@@ -1,0 +1,1550 @@
+openapi: 3.1.0
+info:
+  title: Short-Term Rental Platform API
+  description: |
+    Vendor-neutral API for property managers, hosts, and guests.
+    Built with privacy-by-design and ethical AI principles.
+  version: 1.0.0
+  contact:
+    name: API Support
+    email: api-support@example.com
+  license:
+    name: Proprietary
+
+servers:
+  - url: https://api.example.com/v1
+    description: Production
+  - url: https://api-staging.example.com/v1
+    description: Staging
+  - url: http://localhost:3001/v1
+    description: Local Development
+
+tags:
+  - name: Authentication
+    description: User authentication and authorization
+  - name: Users
+    description: User management operations
+  - name: Properties
+    description: Property listing operations
+  - name: Bookings
+    description: Booking management
+  - name: Payments
+    description: Payment processing
+  - name: Messages
+    description: Guest-host communications
+  - name: Reviews
+    description: Review management
+  - name: Analytics
+    description: Reporting and analytics
+  - name: AI
+    description: AI-powered features
+
+paths:
+  # Authentication
+  /auth/register:
+    post:
+      tags: [Authentication]
+      summary: Register new user
+      operationId: registerUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          description: Email already registered
+
+  /auth/login:
+    post:
+      tags: [Authentication]
+      summary: Authenticate user
+      operationId: loginUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/refresh:
+    post:
+      tags: [Authentication]
+      summary: Refresh access token
+      operationId: refreshToken
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Token refreshed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+
+  # Users
+  /users/me:
+    get:
+      tags: [Users]
+      summary: Get current user profile
+      operationId: getCurrentUser
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+    patch:
+      tags: [Users]
+      summary: Update current user profile
+      operationId: updateCurrentUser
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserUpdate'
+      responses:
+        '200':
+          description: User updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+
+  # Properties
+  /properties:
+    get:
+      tags: [Properties]
+      summary: Search properties
+      operationId: searchProperties
+      parameters:
+        - name: location
+          in: query
+          schema:
+            type: string
+          description: Location search (city, address, or coordinates)
+        - name: checkIn
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: checkOut
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: guests
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+        - name: minPrice
+          in: query
+          schema:
+            type: number
+        - name: maxPrice
+          in: query
+          schema:
+            type: number
+        - name: propertyType
+          in: query
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/PropertyType'
+        - name: amenities
+          in: query
+          schema:
+            type: array
+            items:
+              type: string
+        - $ref: '#/components/parameters/PageCursor'
+        - $ref: '#/components/parameters/PageLimit'
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PropertySearchResponse'
+    post:
+      tags: [Properties]
+      summary: Create new property listing
+      operationId: createProperty
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PropertyCreate'
+      responses:
+        '201':
+          description: Property created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Property'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /properties/{propertyId}:
+    get:
+      tags: [Properties]
+      summary: Get property details
+      operationId: getProperty
+      parameters:
+        - $ref: '#/components/parameters/PropertyId'
+      responses:
+        '200':
+          description: Property details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Property'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      tags: [Properties]
+      summary: Update property
+      operationId: updateProperty
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PropertyId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PropertyUpdate'
+      responses:
+        '200':
+          description: Property updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Property'
+    delete:
+      tags: [Properties]
+      summary: Delete property
+      operationId: deleteProperty
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PropertyId'
+      responses:
+        '204':
+          description: Property deleted
+
+  /properties/{propertyId}/availability:
+    get:
+      tags: [Properties]
+      summary: Get property availability
+      operationId: getAvailability
+      parameters:
+        - $ref: '#/components/parameters/PropertyId'
+        - name: startDate
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: endDate
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Availability calendar
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AvailabilityResponse'
+    patch:
+      tags: [Properties]
+      summary: Update availability
+      operationId: updateAvailability
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PropertyId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AvailabilityUpdate'
+      responses:
+        '200':
+          description: Availability updated
+
+  /properties/{propertyId}/pricing:
+    get:
+      tags: [Properties]
+      summary: Get property pricing rules
+      operationId: getPricing
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PropertyId'
+      responses:
+        '200':
+          description: Pricing rules
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PricingRules'
+
+  /properties/{propertyId}/quote:
+    post:
+      tags: [Properties]
+      summary: Get booking quote
+      operationId: getQuote
+      parameters:
+        - $ref: '#/components/parameters/PropertyId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QuoteRequest'
+      responses:
+        '200':
+          description: Price quote
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuoteResponse'
+
+  # Bookings
+  /bookings:
+    get:
+      tags: [Bookings]
+      summary: List user's bookings
+      operationId: listBookings
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/BookingStatus'
+        - name: role
+          in: query
+          schema:
+            type: string
+            enum: [guest, host]
+        - $ref: '#/components/parameters/PageCursor'
+        - $ref: '#/components/parameters/PageLimit'
+      responses:
+        '200':
+          description: List of bookings
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingListResponse'
+    post:
+      tags: [Bookings]
+      summary: Create new booking
+      operationId: createBooking
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BookingCreate'
+      responses:
+        '201':
+          description: Booking created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          description: Dates not available
+
+  /bookings/{bookingId}:
+    get:
+      tags: [Bookings]
+      summary: Get booking details
+      operationId: getBooking
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/BookingId'
+      responses:
+        '200':
+          description: Booking details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+
+  /bookings/{bookingId}/cancel:
+    post:
+      tags: [Bookings]
+      summary: Cancel booking
+      operationId: cancelBooking
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/BookingId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CancelRequest'
+      responses:
+        '200':
+          description: Booking cancelled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CancelResponse'
+
+  # Payments
+  /payments/methods:
+    get:
+      tags: [Payments]
+      summary: List saved payment methods
+      operationId: listPaymentMethods
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Payment methods
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PaymentMethod'
+
+  /payments/checkout:
+    post:
+      tags: [Payments]
+      summary: Process payment for booking
+      operationId: processPayment
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CheckoutRequest'
+      responses:
+        '200':
+          description: Payment processed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckoutResponse'
+
+  # Messages
+  /messages/threads:
+    get:
+      tags: [Messages]
+      summary: List message threads
+      operationId: listThreads
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Message threads
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MessageThread'
+
+  /messages/threads/{threadId}:
+    get:
+      tags: [Messages]
+      summary: Get messages in thread
+      operationId: getThread
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: threadId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Thread messages
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageThreadDetail'
+
+  /messages/send:
+    post:
+      tags: [Messages]
+      summary: Send message
+      operationId: sendMessage
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SendMessageRequest'
+      responses:
+        '201':
+          description: Message sent
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+
+  # Reviews
+  /reviews:
+    post:
+      tags: [Reviews]
+      summary: Submit review
+      operationId: createReview
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReviewCreate'
+      responses:
+        '201':
+          description: Review submitted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Review'
+
+  /properties/{propertyId}/reviews:
+    get:
+      tags: [Reviews]
+      summary: Get property reviews
+      operationId: getPropertyReviews
+      parameters:
+        - $ref: '#/components/parameters/PropertyId'
+        - $ref: '#/components/parameters/PageCursor'
+        - $ref: '#/components/parameters/PageLimit'
+      responses:
+        '200':
+          description: Property reviews
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewListResponse'
+
+  # AI Features
+  /ai/pricing/suggestions:
+    get:
+      tags: [AI]
+      summary: Get AI pricing suggestions
+      operationId: getPricingSuggestions
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PropertyId'
+        - name: startDate
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: endDate
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Pricing suggestions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PricingSuggestions'
+
+  /ai/listing/optimize:
+    post:
+      tags: [AI]
+      summary: Get listing optimization suggestions
+      operationId: optimizeListing
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OptimizeListingRequest'
+      responses:
+        '200':
+          description: Optimization suggestions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListingOptimizations'
+
+  # Analytics
+  /analytics/dashboard:
+    get:
+      tags: [Analytics]
+      summary: Get dashboard metrics
+      operationId: getDashboard
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: startDate
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: endDate
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Dashboard metrics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardMetrics'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    PropertyId:
+      name: propertyId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    BookingId:
+      name: bookingId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    PageCursor:
+      name: cursor
+      in: query
+      schema:
+        type: string
+      description: Cursor for pagination
+    PageLimit:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+
+  responses:
+    BadRequest:
+      description: Invalid request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Authentication required
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Forbidden:
+      description: Access denied
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+  schemas:
+    # Error
+    Error:
+      type: object
+      required: [type, title, status]
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        instance:
+          type: string
+        requestId:
+          type: string
+
+    # Auth
+    RegisterRequest:
+      type: object
+      required: [email, password, firstName, lastName]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 12
+        firstName:
+          type: string
+        lastName:
+          type: string
+        phone:
+          type: string
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+
+    AuthResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+        expiresIn:
+          type: integer
+        user:
+          $ref: '#/components/schemas/User'
+
+    # User
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        firstName:
+          type: string
+        lastName:
+          type: string
+        displayName:
+          type: string
+        avatarUrl:
+          type: string
+          format: uri
+        emailVerified:
+          type: boolean
+        phoneVerified:
+          type: boolean
+        roles:
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    UserUpdate:
+      type: object
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+        displayName:
+          type: string
+        phone:
+          type: string
+
+    # Property
+    PropertyType:
+      type: string
+      enum:
+        - apartment
+        - house
+        - condo
+        - townhouse
+        - cabin
+        - cottage
+        - villa
+        - chalet
+        - loft
+        - studio
+        - guesthouse
+        - bnb
+
+    Property:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        hostId:
+          type: string
+          format: uuid
+        title:
+          type: string
+        description:
+          type: string
+        propertyType:
+          $ref: '#/components/schemas/PropertyType'
+        roomType:
+          type: string
+          enum: [entire_place, private_room, shared_room]
+        address:
+          $ref: '#/components/schemas/Address'
+        coordinates:
+          $ref: '#/components/schemas/Coordinates'
+        bedrooms:
+          type: integer
+        beds:
+          type: integer
+        bathrooms:
+          type: number
+        maxGuests:
+          type: integer
+        amenities:
+          type: array
+          items:
+            type: string
+        photos:
+          type: array
+          items:
+            $ref: '#/components/schemas/Photo'
+        houseRules:
+          $ref: '#/components/schemas/HouseRules'
+        pricing:
+          $ref: '#/components/schemas/PropertyPricing'
+        rating:
+          type: number
+        reviewCount:
+          type: integer
+        status:
+          type: string
+          enum: [draft, listed, unlisted, suspended]
+        instantBook:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+
+    PropertyCreate:
+      type: object
+      required: [title, propertyType, address, bedrooms, beds, bathrooms, maxGuests]
+      properties:
+        title:
+          type: string
+          maxLength: 100
+        description:
+          type: string
+          maxLength: 5000
+        propertyType:
+          $ref: '#/components/schemas/PropertyType'
+        roomType:
+          type: string
+          enum: [entire_place, private_room, shared_room]
+        address:
+          $ref: '#/components/schemas/Address'
+        bedrooms:
+          type: integer
+          minimum: 0
+        beds:
+          type: integer
+          minimum: 1
+        bathrooms:
+          type: number
+          minimum: 0.5
+        maxGuests:
+          type: integer
+          minimum: 1
+        amenities:
+          type: array
+          items:
+            type: string
+
+    PropertyUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        amenities:
+          type: array
+          items:
+            type: string
+        status:
+          type: string
+          enum: [draft, listed, unlisted]
+
+    PropertySearchResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Property'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+        totalCount:
+          type: integer
+
+    Address:
+      type: object
+      properties:
+        line1:
+          type: string
+        line2:
+          type: string
+        city:
+          type: string
+        state:
+          type: string
+        postalCode:
+          type: string
+        country:
+          type: string
+
+    Coordinates:
+      type: object
+      properties:
+        latitude:
+          type: number
+        longitude:
+          type: number
+
+    Photo:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        url:
+          type: string
+          format: uri
+        caption:
+          type: string
+        order:
+          type: integer
+        isCover:
+          type: boolean
+
+    HouseRules:
+      type: object
+      properties:
+        checkInTime:
+          type: string
+        checkOutTime:
+          type: string
+        smokingAllowed:
+          type: boolean
+        petsAllowed:
+          type: boolean
+        partiesAllowed:
+          type: boolean
+
+    PropertyPricing:
+      type: object
+      properties:
+        basePrice:
+          type: number
+        currency:
+          type: string
+        cleaningFee:
+          type: number
+        weekendPrice:
+          type: number
+
+    # Availability
+    AvailabilityResponse:
+      type: object
+      properties:
+        propertyId:
+          type: string
+          format: uuid
+        dates:
+          type: array
+          items:
+            $ref: '#/components/schemas/AvailabilityDate'
+
+    AvailabilityDate:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        status:
+          type: string
+          enum: [available, blocked, booked]
+        price:
+          type: number
+        minNights:
+          type: integer
+
+    AvailabilityUpdate:
+      type: object
+      properties:
+        dates:
+          type: array
+          items:
+            type: object
+            properties:
+              date:
+                type: string
+                format: date
+              status:
+                type: string
+                enum: [available, blocked]
+              price:
+                type: number
+
+    PricingRules:
+      type: object
+      properties:
+        basePrice:
+          type: number
+        currency:
+          type: string
+        rules:
+          type: array
+          items:
+            $ref: '#/components/schemas/PricingRule'
+
+    PricingRule:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        ruleType:
+          type: string
+          enum: [base, seasonal, weekend, length_of_stay, early_bird, last_minute]
+        adjustmentType:
+          type: string
+          enum: [fixed, percentage]
+        adjustmentValue:
+          type: number
+        isActive:
+          type: boolean
+
+    QuoteRequest:
+      type: object
+      required: [checkIn, checkOut, guests]
+      properties:
+        checkIn:
+          type: string
+          format: date
+        checkOut:
+          type: string
+          format: date
+        guests:
+          type: integer
+          minimum: 1
+
+    QuoteResponse:
+      type: object
+      properties:
+        available:
+          type: boolean
+        pricing:
+          type: object
+          properties:
+            nightlyRate:
+              type: number
+            nights:
+              type: integer
+            subtotal:
+              type: number
+            cleaningFee:
+              type: number
+            serviceFee:
+              type: number
+            taxes:
+              type: number
+            total:
+              type: number
+            currency:
+              type: string
+
+    # Booking
+    BookingStatus:
+      type: string
+      enum: [pending, confirmed, cancelled, checked_in, completed, no_show]
+
+    Booking:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        confirmationCode:
+          type: string
+        propertyId:
+          type: string
+          format: uuid
+        property:
+          $ref: '#/components/schemas/Property'
+        guestId:
+          type: string
+          format: uuid
+        guest:
+          $ref: '#/components/schemas/User'
+        checkIn:
+          type: string
+          format: date
+        checkOut:
+          type: string
+          format: date
+        guests:
+          type: integer
+        status:
+          $ref: '#/components/schemas/BookingStatus'
+        pricing:
+          $ref: '#/components/schemas/QuoteResponse'
+        createdAt:
+          type: string
+          format: date-time
+
+    BookingCreate:
+      type: object
+      required: [propertyId, checkIn, checkOut, guests]
+      properties:
+        propertyId:
+          type: string
+          format: uuid
+        checkIn:
+          type: string
+          format: date
+        checkOut:
+          type: string
+          format: date
+        guests:
+          type: integer
+        specialRequests:
+          type: string
+        paymentMethodId:
+          type: string
+
+    BookingListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Booking'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+
+    CancelRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+
+    CancelResponse:
+      type: object
+      properties:
+        booking:
+          $ref: '#/components/schemas/Booking'
+        refund:
+          type: object
+          properties:
+            amount:
+              type: number
+            currency:
+              type: string
+            policy:
+              type: string
+
+    # Payment
+    PaymentMethod:
+      type: object
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+          enum: [card, bank]
+        last4:
+          type: string
+        brand:
+          type: string
+        expiryMonth:
+          type: integer
+        expiryYear:
+          type: integer
+        isDefault:
+          type: boolean
+
+    CheckoutRequest:
+      type: object
+      required: [bookingId]
+      properties:
+        bookingId:
+          type: string
+          format: uuid
+        paymentMethodId:
+          type: string
+
+    CheckoutResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        booking:
+          $ref: '#/components/schemas/Booking'
+        payment:
+          type: object
+          properties:
+            id:
+              type: string
+            amount:
+              type: number
+            currency:
+              type: string
+            status:
+              type: string
+
+    # Messages
+    MessageThread:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        bookingId:
+          type: string
+          format: uuid
+        participants:
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
+        lastMessage:
+          $ref: '#/components/schemas/Message'
+        unreadCount:
+          type: integer
+
+    MessageThreadDetail:
+      type: object
+      properties:
+        thread:
+          $ref: '#/components/schemas/MessageThread'
+        messages:
+          type: array
+          items:
+            $ref: '#/components/schemas/Message'
+
+    Message:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        senderId:
+          type: string
+          format: uuid
+        content:
+          type: string
+        sentAt:
+          type: string
+          format: date-time
+        readAt:
+          type: string
+          format: date-time
+        isAutoResponse:
+          type: boolean
+
+    SendMessageRequest:
+      type: object
+      required: [recipientId, content]
+      properties:
+        recipientId:
+          type: string
+          format: uuid
+        bookingId:
+          type: string
+          format: uuid
+        content:
+          type: string
+          maxLength: 5000
+
+    # Reviews
+    Review:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        bookingId:
+          type: string
+          format: uuid
+        authorId:
+          type: string
+          format: uuid
+        author:
+          $ref: '#/components/schemas/User'
+        overallRating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        categoryRatings:
+          type: object
+          properties:
+            cleanliness:
+              type: integer
+            accuracy:
+              type: integer
+            communication:
+              type: integer
+            location:
+              type: integer
+            checkIn:
+              type: integer
+            value:
+              type: integer
+        comment:
+          type: string
+        response:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    ReviewCreate:
+      type: object
+      required: [bookingId, overallRating, comment]
+      properties:
+        bookingId:
+          type: string
+          format: uuid
+        overallRating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        categoryRatings:
+          type: object
+        comment:
+          type: string
+          minLength: 50
+          maxLength: 2000
+
+    ReviewListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Review'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+        averageRating:
+          type: number
+        totalCount:
+          type: integer
+
+    # AI
+    PricingSuggestions:
+      type: object
+      properties:
+        propertyId:
+          type: string
+          format: uuid
+        suggestions:
+          type: array
+          items:
+            type: object
+            properties:
+              date:
+                type: string
+                format: date
+              currentPrice:
+                type: number
+              suggestedPrice:
+                type: number
+              confidence:
+                type: number
+              factors:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                    impact:
+                      type: number
+        aiDisclosure:
+          type: object
+          properties:
+            model:
+              type: string
+            generatedAt:
+              type: string
+              format: date-time
+
+    OptimizeListingRequest:
+      type: object
+      required: [propertyId]
+      properties:
+        propertyId:
+          type: string
+          format: uuid
+        aspects:
+          type: array
+          items:
+            type: string
+            enum: [title, description, photos]
+
+    ListingOptimizations:
+      type: object
+      properties:
+        propertyId:
+          type: string
+          format: uuid
+        suggestions:
+          type: object
+          properties:
+            titles:
+              type: array
+              items:
+                type: object
+                properties:
+                  text:
+                    type: string
+                  score:
+                    type: number
+            descriptionImprovements:
+              type: array
+              items:
+                type: object
+                properties:
+                  section:
+                    type: string
+                  suggestion:
+                    type: string
+            photoOrder:
+              type: array
+              items:
+                type: string
+                format: uuid
+        aiDisclosure:
+          type: object
+          properties:
+            model:
+              type: string
+            confidence:
+              type: number
+
+    # Analytics
+    DashboardMetrics:
+      type: object
+      properties:
+        period:
+          type: object
+          properties:
+            start:
+              type: string
+              format: date
+            end:
+              type: string
+              format: date
+        metrics:
+          type: object
+          properties:
+            totalBookings:
+              type: integer
+            totalRevenue:
+              type: number
+            averageDailyRate:
+              type: number
+            occupancyRate:
+              type: number
+            averageRating:
+              type: number
+        bookingsBySource:
+          type: array
+          items:
+            type: object
+            properties:
+              source:
+                type: string
+              count:
+                type: integer
+              revenue:
+                type: number
+        upcomingBookings:
+          type: array
+          items:
+            $ref: '#/components/schemas/Booking'
+
+    # Common
+    Pagination:
+      type: object
+      properties:
+        cursor:
+          type: string
+        hasMore:
+          type: boolean
+        limit:
+          type: integer

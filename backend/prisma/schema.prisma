@@ -1,0 +1,54 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id    Int    @id @default(autoincrement())
+  name  String?
+  email String @unique
+}
+
+model Booking {
+  id            Int     @id @default(autoincrement())
+  confirmation_code String @unique
+  listing_id    Int?
+  guest_name    String
+  property      String?
+  check_in      String?
+  check_out     String?
+  access_code   String?
+  wifi_name     String?
+  wifi_password String?
+  status        String  @default("pending")
+  created_at    DateTime @default(now())
+}
+
+model Listing {
+  id             Int      @id @default(autoincrement())
+  title          String
+  address        String?
+  price_per_night Int?
+  created_at     DateTime @default(now())
+}
+
+model Message {
+  id         Int      @id @default(autoincrement())
+  booking_id Int?
+  sender     String
+  body       String
+  created_at DateTime @default(now())
+}
+
+model Payment {
+  id         Int      @id @default(autoincrement())
+  booking_id Int?
+  amount     Float
+  currency   String
+  status     String   @default("pending")
+  created_at DateTime @default(now())
+}

@@ -1,0 +1,5 @@
+{
+    "chat.customAgentInSubagent.enabled": true,
+    "chat.editing.autoAcceptDelay": 100,
+    "chat.tools.terminal.ignoreDefaultAutoApproveRules": true
+}
