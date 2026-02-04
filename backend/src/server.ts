@@ -1,6 +1,8 @@
 import Fastify from "fastify";
 import cors from "@fastify/cors";
 import jwt from "@fastify/jwt";
+import helmet from "@fastify/helmet";
+import rateLimit from "@fastify/rate-limit";
 import dotenv from "dotenv";
 import authRoutes from "./routes/auth";
 import usersRoutes from "./routes/users";
@@ -19,9 +21,31 @@ import moduleRoutes from "./routes/modules";
 dotenv.config();
 
 export async function buildServer() {
-  const fastify = Fastify({ logger: false });
+  const fastify = Fastify({
+    logger: {
+      level: "info",
+      redact: {
+        paths: [
+          "req.headers.authorization",
+          "req.headers.cookie",
+          "req.body.password",
+          "req.body.accessToken",
+          "req.body.refreshToken",
+          "req.body.token",
+        ],
+        remove: true,
+      },
+    },
+  });
 
   await fastify.register(cors, { origin: true });
+  await fastify.register(helmet, {
+    contentSecurityPolicy: false,
+  });
+  await fastify.register(rateLimit, {
+    max: Number(process.env.RATE_LIMIT_MAX || 120),
+    timeWindow: process.env.RATE_LIMIT_WINDOW || "1 minute",
+  });
   await fastify.register(jwt, { secret: process.env.JWT_SECRET || "dev-secret" });
 
   fastify.decorate("authenticate", async function (request: any, reply: any) {
