@@ -5,10 +5,22 @@ import { signIn } from "next-auth/react";
 import { useState } from "react";
 import { Home, Eye, EyeOff, ArrowRight } from "lucide-react";
 
+const ROLES = [
+  { value: "host",        label: "Host — Host Club (1–10 properties)" },
+  { value: "host_ai",     label: "Host — Host Club + AI (AI pricing & screening)" },
+  { value: "enterprise",  label: "Enterprise Operator (10+ properties, full API)" },
+  { value: "guest",       label: "Guest" },
+  { value: "cleaner",     label: "Cleaner" },
+  { value: "maintenance", label: "Maintenance Technician" },
+  { value: "corporate",   label: "Corporate Manager" },
+  { value: "admin",       label: "Admin" },
+];
+
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [role, setRole] = useState("host");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -19,13 +31,25 @@ export default function LoginPage() {
     const result = await signIn("credentials", {
       email,
       password,
+      role,
       redirect: false,
     });
     setLoading(false);
     if (result?.error) {
       setError("Invalid email or password. Please try again.");
     } else {
-      window.location.href = "/dashboard";
+      // Route to the correct portal based on role
+      const destinations: Record<string, string> = {
+        host:        "/dashboard",
+        host_ai:     "/dashboard",
+        enterprise:  "/dashboard",
+        guest:       "/portal/guest",
+        cleaner:     "/portal/cleaner",
+        maintenance: "/portal/maintenance",
+        corporate:   "/portal/corporate",
+        admin:       "/dashboard",
+      };
+      window.location.href = destinations[role] ?? "/dashboard";
     }
   }
 
@@ -50,20 +74,6 @@ export default function LoginPage() {
           </p>
         </div>
 
-        {/* Demo credentials hint */}
-        <div className="mb-6 px-4 py-3 rounded-lg bg-muted border border-border text-xs text-muted-foreground">
-          <span className="font-medium text-foreground">Demo credentials:</span> use the email and password from your{" "}
-          <code className="font-mono bg-background px-1 py-0.5 rounded">.env.local</code> file, or{" "}
-          <button
-            type="button"
-            onClick={() => { setEmail("demo@complicore.io"); setPassword("demo1234"); }}
-            className="underline underline-offset-4 hover:text-foreground"
-          >
-            autofill demo
-          </button>
-          .
-        </div>
-
         {error && (
           <div className="mb-4 px-4 py-3 rounded-lg bg-destructive/10 border border-destructive/20 text-sm text-destructive">
             {error}
@@ -71,6 +81,23 @@ export default function LoginPage() {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Role selector */}
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium" htmlFor="role">
+              Sign in as
+            </label>
+            <select
+              id="role"
+              value={role}
+              onChange={(e) => setRole(e.target.value)}
+              className="w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+            >
+              {ROLES.map((r) => (
+                <option key={r.value} value={r.value}>{r.label}</option>
+              ))}
+            </select>
+          </div>
+
           <div className="space-y-1.5">
             <label className="text-sm font-medium" htmlFor="email">
               Email address
@@ -142,11 +169,11 @@ export default function LoginPage() {
 
         <p className="mt-8 text-xs text-muted-foreground text-center">
           By signing in you agree to our{" "}
-          <Link href="#" className="underline underline-offset-4 hover:text-foreground">
+          <Link href="/terms" className="underline underline-offset-4 hover:text-foreground">
             Terms
           </Link>{" "}
           and{" "}
-          <Link href="#" className="underline underline-offset-4 hover:text-foreground">
+          <Link href="/privacy" className="underline underline-offset-4 hover:text-foreground">
             Privacy Policy
           </Link>
           .

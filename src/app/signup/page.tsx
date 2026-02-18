@@ -38,12 +38,18 @@ export default function SignupPage() {
     // Simulate account creation — replace with real API call
     await new Promise((r) => setTimeout(r, 1200));
     setLoading(false);
-    // Redirect to onboarding wizard for hosts/managers, dashboard for guests
-    if (form.role === "guest") {
-      window.location.href = "/search";
-    } else {
-      window.location.href = "/onboarding";
-    }
+    // Redirect based on role
+    const destinations: Record<string, string> = {
+      host:        "/onboarding",
+      host_ai:     "/onboarding",
+      enterprise:  "/onboarding",
+      guest:       "/portal/guest",
+      cleaner:     "/portal/cleaner",
+      maintenance: "/portal/maintenance",
+      corporate:   "/portal/corporate",
+      admin:       "/dashboard",
+    };
+    window.location.href = destinations[form.role] ?? "/onboarding";
   }
 
   return (
@@ -179,10 +185,14 @@ export default function SignupPage() {
                 onChange={handleChange}
                 className="w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
               >
-                <option value="host">Host (1–10 properties)</option>
-                <option value="manager">Property Manager (10+ properties)</option>
+                <option value="host">Host — Host Club (1–10 properties, $18/property/mo)</option>
+                <option value="host_ai">Host — Host Club + AI (AI pricing & screening, $46/property/mo)</option>
+                <option value="enterprise">Enterprise Operator (10+ properties, $888/mo)</option>
                 <option value="guest">Guest</option>
-                <option value="enterprise">Enterprise / Corporate</option>
+                <option value="cleaner">Cleaner</option>
+                <option value="maintenance">Maintenance Technician</option>
+                <option value="corporate">Corporate Manager</option>
+                <option value="admin">Admin</option>
               </select>
             </div>
 
@@ -210,11 +220,11 @@ export default function SignupPage() {
 
           <p className="mt-6 text-xs text-muted-foreground text-center leading-relaxed">
             By creating an account you agree to our{" "}
-            <Link href="#" className="underline underline-offset-4 hover:text-foreground">
+            <Link href="/terms" className="underline underline-offset-4 hover:text-foreground">
               Terms of Service
             </Link>{" "}
             and{" "}
-            <Link href="#" className="underline underline-offset-4 hover:text-foreground">
+            <Link href="/privacy" className="underline underline-offset-4 hover:text-foreground">
               Privacy Policy
             </Link>
             .
