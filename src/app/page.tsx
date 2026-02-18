@@ -437,6 +437,18 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ── About Us ── */}
+      <section id="about" className="py-20 px-6 border-t border-border bg-muted/20">
+        <div className="max-w-4xl mx-auto text-center">
+          <h2 className="text-4xl font-bold mb-5">About Us</h2>
+          <p className="text-muted-foreground text-lg leading-relaxed">
+            CompliCore helps hosts and property managers run short-term rentals with confidence.
+            We combine automation, compliance, and practical AI so teams can scale faster while
+            keeping guest trust and regulatory standards first.
+          </p>
+        </div>
+      </section>
+
       {/* ── Footer ── */}
       <footer className="border-t border-border py-12 px-6">
         <div className="max-w-7xl mx-auto">
@@ -458,7 +470,6 @@ export default function LandingPage() {
                 <li><Link href="#features" className="hover:text-foreground transition-colors">Features</Link></li>
                 <li><Link href="#pricing" className="hover:text-foreground transition-colors">Pricing</Link></li>
                 <li><Link href="/prototype/dashboard" className="hover:text-foreground transition-colors">Demo</Link></li>
-                <li><Link href="/api-docs" className="hover:text-foreground transition-colors">API Docs</Link></li>
               </ul>
             </div>
             <div>
@@ -475,8 +486,7 @@ export default function LandingPage() {
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li><Link href="/login" className="hover:text-foreground transition-colors">Sign in</Link></li>
                 <li><Link href="/signup" className="hover:text-foreground transition-colors">Sign up</Link></li>
-                <li><Link href="/diagrams" className="hover:text-foreground transition-colors">Architecture</Link></li>
-                <li><a href="https://github.com/officechbusinessservices-creator/CompliCore" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors">GitHub</a></li>
+                <li><Link href="#about" className="hover:text-foreground transition-colors">About Us</Link></li>
               </ul>
             </div>
           </div>
