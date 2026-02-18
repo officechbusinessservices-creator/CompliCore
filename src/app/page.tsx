@@ -483,9 +483,9 @@ export default function LandingPage() {
           <div className="border-t border-border pt-6 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-muted-foreground">
             <div>© 2026 CompliCore. All rights reserved.</div>
             <div className="flex gap-6">
-              <Link href="#" className="hover:text-foreground transition-colors">Privacy Policy</Link>
-              <Link href="#" className="hover:text-foreground transition-colors">Terms of Service</Link>
-              <Link href="#" className="hover:text-foreground transition-colors">Cookie Policy</Link>
+              <Link href="/privacy" className="hover:text-foreground transition-colors">Privacy Policy</Link>
+              <Link href="/terms" className="hover:text-foreground transition-colors">Terms of Service</Link>
+              <Link href="/cookies" className="hover:text-foreground transition-colors">Cookie Policy</Link>
             </div>
           </div>
         </div>
