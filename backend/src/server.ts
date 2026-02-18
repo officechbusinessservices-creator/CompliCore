@@ -48,6 +48,9 @@ export async function buildServer() {
   });
   await fastify.register(jwt, { secret: process.env.JWT_SECRET || "dev-secret" });
 
+  fastify.get("/health", async () => ({ status: "ok" }));
+  fastify.get("/health/ready", async () => ({ status: "ready" }));
+
   fastify.decorate("authenticate", async function (request: any, reply: any) {
     try {
       await request.jwtVerify();
