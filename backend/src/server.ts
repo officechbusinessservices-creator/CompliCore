@@ -48,6 +48,7 @@ export async function buildServer() {
   });
   await fastify.register(jwt, { secret: process.env.JWT_SECRET || "dev-secret" });
 
+  fastify.get("/", async () => ({ status: "ok", service: "complicore-backend" }));
   fastify.get("/health", async () => ({ status: "ok" }));
   fastify.get("/health/ready", async () => ({ status: "ready" }));
 
