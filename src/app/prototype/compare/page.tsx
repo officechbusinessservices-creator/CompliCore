@@ -115,6 +115,11 @@ export default function ComparePage() {
       </header>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+        <div className="mb-6 p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
+          <p className="text-sm text-zinc-500">
+            Corporate listings require compliance checks and a 5–15% discount range. Corporate SME bookings incur an 8% commission.
+          </p>
+        </div>
         {/* Property Selection */}
         <div className="mb-8">
           <h2 className="text-lg font-semibold mb-4">Select Properties to Compare</h2>

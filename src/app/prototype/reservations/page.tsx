@@ -181,7 +181,7 @@ export default function ReservationsPage() {
     apiGet<any>("/bookings")
       .then((data) => {
         if (Array.isArray(data)) {
-          setReservations((prev) => prev.map((r) => ({ ...r, status: r.status }))); // keep demo shape
+          setReservations((prev) => prev.map((r) => ({ ...r, status: r.status })));
         }
       })
       .catch(() => null);

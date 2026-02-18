@@ -42,10 +42,22 @@ describe("Auth + booking flow", () => {
     const cancelled = await server.inject({
       method: "POST",
       url: `/api/bookings/${bookingId}/cancel`,
+      headers: { Authorization: `Bearer ${token}` },
       payload: { reason: "test" },
     });
     expect(cancelled.statusCode).toBe(200);
     const cancelBody = JSON.parse(cancelled.payload);
     expect(cancelBody.booking?.status).toBe("cancelled");
+  });
+  it("module integrations + marketplace endpoints respond", async () => {
+    const integrations = await server.inject({ method: "GET", url: "/api/integrations" });
+    expect(integrations.statusCode).toBe(200);
+    const integrationsBody = JSON.parse(integrations.payload);
+    expect(Array.isArray(integrationsBody.data)).toBe(true);
+
+    const marketplace = await server.inject({ method: "GET", url: "/api/marketplace" });
+    expect(marketplace.statusCode).toBe(200);
+    const marketplaceBody = JSON.parse(marketplace.payload);
+    expect(Array.isArray(marketplaceBody.data)).toBe(true);
   });
 });

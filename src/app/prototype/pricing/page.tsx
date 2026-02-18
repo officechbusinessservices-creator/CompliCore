@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { apiGet } from "@/lib/api";
+import { apiGet, apiPost } from "@/lib/api";
+import { PRICING, calculateCorporateCommission, calculateHostClubMonthly, calculateMarkupToCoverCommission } from "@/lib/pricing";
 
 // Types
 interface PricingRule {
@@ -96,9 +97,49 @@ const ruleTypes = [
 
 export default function PricingEditorPage() {
   const [property, setProperty] = useState<PropertyPricing>(mockProperties[0]);
+  const [hostProperties, setHostProperties] = useState(5);
+  const [plans, setPlans] = useState<any[]>([]);
+  const [subscriptions, setSubscriptions] = useState<any[]>([]);
+  const [billingMessage, setBillingMessage] = useState<string | null>(null);
+  const [bookingAmount, setBookingAmount] = useState(1000);
+  const [addonSelection, setAddonSelection] = useState<string[]>([]);
   useEffect(() => {
     apiGet<any>("/ai/pricing/suggestions?propertyId=demo-property&startDate=2026-03-15&endDate=2026-03-22").catch(() => null);
+    apiGet<any>("/billing/plans")
+      .then((data) => {
+        if (Array.isArray(data)) setPlans(data);
+      })
+      .catch(() => null);
+    apiGet<any>("/billing/subscriptions")
+      .then((data) => {
+        if (Array.isArray(data)) setSubscriptions(data);
+      })
+      .catch(() => null);
   }, []);
+
+  const subscribeToPlan = async (planId: string) => {
+    setBillingMessage(null);
+    try {
+      const res = await apiPost<any>("/billing/subscribe", { planId });
+      setBillingMessage(`Subscribed: ${res.subscriptionId || planId}`);
+      const updated = await apiGet<any>("/billing/subscriptions").catch(() => []);
+      if (Array.isArray(updated)) setSubscriptions(updated);
+    } catch (err: any) {
+      setBillingMessage(err?.message || "Subscription failed");
+    }
+  };
+
+  const cancelSubscription = async (subscriptionId: string) => {
+    setBillingMessage(null);
+    try {
+      const res = await apiPost<any>("/billing/cancel", { subscriptionId });
+      setBillingMessage(`Canceled: ${res.subscriptionId || subscriptionId}`);
+      const updated = await apiGet<any>("/billing/subscriptions").catch(() => []);
+      if (Array.isArray(updated)) setSubscriptions(updated);
+    } catch (err: any) {
+      setBillingMessage(err?.message || "Cancel failed");
+    }
+  };
   const [editingRule, setEditingRule] = useState<string | null>(null);
   const [showAddRule, setShowAddRule] = useState(false);
   const [previewDates, setPreviewDates] = useState<{ start: string; end: string }>({
@@ -219,6 +260,127 @@ export default function PricingEditorPage() {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-6 py-8">
+        <div className="grid md:grid-cols-3 gap-4 mb-8">
+          <div className="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
+            <h2 className="font-semibold mb-2">Host Club</h2>
+            <p className="text-sm text-zinc-500 mb-3">$18/property/month up to 10 properties.</p>
+            <div className="flex items-center gap-2">
+              <input
+                type="number"
+                min={1}
+                max={10}
+                value={hostProperties}
+                onChange={(e) => setHostProperties(Number(e.target.value))}
+                className="w-20 px-2 py-1 bg-zinc-100 dark:bg-zinc-800 rounded"
+              />
+              <span className="text-sm">properties →</span>
+              <span className="font-semibold">${calculateHostClubMonthly(hostProperties)}/mo</span>
+            </div>
+            <button
+              onClick={() => subscribeToPlan("host_club")}
+              className="mt-3 w-full px-3 py-2 text-sm bg-emerald-500 text-white rounded-lg hover:bg-emerald-600"
+            >
+              Subscribe
+            </button>
+          </div>
+          <div className="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
+            <h2 className="font-semibold mb-2">Enterprise</h2>
+            <p className="text-sm text-zinc-500 mb-3">Flat $888/month for 10+ properties.</p>
+            <span className="font-semibold">${PRICING.enterpriseFlat}/mo</span>
+            <button
+              onClick={() => subscribeToPlan("enterprise")}
+              className="mt-3 w-full px-3 py-2 text-sm bg-emerald-500 text-white rounded-lg hover:bg-emerald-600"
+            >
+              Subscribe
+            </button>
+          </div>
+          <div className="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
+            <h2 className="font-semibold mb-2">Corporate SME</h2>
+            <p className="text-sm text-zinc-500 mb-3">8% commission per booking.</p>
+            <div className="flex items-center gap-2">
+              <input
+                type="number"
+                value={bookingAmount}
+                onChange={(e) => setBookingAmount(Number(e.target.value))}
+                className="w-24 px-2 py-1 bg-zinc-100 dark:bg-zinc-800 rounded"
+              />
+              <span className="text-sm">→ commission</span>
+              <span className="font-semibold">${calculateCorporateCommission(bookingAmount).toFixed(2)}</span>
+            </div>
+            <p className="text-xs text-zinc-500 mt-2">
+              Markup to cover commission: ${calculateMarkupToCoverCommission(bookingAmount).toFixed(2)}
+            </p>
+            <p className="text-xs text-zinc-500 mt-2">AI Power-Up: ${PRICING.aiPowerUp}/mo</p>
+            <button
+              onClick={() => subscribeToPlan("corporate_sme")}
+              className="mt-3 w-full px-3 py-2 text-sm bg-emerald-500 text-white rounded-lg hover:bg-emerald-600"
+            >
+              Subscribe
+            </button>
+          </div>
+        </div>
+        <div className="mb-6 p-4 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-semibold">Marketplace Add-ons</h3>
+            <span className="text-xs text-zinc-500">Billed monthly or per use</span>
+          </div>
+          <div className="grid md:grid-cols-2 gap-3">
+            {PRICING.marketplaceAddOns.map((addon) => (
+              <button
+                key={addon.id}
+                onClick={() =>
+                  setAddonSelection((prev) =>
+                    prev.includes(addon.id) ? prev.filter((id) => id !== addon.id) : [...prev, addon.id]
+                  )
+                }
+                className={`p-4 rounded-lg border text-left transition-colors ${
+                  addonSelection.includes(addon.id)
+                    ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20"
+                    : "border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900"
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium">{addon.name}</p>
+                    <p className="text-xs text-zinc-500">{addon.cadence}</p>
+                  </div>
+                  <span className="text-sm font-semibold">${addon.price}</span>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+        {billingMessage && (
+          <div className="mb-6 p-3 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200">
+            {billingMessage}
+          </div>
+        )}
+        {subscriptions.length > 0 && (
+          <div className="mb-6 p-4 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-semibold">Active Subscriptions</h3>
+              <span className="text-xs text-zinc-500">{subscriptions.length} total</span>
+            </div>
+            <div className="space-y-2">
+              {subscriptions.map((sub) => (
+                <div key={sub.id} className="flex items-center justify-between p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg">
+                  <div>
+                    <p className="font-medium">{sub.plan?.name || sub.planId || sub.plan?.id}</p>
+                    <p className="text-xs text-zinc-500">Status: {sub.status}</p>
+                  </div>
+                  {sub.status !== "canceled" && (
+                    <button
+                      onClick={() => cancelSubscription(sub.id)}
+                      className="px-3 py-1.5 text-xs bg-rose-500/10 text-rose-600 rounded-lg"
+                    >
+                      Cancel
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Base Pricing */}
           <div className="lg:col-span-2 space-y-6">

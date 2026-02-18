@@ -1,7 +1,11 @@
 import { FastifyInstance } from "fastify";
 
 function buildAuthResponse(fastify: FastifyInstance, user: any) {
-  const accessToken = (fastify as any).jwt.sign({ userId: user.id, email: user.email });
+  const accessToken = (fastify as any).jwt.sign({
+    userId: user.id,
+    email: user.email,
+    roles: user.roles || ["guest"],
+  });
   const refreshToken = (fastify as any).jwt.sign({ userId: user.id, type: "refresh" });
   return {
     accessToken,
@@ -22,7 +26,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
       firstName: body.firstName,
       lastName: body.lastName,
       displayName: `${body.firstName} ${body.lastName}`,
-      roles: ["guest"],
+      roles: body.role ? [body.role] : ["guest"],
       createdAt: new Date().toISOString(),
     };
     return buildAuthResponse(fastify, user);
@@ -36,7 +40,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
       firstName: "Dev",
       lastName: "User",
       displayName: "Dev User",
-      roles: ["guest"],
+      roles: body.role ? [body.role] : ["guest"],
       createdAt: new Date().toISOString(),
     };
     return buildAuthResponse(fastify, user);

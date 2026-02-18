@@ -1,0 +1,18 @@
+{
+  "project": "complicore-ai-hub",
+  "description": "Eval + observability scaffold for Complicore orchestrator",
+  "routingMetrics": [
+    "intent_accuracy",
+    "module_latency_ms",
+    "fallback_rate",
+    "hallucination_rate"
+  ],
+  "tracing": {
+    "enabled": true,
+    "sample_rate": 0.2
+  },
+  "alerts": {
+    "intent_accuracy_threshold": 0.92,
+    "fallback_rate_threshold": 0.15
+  }
+}

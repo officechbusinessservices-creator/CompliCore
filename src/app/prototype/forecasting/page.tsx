@@ -83,9 +83,11 @@ export default function ForecastingPage() {
   const [selectedScenario, setSelectedScenario] = useState<"conservative" | "moderate" | "optimistic">("moderate");
   const [forecastRange, setForecastRange] = useState<"6m" | "12m" | "24m">("12m");
   const [forecastData, setForecastData] = useState(monthlyProjections);
+  const [propertiesData, setPropertiesData] = useState(propertyForecasts);
 
   useEffect(() => {
     fetchModuleData<MonthlyProjection[]>("/forecasting", monthlyProjections).then(setForecastData);
+    fetchModuleData<PropertyForecast[]>("/forecasting/properties", propertyForecasts).then(setPropertiesData);
   }, []);
 
   const totalProjected = forecastData.reduce((sum, m) => sum + m.projected, 0);
@@ -314,7 +316,7 @@ export default function ForecastingPage() {
 
         {activeTab === "properties" && (
           <div className="space-y-4">
-            {propertyForecasts.map((property) => (
+            {propertiesData.map((property) => (
               <div key={property.id} className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-6">
                 <div className="flex gap-6">
                   <img src={property.image} alt="" className="w-32 h-24 rounded-lg object-cover shrink-0" />

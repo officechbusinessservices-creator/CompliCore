@@ -59,9 +59,15 @@ export default function SustainabilityPage() {
   const [selectedProperty, setSelectedProperty] = useState("Modern Downtown Loft");
   const [dateRange, setDateRange] = useState("6m");
   const [energyUsage, setEnergyUsage] = useState<EnergyData[]>(energyData);
+  const [metricsData, setMetricsData] = useState(metrics);
+  const [featuresData, setFeaturesData] = useState(ecoFeatures);
+  const [badgesData, setBadgesData] = useState(ecoBadges);
 
   useEffect(() => {
     fetchModuleData<EnergyData[]>("/sustainability/energy", energyData).then(setEnergyUsage);
+    fetchModuleData<typeof metrics>("/sustainability/metrics", metrics).then(setMetricsData);
+    fetchModuleData<typeof ecoFeatures>("/sustainability/features", ecoFeatures).then(setFeaturesData);
+    fetchModuleData<typeof ecoBadges>("/sustainability/badges", ecoBadges).then(setBadgesData);
   }, []);
 
   const totalCost = energyUsage.reduce((sum, d) => sum + d.cost, 0);
@@ -133,7 +139,7 @@ export default function SustainabilityPage() {
             </div>
             <div className="p-4 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800">
               <p className="text-sm text-zinc-500">Badges Earned</p>
-              <p className="text-2xl font-bold text-emerald-600">{ecoBadges.filter((b) => b.earned).length}/{ecoBadges.length}</p>
+              <p className="text-2xl font-bold text-emerald-600">{badgesData.filter((b) => b.earned).length}/{badgesData.length}</p>
               <p className="text-xs text-zinc-400">sustainability goals</p>
             </div>
           </div>
@@ -162,7 +168,7 @@ export default function SustainabilityPage() {
             <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-6">
               <h3 className="font-semibold mb-4">Sustainability Metrics</h3>
               <div className="space-y-4">
-                {metrics.map((metric) => (
+                {metricsData.map((metric) => (
                   <div key={metric.name}>
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-sm">{metric.name}</span>
@@ -203,7 +209,7 @@ export default function SustainabilityPage() {
             <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-6">
               <h3 className="font-semibold mb-4">Eco Badges</h3>
               <div className="grid grid-cols-2 gap-3">
-                {ecoBadges.map((badge) => (
+                {badgesData.map((badge) => (
                   <div
                     key={badge.name}
                     className={`p-4 rounded-xl border ${
@@ -322,7 +328,7 @@ export default function SustainabilityPage() {
           <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-6">
             <h3 className="font-semibold mb-6">Eco-Friendly Improvements</h3>
             <div className="space-y-4">
-              {ecoFeatures.map((feature) => (
+              {featuresData.map((feature) => (
                 <div key={feature.name} className={`flex items-center justify-between p-4 rounded-lg ${
                   feature.installed ? "bg-emerald-50 dark:bg-emerald-950/30" : "bg-zinc-50 dark:bg-zinc-800/50"
                 }`}>

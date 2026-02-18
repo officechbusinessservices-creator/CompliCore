@@ -86,9 +86,11 @@ export default function LoyaltyPage() {
   const [activeTab, setActiveTab] = useState<"overview" | "earn" | "redeem" | "history">("overview");
   const [rewardCategory, setRewardCategory] = useState("all");
   const [activitiesData, setActivitiesData] = useState<PointsActivity[]>(activities);
+  const [rewardsData, setRewardsData] = useState(rewards);
 
   useEffect(() => {
     fetchModuleData<PointsActivity[]>("/loyalty/activity", activities).then(setActivitiesData);
+    fetchModuleData<typeof rewards>("/loyalty/rewards", rewards).then(setRewardsData);
   }, []);
 
   // User's current points and tier
@@ -105,8 +107,8 @@ export default function LoyaltyPage() {
     : 100;
 
   const filteredRewards = rewardCategory === "all"
-    ? rewards
-    : rewards.filter((r) => r.category === rewardCategory);
+    ? rewardsData
+    : rewardsData.filter((r) => r.category === rewardCategory);
 
   const activityColors = {
     earned: "text-emerald-600 dark:text-emerald-400",

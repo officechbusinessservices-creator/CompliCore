@@ -1,0 +1,19 @@
+services:
+  complicore-rag:
+    build: ./ai-engineering-hub/agentic_rag_service
+    ports:
+      - "8000:8000"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
+    volumes:
+      - ./ai-engineering-hub/agentic_rag_service/storage:/app/storage
+      - ./ai-engineering-hub/agentic_rag_service/data:/app/data
+
+  complicore-crag:
+    build: ./ai-engineering-hub/corrective_rag_service
+    ports:
+      - "8001:8001"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}

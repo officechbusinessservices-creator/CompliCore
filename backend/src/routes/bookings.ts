@@ -1,9 +1,46 @@
 import { FastifyInstance } from "fastify";
 import { query } from "../db";
+import { z } from "zod";
+import { formatZodError } from "../lib/validation";
+
+const listSchema = z.object({
+  confirmationCode: z.string().min(3).max(64).optional(),
+});
+
+const createSchema = z.object({
+  confirmation_code: z.string().min(3).max(64).optional(),
+  listing_id: z.number().int().positive(),
+  guest_name: z.string().min(1).max(255),
+  property: z.string().min(1).max(255),
+  check_in: z.string().min(1).max(64),
+  check_out: z.string().min(1).max(64),
+  access_code: z.string().min(1).max(32).optional(),
+  wifi_name: z.string().min(1).max(64).optional(),
+  wifi_password: z.string().min(1).max(64).optional(),
+  status: z.enum(["pending", "confirmed", "cancelled"]).optional(),
+});
+
+const cancelSchema = z.object({
+  reason: z.string().min(1).max(255).optional(),
+});
 
 export default async function bookingsRoutes(fastify: FastifyInstance) {
   fastify.get("/bookings", async (request, reply) => {
-    const q = request.query as any;
+    const parse = listSchema.safeParse(request.query);
+    if (!parse.success) {
+      return reply
+        .status(400)
+        .send({
+          type: "urn:problem:validation",
+          title: "Request validation failed",
+          status: 400,
+          detail: "Invalid query parameters",
+          errors: formatZodError(parse.error),
+          instance: request.url,
+          traceId: request.id,
+        });
+    }
+    const q = parse.data;
     try {
       if (q.confirmationCode) {
         const res = await query(
@@ -63,7 +100,21 @@ export default async function bookingsRoutes(fastify: FastifyInstance) {
       if (reply.sent) return;
       if (res) return res;
     }
-    const body = request.body as any;
+    const parsed = createSchema.safeParse(request.body);
+    if (!parsed.success) {
+      return reply
+        .status(400)
+        .send({
+          type: "urn:problem:validation",
+          title: "Request validation failed",
+          status: 400,
+          detail: "Invalid booking payload",
+          errors: formatZodError(parsed.error),
+          instance: request.url,
+          traceId: request.id,
+        });
+    }
+    const body = parsed.data;
     try {
       const res = await query(
         `INSERT INTO bookings (confirmation_code, listing_id, guest_name, property, check_in, check_out, access_code, wifi_name, wifi_password, status)
@@ -122,9 +173,30 @@ export default async function bookingsRoutes(fastify: FastifyInstance) {
     }
   });
 
-  fastify.post("/bookings/:bookingId/cancel", async (request) => {
+  fastify.post("/bookings/:bookingId/cancel", async (request, reply) => {
+    const req = request as any;
+    const guard = (fastify as any).requireRole;
+    if (guard) {
+      const res = await guard(req, reply, ["guest", "host", "admin"]);
+      if (reply.sent) return;
+      if (res) return res;
+    }
     const { bookingId } = request.params as any;
-    const body = request.body as any;
+    const parsed = cancelSchema.safeParse(request.body);
+    if (!parsed.success) {
+      return reply
+        .status(400)
+        .send({
+          type: "urn:problem:validation",
+          title: "Request validation failed",
+          status: 400,
+          detail: "Invalid cancel payload",
+          errors: formatZodError(parsed.error),
+          instance: request.url,
+          traceId: request.id,
+        });
+    }
+    const body = parsed.data;
     return {
       booking: {
         id: bookingId,

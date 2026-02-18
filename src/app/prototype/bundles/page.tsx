@@ -103,6 +103,9 @@ export default function BundlesPage() {
             Perfect for group trips, family reunions, corporate retreats, and weddings.
             Get up to 25% off when you book multiple properties together.
           </p>
+          <p className="text-sm text-emerald-200 max-w-2xl mx-auto mb-6">
+            Corporate listings require compliance checks and discount ranges (5–15% off public rates) before distribution.
+          </p>
           <div className="flex flex-wrap justify-center gap-4">
             <div className="px-4 py-2 bg-white/10 backdrop-blur-sm rounded-lg">
               <p className="text-2xl font-bold">15-25%</p>

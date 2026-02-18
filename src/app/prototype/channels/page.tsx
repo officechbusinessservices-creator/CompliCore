@@ -126,14 +126,21 @@ export default function ChannelsPage() {
   const [showConnectModal, setShowConnectModal] = useState(false);
   const [connectingChannel, setConnectingChannel] = useState<Channel | null>(null);
   const [channelsData, setChannelsData] = useState<Channel[]>(channels);
+  const [listingsData, setListingsData] = useState<ChannelListing[]>(listings);
+  const [syncActivity, setSyncActivity] = useState(recentSyncActivity);
+
+  const [integrations, setIntegrations] = useState<any[]>([]);
 
   useEffect(() => {
     fetchModuleData<Channel[]>("/channels", channels).then(setChannelsData);
+    fetchModuleData<ChannelListing[]>("/channels/listings", listings).then(setListingsData);
+    fetchModuleData<typeof recentSyncActivity>("/channels/sync", recentSyncActivity).then(setSyncActivity);
+    fetchModuleData<any[]>("/integrations", []).then(setIntegrations);
   }, []);
 
-  const totalRevenue = channels.reduce((sum, c) => sum + c.revenue, 0);
-  const totalBookings = channels.reduce((sum, c) => sum + c.bookings, 0);
-  const connectedChannels = channels.filter((c) => c.status === "connected").length;
+  const totalRevenue = channelsData.reduce((sum, c) => sum + c.revenue, 0);
+  const totalBookings = channelsData.reduce((sum, c) => sum + c.bookings, 0);
+  const connectedChannels = channelsData.filter((c) => c.status === "connected").length;
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -203,6 +210,27 @@ export default function ChannelsPage() {
             <p className="text-2xl font-bold">4.2%</p>
           </div>
         </div>
+
+        {integrations.length > 0 && (
+          <div className="mb-6 p-4 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-semibold">Supported Integrations</h3>
+              <span className="text-xs text-zinc-500">{integrations.length} providers</span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {integrations.slice(0, 10).map((integration) => (
+                <span key={integration.id} className="px-2 py-1 text-xs rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">
+                  {integration.name}
+                </span>
+              ))}
+              {integrations.length > 10 && (
+                <span className="px-2 py-1 text-xs rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-500">
+                  +{integrations.length - 10} more
+                </span>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Tabs */}
         <div className="flex gap-2 mb-6">
@@ -296,7 +324,7 @@ export default function ChannelsPage() {
             <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-6">
               <h3 className="font-semibold mb-4">Revenue by Channel</h3>
               <div className="space-y-4">
-                {channels.filter((c) => c.revenue > 0).map((channel) => {
+                {channelsData.filter((c) => c.revenue > 0).map((channel) => {
                   const percentage = (channel.revenue / totalRevenue) * 100;
                   return (
                     <div key={channel.id}>
@@ -320,14 +348,14 @@ export default function ChannelsPage() {
 
         {activeTab === "listings" && (
           <div className="space-y-4">
-            {listings.map((listing) => (
+            {listingsData.map((listing) => (
               <div key={listing.id} className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-4">
                 <div className="flex gap-4">
                   <img src={listing.propertyImage} alt="" className="w-24 h-24 rounded-lg object-cover shrink-0" />
                   <div className="flex-1">
                     <h3 className="font-semibold mb-3">{listing.propertyName}</h3>
                     <div className="flex flex-wrap gap-2">
-                      {channels.filter((c) => c.status === "connected").map((channel) => {
+                      {channelsData.filter((c) => c.status === "connected").map((channel) => {
                         const channelListing = listing.channels.find((cl) => cl.channelId === channel.id);
                         return (
                           <div
@@ -374,7 +402,7 @@ export default function ChannelsPage() {
               </button>
             </div>
             <div className="divide-y divide-zinc-200 dark:divide-zinc-800">
-              {recentSyncActivity.map((activity) => (
+              {syncActivity.map((activity) => (
                 <div key={activity.id} className="p-4 flex items-center justify-between">
                   <div className="flex items-center gap-4">
                     <span className={`w-2 h-2 rounded-full ${getStatusColor(activity.status)}`} />
@@ -411,7 +439,7 @@ export default function ChannelsPage() {
 
             {!connectingChannel ? (
               <div className="space-y-3">
-                {channels.filter((c) => c.status === "disconnected").map((channel) => (
+                {channelsData.filter((c) => c.status === "disconnected").map((channel) => (
                   <button
                     key={channel.id}
                     onClick={() => setConnectingChannel(channel)}

@@ -135,9 +135,11 @@ export default function OccupancyPage() {
   const [appliedSuggestions, setAppliedSuggestions] = useState<string[]>([]);
   const [selectedProperty, setSelectedProperty] = useState("All Properties");
   const [suggestionsData, setSuggestionsData] = useState<OptimizationSuggestion[]>(suggestions);
+  const [gapData, setGapData] = useState<GapAnalysis[]>(gapAnalysis);
 
   useEffect(() => {
     fetchModuleData<OptimizationSuggestion[]>("/occupancy/suggestions", suggestions).then(setSuggestionsData);
+    fetchModuleData<GapAnalysis[]>("/occupancy/gaps", gapAnalysis).then(setGapData);
   }, []);
 
   const filteredSuggestions = selectedProperty === "All Properties"
@@ -301,7 +303,7 @@ export default function OccupancyPage() {
               <p className="text-sm text-zinc-500">Modern Downtown Loft</p>
             </div>
             <div className="divide-y divide-zinc-200 dark:divide-zinc-800">
-              {gapAnalysis.map((day) => (
+              {gapData.map((day) => (
                 <div key={day.date} className={`p-4 flex items-center justify-between ${
                   day.status === "available" ? "bg-amber-50/50 dark:bg-amber-950/10" : ""
                 }`}>

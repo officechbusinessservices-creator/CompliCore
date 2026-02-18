@@ -52,3 +52,36 @@ model Payment {
   status     String   @default("pending")
   created_at DateTime @default(now())
 }
+
+model BillingPlan {
+  id          Int      @id @default(autoincrement())
+  code        String   @unique
+  name        String
+  interval    String?
+  price_flat  Float?
+  price_per_property Float?
+  commission_rate   Float?
+  description String?
+  created_at  DateTime @default(now())
+  subscriptions Subscription[]
+}
+
+model Subscription {
+  id          Int      @id @default(autoincrement())
+  user_id     Int?
+  plan_id     Int
+  status      String   @default("active")
+  started_at  DateTime @default(now())
+  canceled_at DateTime?
+  plan        BillingPlan @relation(fields: [plan_id], references: [id])
+}
+
+model Payout {
+  id         Int      @id @default(autoincrement())
+  host_id    Int?
+  amount     Float
+  status     String   @default("pending")
+  method     String   @default("bank_transfer")
+  date       DateTime @default(now())
+  created_at DateTime @default(now())
+}

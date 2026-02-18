@@ -60,6 +60,24 @@ async function main() {
       { booking_id: 1, amount: 250, currency: "USD", status: "succeeded" },
     ],
   });
+
+  await prisma.billingPlan.createMany({
+    skipDuplicates: true,
+    data: [
+      { code: "host_club", name: "Host Club", interval: "month", price_per_property: 18, description: "Up to 10 properties" },
+      { code: "enterprise", name: "Enterprise", interval: "month", price_flat: 888, description: "10+ properties" },
+      { code: "corporate_sme", name: "Corporate SME", commission_rate: 0.08, description: "8% commission per booking" },
+      { code: "ai_powerup", name: "AI Power-Up", interval: "month", price_flat: 28 },
+    ],
+  });
+
+  await prisma.payout.createMany({
+    skipDuplicates: true,
+    data: [
+      { amount: 2847.5, status: "completed", method: "bank_transfer" },
+      { amount: 1890, status: "pending", method: "bank_transfer" },
+    ],
+  });
 }
 
 main()

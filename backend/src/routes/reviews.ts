@@ -20,7 +20,14 @@ export default async function reviewsRoutes(fastify: FastifyInstance) {
     };
   });
 
-  fastify.get("/properties/:propertyId/reviews", async (request) => {
+  fastify.get("/properties/:propertyId/reviews", async (request, reply) => {
+    const req = request as any;
+    const guard = (fastify as any).requireRole;
+    if (guard) {
+      const res = await guard(req, reply, ["host", "admin"]);
+      if (reply.sent) return;
+      if (res) return res;
+    }
     const { propertyId } = request.params as any;
     return {
       data: [

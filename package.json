@@ -1,30 +1,41 @@
 {
-  "name": "nextjs-shadcn",
+  "name": "complicore",
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev -H 0.0.0.0 --turbopack",
-    "build": "next build",
+    "test": "npm run lint && (cd backend && npm run test)",
+    "dev": "next dev -H 0.0.0.0",
+    "build": "next build --webpack",
+    "analyze": "ANALYZE=true next build --webpack",
     "start": "next start",
     "lint": "npx tsc --noEmit && npx eslint .",
-    "format": "bunx biome format --write"
+    "format": "bunx biome format --write",
+    "security:deps": "npm audit",
+    "security:updates": "npx npm-check-updates --errorLevel 2",
+    "security:secrets": "gitleaks detect --source . -v || npx gitleaks detect --source . -v",
+    "security-check": "npm run security:deps && npm run security:updates && npm run security:secrets"
   },
   "dependencies": {
+    "@next/bundle-analyzer": "^15.5.12",
     "@types/js-yaml": "^4.0.9",
     "@types/react-syntax-highlighter": "^15.5.13",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "framer-motion": "^12.34.2",
+    "gsap": "^3.14.2",
     "js-yaml": "^4.1.1",
     "lucide-react": "^0.475.0",
     "mermaid": "^11.12.2",
     "next": "^16.1.6",
+    "next-auth": "^4.24.7",
     "next-themes": "^0.4.6",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
     "react-syntax-highlighter": "^16.1.0",
     "same-runtime": "^0.0.1",
     "tailwind-merge": "^3.3.0",
-    "tailwindcss-animate": "^1.0.7"
+    "tailwindcss-animate": "^1.0.7",
+    "three": "^0.160.0"
   },
   "devDependencies": {
     "@biomejs/biome": "1.9.4",

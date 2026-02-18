@@ -1,7 +1,13 @@
 import { FastifyInstance } from "fastify";
 
 export default async function analyticsRoutes(fastify: FastifyInstance) {
-  fastify.get("/analytics/dashboard", async () => {
+  fastify.get("/analytics/dashboard", async (request, reply) => {
+    const guard = (fastify as any).requireRole;
+    if (guard) {
+      const res = await guard(request as any, reply, ["host", "admin", "enterprise", "corporate"]);
+      if (reply.sent) return;
+      if (res) return res;
+    }
     return {
       period: { start: new Date().toISOString().slice(0, 10), end: new Date().toISOString().slice(0, 10) },
       metrics: {

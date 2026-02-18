@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { properties, formatCurrency, formatDate } from "@/lib/mockData";
-import { apiGet } from "@/lib/api";
+import { apiGet, apiPost } from "@/lib/api";
 import { PropertyCalendar } from "@/components/Calendar";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { WebSocketProvider, RealtimeNotificationBell } from "@/lib/websocket";
@@ -82,13 +82,46 @@ const dashboardData = {
   ],
 };
 
+type AuthUser = {
+  id: string;
+  email: string;
+  firstName?: string;
+  lastName?: string;
+  displayName?: string;
+  roles?: string[];
+};
+
+type AuthResponse = {
+  accessToken?: string;
+  refreshToken?: string;
+  token?: string;
+  user: AuthUser;
+};
+
 function DashboardContent() {
   const [selectedProperty, setSelectedProperty] = useState(properties[0]);
   const [activeTab, setActiveTab] = useState<"bookings" | "calendar" | "analytics">("bookings");
   const [metrics, setMetrics] = useState(dashboardData.stats);
   const [recentBookings, setRecentBookings] = useState(dashboardData.recentBookings);
+  const [authUser, setAuthUser] = useState<AuthUser | null>(null);
+  const [authToken, setAuthToken] = useState<string | null>(null);
+  const [authError, setAuthError] = useState<string | null>(null);
+  const [authLoading, setAuthLoading] = useState(false);
+  const [authMode, setAuthMode] = useState<"login" | "register">("login");
+  const [role, setRole] = useState("host");
+  const [formEmail, setFormEmail] = useState("");
+  const [formPassword, setFormPassword] = useState("");
+  const [formFirstName, setFormFirstName] = useState("");
+  const [formLastName, setFormLastName] = useState("");
 
   useEffect(() => {
+    if (typeof window !== "undefined") {
+      const storedToken = sessionStorage.getItem("auth_token");
+      const storedUser = sessionStorage.getItem("auth_user");
+      if (storedToken) setAuthToken(storedToken);
+      if (storedUser) setAuthUser(JSON.parse(storedUser));
+    }
+
     apiGet<any>("/analytics/dashboard")
       .then((data) => {
         if (data?.metrics) {
@@ -113,6 +146,47 @@ function DashboardContent() {
       .catch(() => null);
   }, []);
 
+  async function handleAuthSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setAuthError(null);
+    setAuthLoading(true);
+    try {
+      const payload = {
+        email: formEmail,
+        password: formPassword,
+        firstName: formFirstName,
+        lastName: formLastName,
+        role,
+      };
+      const res = await apiPost<AuthResponse>(
+        authMode === "login" ? "/auth/login" : "/auth/register",
+        payload
+      );
+      const token = res.accessToken || res.token || "";
+      if (token) {
+        setAuthToken(token);
+        sessionStorage.setItem("auth_token", token);
+      }
+      setAuthUser(res.user);
+      sessionStorage.setItem("auth_user", JSON.stringify(res.user));
+      if (res.user?.roles?.[0]) {
+        setRole(res.user.roles[0]);
+      }
+      setFormPassword("");
+    } catch (err: any) {
+      setAuthError(err?.message || "Authentication failed");
+    } finally {
+      setAuthLoading(false);
+    }
+  }
+
+  function handleLogout() {
+    setAuthUser(null);
+    setAuthToken(null);
+    sessionStorage.removeItem("auth_token");
+    sessionStorage.removeItem("auth_user");
+  }
+
   const statusColors = {
     pending: "bg-amber-500/10 text-amber-400 border-amber-500/20",
     confirmed: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
@@ -121,6 +195,23 @@ function DashboardContent() {
   };
 
   const maxRevenue = Math.max(...dashboardData.monthlyRevenue.map((m) => m.revenue));
+
+  const activeRole = authUser?.roles?.[0] || "guest";
+  const isHostView = ["host", "admin", "enterprise"].includes(activeRole);
+  const isCorporateView = ["corporate", "enterprise"].includes(activeRole);
+  const isGuestView = activeRole === "guest";
+  const isCleanerView = activeRole === "cleaner";
+  const isMaintenanceView = activeRole === "maintenance";
+
+  const roleLinks: Record<string, { label: string; href: string }> = {
+    guest: { label: "Guest Portal", href: "/portal/guest" },
+    host: { label: "Host Portal", href: "/portal/host" },
+    enterprise: { label: "Enterprise Portal", href: "/portal/corporate" },
+    corporate: { label: "Corporate Portal", href: "/portal/corporate" },
+    cleaner: { label: "Cleaner Portal", href: "/portal/cleaner" },
+    maintenance: { label: "Maintenance Portal", href: "/portal/maintenance" },
+    admin: { label: "Admin Portal", href: "/prototype/dashboard" },
+  };
 
   return (
     <div className="min-h-screen bg-zinc-100 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">
@@ -141,78 +232,264 @@ function DashboardContent() {
           <div className="flex items-center gap-3">
             <RealtimeNotificationBell />
             <ThemeToggle />
-            <div className="flex items-center gap-2">
-              <img
-                src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100"
-                alt="Host"
-                className="w-8 h-8 rounded-full"
-              />
-              <span className="text-sm font-medium">Sarah</span>
-            </div>
+            {authUser ? (
+              <div className="flex items-center gap-2">
+                <img
+                  src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100"
+                  alt="Host"
+                  className="w-8 h-8 rounded-full"
+                />
+                <div className="text-sm">
+                  <div className="font-medium">
+                    {authUser.displayName || `${authUser.firstName || ""} ${authUser.lastName || ""}`.trim() || "User"}
+                  </div>
+                  {authUser.roles?.[0] && (
+                    <div className="text-xs text-emerald-600 dark:text-emerald-400">
+                      Role: {authUser.roles[0]}
+                    </div>
+                  )}
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                    className="text-xs text-rose-500 hover:underline"
+                  >
+                    Log out
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <span className="text-xs px-2 py-1 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                Not signed in
+              </span>
+            )}
           </div>
         </div>
       </header>
 
       <div className="max-w-7xl mx-auto px-6 py-8">
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
-          <div className="p-4 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800">
-            <p className="text-sm text-zinc-500 mb-1">Total Bookings</p>
-            <p className="text-2xl font-bold">{metrics.totalBookings}</p>
+        {/* Auth Panel */}
+        {!authUser && (
+          <div className="mb-8 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold">{authMode === "login" ? "Log in" : "Register"}</h2>
+              <button
+                type="button"
+                onClick={() => setAuthMode(authMode === "login" ? "register" : "login")}
+                className="text-sm text-emerald-600 hover:underline"
+              >
+                {authMode === "login" ? "Need an account? Register" : "Have an account? Log in"}
+              </button>
+            </div>
+            {authError && <p className="text-sm text-rose-500 mb-3">{authError}</p>}
+            <form onSubmit={handleAuthSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {authMode === "register" && (
+                <>
+                  <div>
+                    <label className="text-sm text-zinc-500">First name</label>
+                    <input
+                      value={formFirstName}
+                      onChange={(e) => setFormFirstName(e.target.value)}
+                      className="w-full mt-1 px-3 py-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg"
+                      placeholder="Jane"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm text-zinc-500">Last name</label>
+                    <input
+                      value={formLastName}
+                      onChange={(e) => setFormLastName(e.target.value)}
+                      className="w-full mt-1 px-3 py-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg"
+                      placeholder="Doe"
+                    />
+                  </div>
+                </>
+              )}
+              <div>
+                <label className="text-sm text-zinc-500">Email</label>
+                <input
+                  type="email"
+                  value={formEmail}
+                  onChange={(e) => setFormEmail(e.target.value)}
+                  required
+                  className="w-full mt-1 px-3 py-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg"
+                  placeholder="you@example.com"
+                />
+              </div>
+              <div>
+                <label className="text-sm text-zinc-500">Role</label>
+                <select
+                  value={role}
+                  onChange={(e) => setRole(e.target.value)}
+                  className="w-full mt-1 px-3 py-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg"
+                >
+                  <option value="guest">Guest</option>
+                  <option value="host">Host</option>
+                  <option value="enterprise">Enterprise Operator</option>
+                  <option value="cleaner">Cleaner</option>
+                  <option value="maintenance">Maintenance</option>
+                  <option value="corporate">Corporate Manager</option>
+                  <option value="admin">Admin</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-sm text-zinc-500">Password</label>
+                <input
+                  type="password"
+                  value={formPassword}
+                  onChange={(e) => setFormPassword(e.target.value)}
+                  required
+                  className="w-full mt-1 px-3 py-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg"
+                  placeholder="••••••••"
+                />
+              </div>
+              <div className="md:col-span-2 flex items-center gap-3">
+                <button
+                  type="submit"
+                  disabled={authLoading}
+                  className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 disabled:opacity-60"
+                >
+                  {authLoading ? "Please wait..." : authMode === "login" ? "Log in" : "Create account"}
+                </button>
+                <p className="text-xs text-zinc-500">
+                  Demo auth: any email/password works in dev.
+                </p>
+              </div>
+            </form>
           </div>
-          <div className="p-4 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800">
-            <p className="text-sm text-zinc-500 mb-1">Total Revenue</p>
-            <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
-              {formatCurrency(metrics.totalRevenue)}
-            </p>
-          </div>
-          <div className="p-4 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800">
-            <p className="text-sm text-zinc-500 mb-1">Occupancy Rate</p>
-            <p className="text-2xl font-bold">{metrics.occupancyRate}%</p>
-          </div>
-          <div className="p-4 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800">
-            <p className="text-sm text-zinc-500 mb-1">Avg Rating</p>
-            <p className="text-2xl font-bold flex items-center gap-1">
-              <svg className="w-5 h-5 text-amber-400 fill-current" viewBox="0 0 20 20">
-                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-              </svg>
-              {metrics.averageRating}
-            </p>
-          </div>
-          <div className="p-4 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800">
-            <p className="text-sm text-zinc-500 mb-1">Pending</p>
-            <p className="text-2xl font-bold text-amber-600 dark:text-amber-400">
-              {metrics.pendingBookings}
-            </p>
-          </div>
-          <div className="p-4 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800">
-            <p className="text-sm text-zinc-500 mb-1">Check-ins Today</p>
-            <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-              {metrics.upcomingCheckIns}
-            </p>
-          </div>
-        </div>
+        )}
 
-        {/* Tabs */}
-        <div className="flex gap-2 mb-6">
-          {(["bookings", "calendar", "analytics"] as const).map((tab) => (
-            <button
-              key={tab}
-              type="button"
-              onClick={() => setActiveTab(tab)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium capitalize transition-colors ${
-                activeTab === tab
-                  ? "bg-emerald-600 text-white"
-                  : "bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-800"
-              }`}
-            >
-              {tab}
-            </button>
-          ))}
-        </div>
+        {authUser && authUser.roles?.[0] && roleLinks[authUser.roles[0]] && (
+          <div className="mb-6 p-4 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200">
+            <Link href={roleLinks[authUser.roles[0]].href} className="font-semibold">
+              Go to {roleLinks[authUser.roles[0]].label}
+            </Link>
+            <p className="text-xs text-emerald-600 mt-1">
+              Role-specific access is enforced on the API and portals.
+            </p>
+          </div>
+        )}
+
+        {isHostView && (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+            <div className="p-4 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800">
+              <p className="text-sm text-zinc-500 mb-1">Total Bookings</p>
+              <p className="text-2xl font-bold">{metrics.totalBookings}</p>
+            </div>
+            <div className="p-4 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800">
+              <p className="text-sm text-zinc-500 mb-1">Total Revenue</p>
+              <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
+                {formatCurrency(metrics.totalRevenue)}
+              </p>
+            </div>
+            <div className="p-4 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800">
+              <p className="text-sm text-zinc-500 mb-1">Occupancy Rate</p>
+              <p className="text-2xl font-bold">{metrics.occupancyRate}%</p>
+            </div>
+            <div className="p-4 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800">
+              <p className="text-sm text-zinc-500 mb-1">Avg Rating</p>
+              <p className="text-2xl font-bold flex items-center gap-1">
+                <svg className="w-5 h-5 text-amber-400 fill-current" viewBox="0 0 20 20">
+                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                </svg>
+                {metrics.averageRating}
+              </p>
+            </div>
+            <div className="p-4 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800">
+              <p className="text-sm text-zinc-500 mb-1">Pending</p>
+              <p className="text-2xl font-bold text-amber-600 dark:text-amber-400">
+                {metrics.pendingBookings}
+              </p>
+            </div>
+            <div className="p-4 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800">
+              <p className="text-sm text-zinc-500 mb-1">Check-ins Today</p>
+              <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                {metrics.upcomingCheckIns}
+              </p>
+            </div>
+          </div>
+        )}
+
+        {isGuestView && (
+          <div className="mb-8 grid md:grid-cols-3 gap-4">
+            {[
+              { title: "Upcoming stays", value: "2" },
+              { title: "Messages", value: "4" },
+              { title: "Wishlist", value: "6" },
+            ].map((item) => (
+              <div key={item.title} className="p-4 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800">
+                <p className="text-sm text-zinc-500 mb-1">{item.title}</p>
+                <p className="text-2xl font-bold">{item.value}</p>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {isCorporateView && (
+          <div className="mb-8 grid md:grid-cols-3 gap-4">
+            {[
+              { title: "Policy approvals", value: "5" },
+              { title: "Travelers active", value: "18" },
+              { title: "ESG compliance", value: "92%" },
+            ].map((item) => (
+              <div key={item.title} className="p-4 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800">
+                <p className="text-sm text-zinc-500 mb-1">{item.title}</p>
+                <p className="text-2xl font-bold">{item.value}</p>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {isCleanerView && (
+          <div className="mb-8 grid md:grid-cols-3 gap-4">
+            {[
+              { title: "Turnovers today", value: "3" },
+              { title: "Photos pending", value: "2" },
+              { title: "Payouts queued", value: "$420" },
+            ].map((item) => (
+              <div key={item.title} className="p-4 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800">
+                <p className="text-sm text-zinc-500 mb-1">{item.title}</p>
+                <p className="text-2xl font-bold">{item.value}</p>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {isMaintenanceView && (
+          <div className="mb-8 grid md:grid-cols-3 gap-4">
+            {[
+              { title: "Open work orders", value: "7" },
+              { title: "SLA breaches", value: "1" },
+              { title: "Vendor visits", value: "4" },
+            ].map((item) => (
+              <div key={item.title} className="p-4 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800">
+                <p className="text-sm text-zinc-500 mb-1">{item.title}</p>
+                <p className="text-2xl font-bold">{item.value}</p>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {isHostView && (
+          <div className="flex gap-2 mb-6">
+            {(["bookings", "calendar", "analytics"] as const).map((tab) => (
+              <button
+                key={tab}
+                type="button"
+                onClick={() => setActiveTab(tab)}
+                className={`px-4 py-2 rounded-lg text-sm font-medium capitalize transition-colors ${
+                  activeTab === tab
+                    ? "bg-emerald-600 text-white"
+                    : "bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-800"
+                }`}
+              >
+                {tab}
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* Content */}
-        {activeTab === "bookings" && (
+        {isHostView && activeTab === "bookings" && (
           <div className="grid lg:grid-cols-3 gap-6">
             {/* Bookings List */}
             <div className="lg:col-span-2 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 overflow-hidden">
@@ -637,7 +914,7 @@ function DashboardContent() {
           </div>
         )}
 
-        {activeTab === "calendar" && (
+        {isHostView && activeTab === "calendar" && (
           <div className="grid lg:grid-cols-4 gap-6">
             {/* Property Selector */}
             <div className="lg:col-span-1 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-4 h-fit">
@@ -677,7 +954,7 @@ function DashboardContent() {
           </div>
         )}
 
-        {activeTab === "analytics" && (
+        {isHostView && activeTab === "analytics" && (
           <div className="grid lg:grid-cols-2 gap-6">
             {/* Revenue Chart */}
             <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-6">

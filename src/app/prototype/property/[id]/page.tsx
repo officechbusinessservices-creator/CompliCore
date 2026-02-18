@@ -90,6 +90,10 @@ export default function PropertyDetailPage() {
     }
   };
 
+  const photos = Array.isArray(property.photos) ? property.photos : [];
+  const heroPhoto = photos[0] || "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=1200";
+  const galleryPhotos = photos.length > 0 ? photos : [heroPhoto];
+
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100">
       {/* Header */}
@@ -114,12 +118,12 @@ export default function PropertyDetailPage() {
         <div className="grid grid-cols-4 gap-2 rounded-xl overflow-hidden h-[400px]">
           <div className="col-span-2 row-span-2">
             <img
-              src={property.photos[0]}
+              src={heroPhoto}
               alt={property.title}
               className="w-full h-full object-cover"
             />
           </div>
-          {property.photos.slice(1, 3).map((photo, idx) => (
+          {galleryPhotos.slice(1, 3).map((photo, idx) => (
             <div key={photo} className="col-span-1">
               <img
                 src={photo}
@@ -128,15 +132,15 @@ export default function PropertyDetailPage() {
               />
             </div>
           ))}
-          {property.photos.length > 3 ? (
+          {galleryPhotos.length > 3 ? (
             <div className="col-span-1 relative">
               <img
-                src={property.photos[2]}
+                src={galleryPhotos[2]}
                 alt={`${property.title} more`}
                 className="w-full h-full object-cover"
               />
               <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                <span className="text-white font-medium">+{property.photos.length - 3} more</span>
+                <span className="text-white font-medium">+{galleryPhotos.length - 3} more</span>
               </div>
             </div>
           ) : (

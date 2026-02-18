@@ -93,10 +93,10 @@ export default function PayoutsPage() {
   }, []);
 
   // Calculate totals
-  const totalPaid = payouts.filter((p) => p.status === "completed").reduce((sum, p) => sum + p.amount, 0);
-  const totalPending = payouts.filter((p) => p.status === "pending" || p.status === "processing").reduce((sum, p) => sum + p.amount, 0);
-  const totalBookings = payouts.reduce((sum, p) => sum + p.bookings.length, 0);
-  const avgPayout = totalPaid / payouts.filter((p) => p.status === "completed").length || 0;
+  const totalPaid = payoutsData.filter((p) => p.status === "completed").reduce((sum, p) => sum + p.amount, 0);
+  const totalPending = payoutsData.filter((p) => p.status === "pending" || p.status === "processing").reduce((sum, p) => sum + p.amount, 0);
+  const totalBookings = payoutsData.reduce((sum, p) => sum + p.bookings.length, 0);
+  const avgPayout = totalPaid / payoutsData.filter((p) => p.status === "completed").length || 0;
 
   return (
     <div className="min-h-screen bg-zinc-100 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">

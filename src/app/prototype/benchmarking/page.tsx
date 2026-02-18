@@ -115,9 +115,11 @@ export default function BenchmarkingPage() {
   const [activeTab, setActiveTab] = useState<"overview" | "competitors" | "trends" | "insights">("overview");
   const [comparisonRadius, setComparisonRadius] = useState("1");
   const [benchmarkData, setBenchmarkData] = useState(competitors);
+  const [metricsData, setMetricsData] = useState(benchmarkMetrics);
 
   useEffect(() => {
     fetchModuleData<CompetitorProperty[]>("/benchmarks", competitors).then(setBenchmarkData);
+    fetchModuleData<BenchmarkMetric[]>("/benchmarks/metrics", benchmarkMetrics).then(setMetricsData);
   }, []);
 
   const getPerformanceColor = (metric: BenchmarkMetric) => {
@@ -147,12 +149,12 @@ export default function BenchmarkingPage() {
   };
 
   const overallScore = Math.round(
-    benchmarkMetrics.reduce((sum, m) => {
+    metricsData.reduce((sum, m) => {
       const normalized = m.higherIsBetter
         ? (m.yourValue / m.topPerformers) * 100
         : (m.topPerformers / m.yourValue) * 100;
       return sum + Math.min(normalized, 100);
-    }, 0) / benchmarkMetrics.length
+    }, 0) / metricsData.length
   );
 
   return (
@@ -244,7 +246,7 @@ export default function BenchmarkingPage() {
               <h3 className="font-semibold">Key Performance Metrics</h3>
             </div>
             <div className="divide-y divide-zinc-200 dark:divide-zinc-800">
-              {benchmarkMetrics.map((metric) => {
+              {metricsData.map((metric) => {
                 const position = metric.higherIsBetter
                   ? ((metric.yourValue - metric.marketAvg) / (metric.topPerformers - metric.marketAvg)) * 50 + 50
                   : ((metric.marketAvg - metric.yourValue) / (metric.marketAvg - metric.topPerformers)) * 50 + 50;
