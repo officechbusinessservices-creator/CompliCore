@@ -1,6 +1,9 @@
 'use client';
 
 import React, { useContext, useEffect, useMemo, useState } from 'react';
+import ApiReference from '@/components/ApiReference';
+import GovernancePanel from '@/components/GovernancePanel';
+import ProtocolBridge from '@/components/ProtocolBridge';
 import {
   Activity,
   AlertTriangle,
@@ -71,6 +74,12 @@ const useCardActions = () => {
 
 const RentalOSPlayground = () => {
   const [activeTab, setActiveTab] = useState<TabId>('host');
+  const [manualOverride, setManualOverride] = useState(false);
+  const [projectionMode, setProjectionMode] = useState(false);
+  const [portfolioOccupancy, setPortfolioOccupancy] = useState(78);
+  const [portfolioRevpar, setPortfolioRevpar] = useState(214);
+  const [portfolioAlerts, setPortfolioAlerts] = useState(3);
+  const [portfolioWeatherRisk, setPortfolioWeatherRisk] = useState<'Stable' | 'Storm' | 'Heat'>('Stable');
 
   const [price, setPrice] = useState(245);
   const [eventMode, setEventMode] = useState(false);
@@ -112,6 +121,24 @@ const RentalOSPlayground = () => {
 
   const demandLift = eventMode ? '+40% Surge' : '+10% Baseline';
   const upsellLift = useMemo(() => Math.min(30, Math.max(8, Math.round((upsellRevenue / 300) * 30))), [upsellRevenue]);
+  const projectionPoints = projectionMode
+    ? [
+        { label: '30d', occupancy: 72, rate: 265 },
+        { label: '60d', occupancy: 81, rate: 285 },
+        { label: '90d', occupancy: 89, rate: 310 },
+      ]
+    : [
+        { label: '30d', occupancy: 68, rate: 248 },
+        { label: '60d', occupancy: 73, rate: 255 },
+        { label: '90d', occupancy: 76, rate: 262 },
+      ];
+  const profitability = useMemo(() => {
+    const nightlyRevenue = Math.round(price * (occupancy / 100) * 30);
+    const utilitySavings = Math.round((eventMode ? 65 : 38) * (liveMode ? 1 : 0.6));
+    const cleaningCost = Math.round((occupancy / 100) * 420);
+    const netRevenue = nightlyRevenue + upsellRevenue + utilitySavings - cleaningCost;
+    return { nightlyRevenue, utilitySavings, cleaningCost, netRevenue };
+  }, [eventMode, liveMode, occupancy, price, upsellRevenue]);
 
   const workflowSteps = [
     { title: 'Analyze', description: 'Pull real-time signals, detect anomalies, and flag opportunities.' },
@@ -151,7 +178,7 @@ const RentalOSPlayground = () => {
   };
 
   useEffect(() => {
-    if (!liveMode) {
+    if (!liveMode || manualOverride) {
       return;
     }
 
@@ -162,10 +189,22 @@ const RentalOSPlayground = () => {
       setCashReady((prev) => Math.max(0, prev + randomBetween(-50, 120)));
       setCo2Savings((prev) => clamp(prev + randomBetween(0, 2), 10, 60));
       setPrice((prev) => (eventMode ? prev : clamp(prev + randomBetween(-8, 8), 190, 320)));
+      setPortfolioOccupancy((prev) => clamp(prev + randomBetween(-2, 2), 70, 98));
+      setPortfolioRevpar((prev) => clamp(prev + randomBetween(-6, 6), 180, 320));
+      setPortfolioAlerts((prev) => clamp(prev + randomBetween(-1, 1), 0, 9));
+      setPortfolioWeatherRisk((prev) => {
+        if (prev === 'Storm') {
+          return 'Stable';
+        }
+        if (prev === 'Heat') {
+          return Math.random() > 0.6 ? 'Storm' : 'Stable';
+        }
+        return Math.random() > 0.85 ? 'Heat' : 'Stable';
+      });
     }, 2500);
 
     return () => clearInterval(interval);
-  }, [eventMode, liveMode]);
+  }, [eventMode, liveMode, manualOverride]);
 
   const cardActionContext = useMemo<CardActionContextValue>(
     () => ({
@@ -251,7 +290,15 @@ const RentalOSPlayground = () => {
                 <activeTheme.icon size={12} /> {activeTheme.label} Module
               </div>
               <h2 className="text-5xl font-black mb-2 tracking-tight">Command Center</h2>
-              <p className="text-slate-400 text-lg max-w-2xl">
+              <div className="flex flex-wrap items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500">
+                <span className="rounded-full border border-cyan-500/40 bg-cyan-500/10 px-3 py-1 text-cyan-300">Portfolio Pulse Online</span>
+                {manualOverride && (
+                  <span className="rounded-full border border-red-500/40 bg-red-500/10 px-3 py-1 text-red-300">
+                    Manual Override Active
+                  </span>
+                )}
+              </div>
+              <p className="text-slate-400 text-lg max-w-2xl mt-3">
                 Real-time orchestration &amp; control logic for <span className={activeTheme.color}>{activeTheme.label}</span> operations.
               </p>
             </div>
@@ -273,6 +320,60 @@ const RentalOSPlayground = () => {
             </div>
           </div>
 
+          <div className="mb-10 grid gap-4 lg:grid-cols-[1.2fr,0.8fr]">
+            <div className="rounded-2xl border border-white/10 bg-slate-900/40 p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <p className="text-[10px] uppercase tracking-[0.3em] text-slate-500">Portfolio Pulse</p>
+                  <h3 className="text-xl font-bold">Global Health Snapshot</h3>
+                </div>
+                <div className="flex items-center gap-2 text-xs text-slate-400">
+                  <div className={`h-2 w-2 rounded-full ${portfolioAlerts > 0 ? 'bg-amber-400' : 'bg-emerald-400'}`} />
+                  {portfolioAlerts > 0 ? `${portfolioAlerts} active alerts` : 'All systems stable'}
+                </div>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-3">
+                <div className="rounded-xl border border-white/5 bg-slate-950/60 p-4">
+                  <div className="text-[10px] uppercase tracking-[0.3em] text-slate-500">Occupancy</div>
+                  <div className="mt-2 text-2xl font-black text-cyan-300">{portfolioOccupancy}%</div>
+                  <div className="text-[11px] text-slate-500">Portfolio average</div>
+                </div>
+                <div className="rounded-xl border border-white/5 bg-slate-950/60 p-4">
+                  <div className="text-[10px] uppercase tracking-[0.3em] text-slate-500">RevPAR</div>
+                  <div className="mt-2 text-2xl font-black text-emerald-300">${portfolioRevpar}</div>
+                  <div className="text-[11px] text-slate-500">Revenue per room</div>
+                </div>
+                <div className="rounded-xl border border-white/5 bg-slate-950/60 p-4">
+                  <div className="text-[10px] uppercase tracking-[0.3em] text-slate-500">Weather Risk</div>
+                  <div className="mt-2 flex items-center gap-2 text-lg font-bold text-slate-100">
+                    <CloudLightning size={18} className="text-cyan-300" />
+                    {portfolioWeatherRisk}
+                  </div>
+                  <div className="text-[11px] text-slate-500">Regional exposure</div>
+                </div>
+              </div>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-slate-900/40 p-6 flex flex-col justify-between">
+              <div>
+                <p className="text-[10px] uppercase tracking-[0.3em] text-slate-500">System Control</p>
+                <h3 className="text-xl font-bold mt-2">Emergency Manual Pilot</h3>
+                <p className="text-sm text-slate-400 mt-2">
+                  Freeze all autonomous actions across the signal mesh and return to human control instantly.
+                </p>
+              </div>
+              <button
+                onClick={() => setManualOverride((prev) => !prev)}
+                className={`mt-6 w-full rounded-xl border px-4 py-3 text-xs font-bold uppercase tracking-[0.3em] transition-colors ${
+                  manualOverride
+                    ? 'border-emerald-400/60 bg-emerald-500/10 text-emerald-300'
+                    : 'border-red-500/50 bg-red-500/10 text-red-300 hover:bg-red-500/20'
+                }`}
+              >
+                {manualOverride ? 'Manual Override Engaged' : 'Engage Manual Override'}
+              </button>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 pb-16">
             {activeTab === 'host' && (
               <>
@@ -281,6 +382,22 @@ const RentalOSPlayground = () => {
                     <div className="flex justify-between items-center text-sm">
                       <span className="text-slate-400">Nightly Rate</span>
                       <span className={`font-mono text-2xl font-bold ${eventMode ? 'text-pink-500' : 'text-white'}`}>${price}</span>
+                    </div>
+                    <div className="flex items-center justify-between rounded-lg border border-white/5 bg-slate-800/70 px-3 py-2 text-xs">
+                      <div>
+                        <div className="text-[10px] uppercase tracking-[0.3em] text-slate-500">Forecast Mode</div>
+                        <div className="font-semibold text-slate-200">{projectionMode ? 'Projection Active' : 'Baseline Trend'}</div>
+                      </div>
+                      <button
+                        onClick={() => setProjectionMode((prev) => !prev)}
+                        className={`rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-[0.25em] transition-colors ${
+                          projectionMode
+                            ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                            : 'bg-slate-700 text-slate-300 border border-white/10'
+                        }`}
+                      >
+                        {projectionMode ? '90 Day View' : 'Enable 90 Day'}
+                      </button>
                     </div>
                     <div className="h-32 bg-slate-900/50 rounded-lg border border-white/5 relative overflow-hidden flex items-end px-2 gap-1">
                       {[40, 60, 30, 50, eventMode ? 90 : 45, eventMode ? 95 : 50, 60].map((height, index) => (
@@ -291,6 +408,17 @@ const RentalOSPlayground = () => {
                           }`}
                           style={{ height: `${height}%` }}
                         />
+                      ))}
+                    </div>
+                    <div className="grid gap-2 sm:grid-cols-3 text-[10px] text-slate-400">
+                      {projectionPoints.map((point) => (
+                        <div key={point.label} className="rounded-lg border border-white/5 bg-slate-900/60 p-2">
+                          <div className="text-[9px] uppercase tracking-[0.3em] text-slate-500">{point.label}</div>
+                          <div className="mt-2 flex items-center justify-between text-xs">
+                            <span className="text-cyan-300 font-semibold">{point.occupancy}%</span>
+                            <span className="text-emerald-300 font-semibold">${point.rate}</span>
+                          </div>
+                        </div>
                       ))}
                     </div>
                     <div className="flex items-center justify-between p-3 bg-slate-800 rounded-lg border border-white/5">
@@ -310,6 +438,27 @@ const RentalOSPlayground = () => {
                     <div className="flex items-center justify-between text-xs text-slate-400">
                       <span>Projected Occupancy</span>
                       <span className="text-cyan-400 font-bold">{occupancy}%</span>
+                    </div>
+                  </div>
+                </MiniApp>
+
+                <MiniApp title="Profitability Engine" icon={DollarSign} theme={activeTheme} stat={`$${profitability.netRevenue}`} statLabel="Net Revenue">
+                  <div className="space-y-3 text-xs">
+                    <div className="flex items-center justify-between rounded-lg border border-white/5 bg-slate-900/60 p-3">
+                      <span className="text-slate-400">Dynamic pricing gains</span>
+                      <span className="text-emerald-300 font-semibold">${profitability.nightlyRevenue}</span>
+                    </div>
+                    <div className="flex items-center justify-between rounded-lg border border-white/5 bg-slate-900/60 p-3">
+                      <span className="text-slate-400">Utility arbitrage savings</span>
+                      <span className="text-cyan-300 font-semibold">+${profitability.utilitySavings}</span>
+                    </div>
+                    <div className="flex items-center justify-between rounded-lg border border-white/5 bg-slate-900/60 p-3">
+                      <span className="text-slate-400">Cleaning costs</span>
+                      <span className="text-rose-300 font-semibold">-${profitability.cleaningCost}</span>
+                    </div>
+                    <div className="flex items-center justify-between rounded-lg border border-emerald-500/40 bg-emerald-500/10 p-3">
+                      <span className="text-emerald-200 font-semibold">Net Alpha</span>
+                      <span className="text-emerald-200 font-bold">${profitability.netRevenue}</span>
                     </div>
                   </div>
                 </MiniApp>
@@ -523,6 +672,18 @@ const RentalOSPlayground = () => {
 
             {activeTab === 'integrations' && (
               <>
+                <div className="md:col-span-2 xl:col-span-3">
+                  <ProtocolBridge />
+                </div>
+
+                <div className="md:col-span-2 xl:col-span-3">
+                  <ApiReference />
+                </div>
+
+                <div className="md:col-span-2 xl:col-span-3">
+                  <GovernancePanel />
+                </div>
+
                 <MiniApp title="Workflow Builder" icon={Network} theme={activeTheme} stat="98%" statLabel="Automation Rate">
                   <div className="flex items-center gap-2 text-[10px] text-slate-400 justify-center h-16">
                     <span className="border border-white/10 p-1 rounded">Booking</span>

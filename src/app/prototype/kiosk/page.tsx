@@ -36,6 +36,14 @@ const houseRules = [
   "Take out trash before checkout",
 ];
 
+const DEV_KIOSK_USER = {
+  email: "kiosk.demo@example.com",
+  password: "KioskPass123!",
+  firstName: "Kiosk",
+  lastName: "Demo",
+  role: "host",
+};
+
 export default function KioskPage() {
   const [step, setStep] = useState<KioskStep>("welcome");
   const [confirmationCode, setConfirmationCode] = useState("");
@@ -97,15 +105,41 @@ export default function KioskPage() {
   async function loginDev() {
     try {
       const base = process.env.NEXT_PUBLIC_API_BASE || "";
-      const res = await fetch(`${base}/api/auth/login`, {
+      const loginPayload = {
+        email: DEV_KIOSK_USER.email,
+        password: DEV_KIOSK_USER.password,
+        role: DEV_KIOSK_USER.role,
+      };
+
+      let res = await fetch(`${base}/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: "dev@local" }),
+        body: JSON.stringify(loginPayload),
       });
-      if (!res.ok) throw new Error("login failed");
+
+      if (res.status === 401) {
+        const registerRes = await fetch(`${base}/api/auth/register`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(DEV_KIOSK_USER),
+        });
+        if (!(registerRes.status === 201 || registerRes.status === 409)) {
+          throw new Error(`register failed (${registerRes.status})`);
+        }
+
+        res = await fetch(`${base}/api/auth/login`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(loginPayload),
+        });
+      }
+
+      if (!res.ok) throw new Error(`login failed (${res.status})`);
       const data = await res.json();
-      setToken(data.token);
-      return data.token;
+      const accessToken = data.accessToken || data.token;
+      if (!accessToken) throw new Error("login response missing access token");
+      setToken(accessToken);
+      return accessToken;
     } catch (err) {
       setApiError((err as any)?.message || "login error");
       throw err;

@@ -1,0 +1,3 @@
+[monitor] starting 24h whale/sentry monitor
+[monitor] api=http://localhost:4000/v1 interval=1s window=0h
+[monitor] complete. summary: ./monitoring/out/whale-sentry-20260212T231601Z.summary.json

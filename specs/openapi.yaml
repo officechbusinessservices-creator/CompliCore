@@ -38,6 +38,10 @@ tags:
     description: Reporting and analytics
   - name: AI
     description: AI-powered features
+  - name: Economic
+    description: RWA and SSI economic activation simulations
+  - name: Agentic
+    description: Sovereign Agentic Mesh orchestration and liability controls
 
 paths:
   # Authentication
@@ -90,8 +94,12 @@ paths:
       tags: [Authentication]
       summary: Refresh access token
       operationId: refreshToken
-      security:
-        - bearerAuth: []
+      requestBody:
+        description: Optional refresh token payload. If omitted, server may use refresh cookie.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshRequest'
       responses:
         '200':
           description: Token refreshed
@@ -99,6 +107,86 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AuthResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/logout:
+    post:
+      tags: [Authentication]
+      summary: Logout current session
+      operationId: logoutUser
+      responses:
+        '200':
+          description: Logout successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+
+  /auth/forgot-password:
+    post:
+      tags: [Authentication]
+      summary: Request password reset link
+      operationId: forgotPassword
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ForgotPasswordRequest'
+      responses:
+        '200':
+          description: Reset email dispatched
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /auth/reset-password/{token}:
+    post:
+      tags: [Authentication]
+      summary: Reset password using token
+      operationId: resetPassword
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResetPasswordRequest'
+      responses:
+        '200':
+          description: Password reset successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /auth/me:
+    get:
+      tags: [Authentication]
+      summary: Get current authenticated user
+      operationId: getCurrentAuthUser
+      responses:
+        '200':
+          description: Current user profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
 
   # Users
   /users/me:
@@ -650,6 +738,915 @@ paths:
               schema:
                 $ref: '#/components/schemas/DashboardMetrics'
 
+  # Economic Activation
+  /economic/activation/status:
+    get:
+      tags: [Economic]
+      summary: Get current economic activation status
+      operationId: getEconomicActivationStatus
+      responses:
+        '200':
+          description: Economic activation status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EconomicActivationStatus'
+
+  /economic/rwa/mint-simulation:
+    post:
+      tags: [Economic]
+      summary: Simulate ERC-7518 RWA partition mint command
+      operationId: simulateRwaMint
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RwaMintSimulationRequest'
+      responses:
+        '200':
+          description: Mint simulation result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RwaMintSimulationResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /economic/ssi/onboarding-simulation:
+    post:
+      tags: [Economic]
+      summary: Simulate SSI wallet onboarding and selective disclosure flow
+      operationId: simulateSsiOnboarding
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SsiOnboardingSimulationRequest'
+      responses:
+        '200':
+          description: SSI onboarding simulation result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SsiOnboardingSimulationResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /economic/rwa/trade-simulation:
+    post:
+      tags: [Economic]
+      summary: Simulate Auto-Verifier trade authorization decision
+      operationId: simulateRwaTrade
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RwaTradeSimulationRequest'
+      responses:
+        '200':
+          description: Trade simulation decision
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RwaTradeSimulationResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /economic/portal/onboarding-config:
+    get:
+      tags: [Economic]
+      summary: Get public portal staged rollout onboarding config
+      operationId: getPortalOnboardingConfig
+      responses:
+        '200':
+          description: Current portal gatekeeper configuration
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PortalOnboardingConfig'
+
+  /economic/portal/whitelist/add:
+    post:
+      tags: [Economic]
+      summary: Add user DID to whitelist registry (simulation)
+      operationId: addWhitelistUser
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WhitelistAddRequest'
+      responses:
+        '200':
+          description: Whitelist entry created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WhitelistAddResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          description: Whitelist capacity reached
+
+  /economic/portal/whitelist/verify:
+    post:
+      tags: [Economic]
+      summary: Verify whitelist access and apply SBM lock on violation
+      operationId: verifyWhitelistUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WhitelistVerifyRequest'
+      responses:
+        '200':
+          description: Whitelist verified
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WhitelistVerifyResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          description: Not whitelisted; SBM lock applied
+        '423':
+          description: SBM lock currently active for source IP
+
+  /economic/revenue/deposit-rent:
+    post:
+      tags: [Economic]
+      summary: Deposit rent into revenue pool for an asset (simulation)
+      operationId: depositRevenueRent
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RevenueDepositRequest'
+      responses:
+        '200':
+          description: Rent deposit accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RevenueDepositResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /economic/revenue/distribute-yield:
+    post:
+      tags: [Economic]
+      summary: Execute atomic snapshot yield distribution (simulation)
+      operationId: distributeRevenueYield
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RevenueDistributeRequest'
+      responses:
+        '200':
+          description: Distribution completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RevenueDistributeResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          description: Empty revenue pool
+
+  /economic/revenue/pool/{assetId}:
+    get:
+      tags: [Economic]
+      summary: Get current revenue pool for an asset
+      operationId: getRevenuePool
+      parameters:
+        - name: assetId
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        '200':
+          description: Revenue pool state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RevenuePoolStatus'
+
+  /economic/portal/manifesto/template:
+    get:
+      tags: [Economic]
+      summary: Get whitelist welcome manifesto template
+      operationId: getWhitelistManifestoTemplate
+      responses:
+        '200':
+          description: Manifesto template
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ManifestoTemplate'
+
+  /economic/portal/manifesto/send-simulation:
+    post:
+      tags: [Economic]
+      summary: Simulate sending whitelist welcome manifesto campaign
+      operationId: sendWhitelistManifestoSimulation
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ManifestoSendSimulationRequest'
+      responses:
+        '200':
+          description: Manifesto campaign queued in simulation mode
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ManifestoSendSimulationResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /economic/sentry/events:
+    get:
+      tags: [Economic]
+      summary: Get onboarding sentry event stream
+      operationId: listOnboardingSentryEvents
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+      responses:
+        '200':
+          description: Sentry events
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SentryEventListResponse'
+    post:
+      tags: [Economic]
+      summary: Ingest onboarding sentry event (simulation)
+      operationId: ingestOnboardingSentryEvent
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SentryEventIngestRequest'
+      responses:
+        '200':
+          description: Event ingested
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SentryEventIngestResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /economic/sentry/first-ten:
+    get:
+      tags: [Economic]
+      summary: Get first-10 onboarding progress and residency compliance
+      operationId: getFirstTenOnboardingStatus
+      responses:
+        '200':
+          description: First 10 onboarding status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FirstTenOnboardingStatus'
+
+  /economic/whale/status:
+    get:
+      tags: [Economic]
+      summary: Get APAC whale alert monitoring status and watchlist
+      operationId: getWhaleAlertStatus
+      responses:
+        '200':
+          description: Whale alert status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WhaleAlertStatus'
+
+  /economic/whale/pause-mint:
+    post:
+      tags: [Economic]
+      summary: Lock or unlock minting for a DID in fair-distribution mode
+      operationId: updateWhaleMintPause
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WhalePauseMintRequest'
+      responses:
+        '200':
+          description: Mint pause state updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WhalePauseMintResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /economic/governance/genesis-sellout-report:
+    get:
+      tags: [Economic]
+      summary: Generate live Genesis sell-out report from onboarded holdings
+      operationId: getGenesisSelloutReport
+      responses:
+        '200':
+          description: Genesis sell-out report
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenesisSelloutReport'
+
+  /economic/governance/ccp302/auto-trigger:
+    post:
+      tags: [Economic]
+      summary: Trigger CCP-302 governance proposal when pilot reaches sell-out (or force)
+      operationId: triggerCcp302AutoProposal
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Ccp302AutoTriggerRequest'
+      responses:
+        '200':
+          description: CCP-302 proposal triggered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ccp302AutoTriggerResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          description: Pilot not sold out and force not set
+
+  /economic/settlement/status:
+    get:
+      tags: [Economic]
+      summary: Get final settlement state and retail mint closure status
+      operationId: getEconomicSettlementStatus
+      responses:
+        '200':
+          description: Settlement status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinalSettlementStatus'
+
+  /economic/settlement/execute-final:
+    post:
+      tags: [Economic]
+      summary: Execute final DvP settlement for MBFC-001 pilot
+      operationId: executeFinalSettlement
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FinalSettlementRequest'
+      responses:
+        '200':
+          description: Final settlement completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinalSettlementResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /economic/governance/capital-call/initiate:
+    post:
+      tags: [Economic]
+      summary: Initiate CCP-302 institutional capital call
+      operationId: initiateCapitalCall
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CapitalCallInitiateRequest'
+      responses:
+        '200':
+          description: Capital call activated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CapitalCallInitiateResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          description: Final settlement required before capital call
+
+  /economic/governance/capital-call/partner-update:
+    post:
+      tags: [Economic]
+      summary: Update partner funding/signature state for active capital call
+      operationId: updateCapitalCallPartner
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CapitalCallPartnerUpdateRequest'
+      responses:
+        '200':
+          description: Partner capital call state updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CapitalCallPartnerUpdateResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Capital call not active
+
+  /economic/governance/capital-call/status:
+    get:
+      tags: [Economic]
+      summary: Get institutional capital call progress and rail monitoring status
+      operationId: getCapitalCallStatus
+      responses:
+        '200':
+          description: Capital call status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CapitalCallStatusResponse'
+
+  /economic/governance/capital-call/private-update:
+    post:
+      tags: [Economic]
+      summary: Generate private capital update for Anchor C final wire nudging
+      operationId: generateCapitalCallPrivateUpdate
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PrivateCapitalUpdateRequest'
+      responses:
+        '200':
+          description: Private capital update generated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PrivateCapitalUpdateResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /agentic/status:
+    get:
+      tags: [Agentic]
+      summary: Get sovereign Agentic Mesh runtime status
+      operationId: getAgenticStatus
+      responses:
+        '200':
+          description: Agentic mesh status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgenticStatusResponse'
+
+  /agentic/foundry/capabilities:
+    get:
+      tags: [Agentic]
+      summary: Get Agent Foundry capabilities and active delegates
+      operationId: getAgentFoundryCapabilities
+      responses:
+        '200':
+          description: Agent Foundry capability map
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentFoundryCapabilitiesResponse'
+
+  /agentic/journeys/plan:
+    post:
+      tags: [Agentic]
+      summary: Orchestrate sovereign curb-to-gate journey plan
+      operationId: planAgenticJourney
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AgenticJourneyPlanRequest'
+      responses:
+        '200':
+          description: Journey planned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgenticJourneyPlanResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /agentic/a2a/negotiate:
+    post:
+      tags: [Agentic]
+      summary: Execute Agent-to-Agent negotiation simulation
+      operationId: negotiateA2ADeal
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AgenticA2ANegotiationRequest'
+      responses:
+        '200':
+          description: Negotiation result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgenticA2ANegotiationResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /agentic/compliance/liability-eval:
+    post:
+      tags: [Agentic]
+      summary: Evaluate AI action through policy-as-code liability wrapper
+      operationId: evaluateAgenticLiability
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AgenticLiabilityEvalRequest'
+      responses:
+        '200':
+          description: Liability evaluation result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgenticLiabilityEvalResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /agentic/registry/agents:
+    get:
+      tags: [Agentic]
+      summary: List registered agent cards with trust scores
+      operationId: listAgentRegistryCards
+      parameters:
+        - name: capability
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Agent cards
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentRegistryListResponse'
+    post:
+      tags: [Agentic]
+      summary: Register an agent card in registry
+      operationId: registerAgentCard
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AgentCard'
+      responses:
+        '200':
+          description: Agent card registered
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /agentic/registry/discovery:
+    get:
+      tags: [Agentic]
+      summary: Discover trusted agents by capability and trust threshold
+      operationId: discoverTrustedAgents
+      parameters:
+        - name: capability
+          in: query
+          schema:
+            type: string
+        - name: minTrust
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Discovery result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentRegistryListResponse'
+
+  /agentic/a2a/handshake-simulate:
+    post:
+      tags: [Agentic]
+      summary: Simulate multi-agent handshake negotiation for SIN-DXB corridor
+      operationId: simulateA2AHandshake
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/A2AHandshakeSimulationRequest'
+      responses:
+        '200':
+          description: Handshake transcript and outcome
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/A2AHandshakeSimulationResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /agentic/compliance/guardrail-check:
+    post:
+      tags: [Agentic]
+      summary: Deterministic compliance guardrail check with HITL trigger logic
+      operationId: checkAgenticGuardrails
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AgenticGuardrailCheckRequest'
+      responses:
+        '200':
+          description: Guardrail evaluation decision
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgenticGuardrailCheckResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /agentic/sandbox/zero-touch:
+    post:
+      tags: [Agentic]
+      summary: Run Singpass-UAE Pass zero-touch biometric sandbox flow
+      operationId: runZeroTouchSandbox
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ZeroTouchSandboxRequest'
+      responses:
+        '200':
+          description: Sandbox flow completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ZeroTouchSandboxResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /agentic/settlement/biometric-trigger:
+    post:
+      tags: [Agentic]
+      summary: Trigger biometric OIDC-to-ZKP settlement flow simulation
+      operationId: triggerBiometricSettlement
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BiometricSettlementTriggerRequest'
+      responses:
+        '200':
+          description: Biometric settlement trigger processed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BiometricSettlementTriggerResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /agentic/cfo/dashboard:
+    get:
+      tags: [Agentic]
+      summary: Get CFO compliance and settlement operations dashboard snapshot
+      operationId: getAgenticCfoDashboard
+      responses:
+        '200':
+          description: CFO dashboard snapshot
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgenticCfoDashboardResponse'
+
+  /agentic/stress/austin-disruption:
+    post:
+      tags: [Agentic]
+      summary: Simulate Austin corridor disruption and autonomous re-stabilization
+      operationId: simulateAustinDisruption
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AustinDisruptionSimulationRequest'
+      responses:
+        '200':
+          description: Disruption simulation outcome
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AustinDisruptionSimulationResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /agentic/genesis/expansion-report:
+    get:
+      tags: [Agentic]
+      summary: Get Genesis multi-asset expansion board report snapshot
+      operationId: getAgenticGenesisExpansionReport
+      responses:
+        '200':
+          description: Expansion report snapshot
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgenticGenesisExpansionReportResponse'
+
+  /agentic/revenue/genesis-distribution:
+    post:
+      tags: [Agentic]
+      summary: Execute genesis revenue distribution simulation
+      operationId: executeGenesisRevenueDistribution
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GenesisRevenueDistributionRequest'
+      responses:
+        '200':
+          description: Revenue distribution executed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenesisRevenueDistributionResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /agentic/whale/sentiment:
+    get:
+      tags: [Agentic]
+      summary: Get whale sentiment and liquidity depth diagnostics
+      operationId: getAgenticWhaleSentiment
+      responses:
+        '200':
+          description: Whale sentiment matrix
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgenticWhaleSentimentResponse'
+
+  /agentic/whale/london-partnership/draft:
+    post:
+      tags: [Agentic]
+      summary: Draft London expansion whale liquidity partnership agreement
+      operationId: draftAgenticWhaleLondonPartnership
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WhaleLondonPartnershipDraftRequest'
+      responses:
+        '200':
+          description: Partnership draft pushed for signature
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WhaleLondonPartnershipDraftResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /agentic/sustainability/audit:
+    get:
+      tags: [Agentic]
+      summary: Get sustainability audit progress and CSRD readiness snapshot
+      operationId: getAgenticSustainabilityAudit
+      responses:
+        '200':
+          description: Sustainability audit status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgenticSustainabilityAuditResponse'
+
 components:
   securitySchemes:
     bearerAuth:
@@ -743,11 +1740,17 @@ components:
           format: email
         password:
           type: string
-          minLength: 12
+          minLength: 8
         firstName:
           type: string
         lastName:
           type: string
+        username:
+          type: string
+          pattern: '^[a-zA-Z0-9_]+$'
+        role:
+          type: string
+          enum: [guest, host, enterprise, admin]
         phone:
           type: string
 
@@ -760,12 +1763,54 @@ components:
           format: email
         password:
           type: string
+          minLength: 8
+        role:
+          type: string
+          enum: [guest, host, enterprise, admin]
+
+    RefreshRequest:
+      type: object
+      properties:
+        refreshToken:
+          type: string
+          minLength: 10
+
+    ForgotPasswordRequest:
+      type: object
+      required: [email]
+      properties:
+        email:
+          type: string
+          format: email
+
+    ResetPasswordRequest:
+      type: object
+      required: [password]
+      properties:
+        password:
+          type: string
+          minLength: 8
+
+    MessageResponse:
+      type: object
+      properties:
+        status:
+          type: string
+        message:
+          type: string
 
     AuthResponse:
       type: object
       properties:
+        status:
+          type: string
+        message:
+          type: string
         accessToken:
           type: string
+        token:
+          type: string
+          deprecated: true
         refreshToken:
           type: string
         expiresIn:
@@ -1548,3 +2593,1541 @@ components:
           type: boolean
         limit:
           type: integer
+
+    # Economic
+    EconomicActivationStatus:
+      type: object
+      properties:
+        phase:
+          type: string
+        rwaBridge:
+          type: string
+        ssiFramework:
+          type: string
+        compliance:
+          type: string
+        updatedAt:
+          type: string
+          format: date-time
+
+    RwaMintSimulationRequest:
+      type: object
+      required: [assetId, amount, partition, issuerDid]
+      properties:
+        assetId:
+          type: string
+        amount:
+          type: integer
+          minimum: 1
+        partition:
+          type: string
+        issuerDid:
+          type: string
+
+    RwaMintSimulationResponse:
+      type: object
+      properties:
+        status:
+          type: string
+        protocol:
+          type: string
+        assetId:
+          type: string
+        amount:
+          type: integer
+        partition:
+          type: string
+        issuerDid:
+          type: string
+        commandPreview:
+          type: string
+        note:
+          type: string
+        processedAt:
+          type: string
+          format: date-time
+
+    SsiOnboardingSimulationRequest:
+      type: object
+      required: [userId, walletProvider, jurisdiction, requestedCredentialType]
+      properties:
+        userId:
+          type: string
+        walletProvider:
+          type: string
+          enum: [apple, google, ledger, custom]
+        jurisdiction:
+          type: string
+        requestedCredentialType:
+          type: string
+
+    SsiOnboardingSimulationResponse:
+      type: object
+      properties:
+        userId:
+          type: string
+        walletProvider:
+          type: string
+        handshake:
+          type: string
+        selectiveDisclosure:
+          type: object
+          properties:
+            jurisdiction:
+              type: string
+            credentialType:
+              type: string
+            zkProof:
+              type: string
+        onboardingFrictionSeconds:
+          type: number
+        privacyMode:
+          type: string
+        processedAt:
+          type: string
+          format: date-time
+
+    RwaTradeSimulationRequest:
+      type: object
+      required: [assetId, partitionId, buyerDid, amount, ssiVoucherValid, isSgResident]
+      properties:
+        assetId:
+          type: string
+        partitionId:
+          type: integer
+          minimum: 1
+        buyerDid:
+          type: string
+        amount:
+          type: integer
+          minimum: 1
+        ssiVoucherValid:
+          type: boolean
+        isSgResident:
+          type: boolean
+        investorCredentialType:
+          type: string
+          enum: [StandardInvestor, InstitutionalEntity]
+          default: StandardInvestor
+        currentUnits:
+          type: integer
+          minimum: 0
+          default: 0
+
+    RwaTradeSimulationResponse:
+      type: object
+      properties:
+        protocol:
+          type: string
+        assetId:
+          type: string
+        buyerDid:
+          type: string
+        amount:
+          type: integer
+        partitionId:
+          type: integer
+        autoVerifier:
+          type: object
+          properties:
+            ssiVoucherValid:
+              type: boolean
+            jurisdictionCheck:
+              type: boolean
+            investorCredentialType:
+              type: string
+              enum: [StandardInvestor, InstitutionalEntity]
+            ownership:
+              type: object
+              properties:
+                retailCapUnits:
+                  type: integer
+                currentUnits:
+                  type: integer
+                requestedUnits:
+                  type: integer
+                projectedUnits:
+                  type: integer
+                decision:
+                  type: string
+                  enum: [pass, block]
+                reason:
+                  type: string
+            decision:
+              type: string
+              enum: [allow, deny]
+        ccp201:
+          type: object
+          properties:
+            active:
+              type: boolean
+            reasonCode:
+              type: string
+        processedAt:
+          type: string
+          format: date-time
+
+    PortalOnboardingConfig:
+      type: object
+      properties:
+        mode:
+          type: string
+        rollout:
+          type: string
+        portalUrl:
+          type: string
+          format: uri
+        whitelistSlots:
+          type: integer
+        activeWhitelistCount:
+          type: integer
+        sbm:
+          type: object
+          properties:
+            botSnipingProtection:
+              type: boolean
+            geoFenceOnViolationHours:
+              type: integer
+        updatedAt:
+          type: string
+          format: date-time
+
+    WhitelistAddRequest:
+      type: object
+      required: [userDid, tier, quota, memberId]
+      properties:
+        userDid:
+          type: string
+        tier:
+          type: string
+          enum: [ACCREDITED, INSTITUTIONAL]
+        quota:
+          type: integer
+          minimum: 1
+          maximum: 100
+        memberId:
+          type: string
+
+    WhitelistAddResponse:
+      type: object
+      properties:
+        status:
+          type: string
+        userDid:
+          type: string
+        tier:
+          type: string
+        quota:
+          type: integer
+        activeWhitelistCount:
+          type: integer
+        commandPreview:
+          type: string
+        processedAt:
+          type: string
+          format: date-time
+
+    WhitelistVerifyRequest:
+      type: object
+      required: [userDid, memberId]
+      properties:
+        userDid:
+          type: string
+        memberId:
+          type: string
+
+    WhitelistVerifyResponse:
+      type: object
+      properties:
+        status:
+          type: string
+        userDid:
+          type: string
+        tier:
+          type: string
+        quota:
+          type: integer
+        onboardingFlow:
+          type: string
+        processedAt:
+          type: string
+          format: date-time
+
+    RevenueDepositRequest:
+      type: object
+      required: [assetId, amount, currency]
+      properties:
+        assetId:
+          type: integer
+          minimum: 1
+        amount:
+          type: integer
+          minimum: 1
+        currency:
+          type: string
+          enum: [USDC, SGD]
+
+    RevenueDepositResponse:
+      type: object
+      properties:
+        status:
+          type: string
+        assetId:
+          type: integer
+        currency:
+          type: string
+        depositedAmount:
+          type: integer
+        revenuePool:
+          type: integer
+        processedAt:
+          type: string
+          format: date-time
+
+    RevenueDistributeRequest:
+      type: object
+      required: [assetId, snapshotHolders]
+      properties:
+        assetId:
+          type: integer
+          minimum: 1
+        snapshotHolders:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            required: [holderDid, units]
+            properties:
+              holderDid:
+                type: string
+              units:
+                type: integer
+                minimum: 0
+
+    RevenueDistributeResponse:
+      type: object
+      properties:
+        status:
+          type: string
+        mode:
+          type: string
+        assetId:
+          type: integer
+        totalPool:
+          type: integer
+        totalHolders:
+          type: integer
+        payouts:
+          type: array
+          items:
+            type: object
+            properties:
+              holderDid:
+                type: string
+              units:
+                type: integer
+              payout:
+                type: integer
+        processedAt:
+          type: string
+          format: date-time
+
+    RevenuePoolStatus:
+      type: object
+      properties:
+        assetId:
+          type: integer
+        revenuePool:
+          type: integer
+        updatedAt:
+          type: string
+          format: date-time
+
+    ManifestoTemplate:
+      type: object
+      properties:
+        subject:
+          type: string
+        recipientGroup:
+          type: string
+        body:
+          type: array
+          items:
+            type: string
+        portalUrl:
+          type: string
+          format: uri
+        generatedAt:
+          type: string
+          format: date-time
+
+    ManifestoSendSimulationRequest:
+      type: object
+      required: [recipients]
+      properties:
+        recipients:
+          type: array
+          minItems: 1
+          maxItems: 100
+          items:
+            type: string
+            format: email
+        allocationWindowHours:
+          type: integer
+          minimum: 1
+          maximum: 72
+          default: 48
+
+    ManifestoSendSimulationResponse:
+      type: object
+      properties:
+        status:
+          type: string
+        campaign:
+          type: string
+        recipients:
+          type: integer
+        allocationWindowHours:
+          type: integer
+        protocol:
+          type: string
+        note:
+          type: string
+        processedAt:
+          type: string
+          format: date-time
+
+    SentryEventIngestRequest:
+      type: object
+      required: [eventId, action, status, userRef]
+      properties:
+        eventId:
+          type: string
+        action:
+          type: string
+          enum: [SSI_HANDSHAKE, IDENTITY_VERIFIED, MINT_COMMITTED, ONBOARDING_ACTIVE]
+        status:
+          type: string
+          enum: [PENDING, SUCCESS, COMMITTED, ACTIVE, FAILED]
+        userRef:
+          type: string
+        didHash:
+          type: string
+        unitsClaimed:
+          type: integer
+          minimum: 0
+        investorCredentialType:
+          type: string
+          enum: [StandardInvestor, InstitutionalEntity]
+        dataResidency:
+          type: string
+          enum: [APAC, EU, US]
+        latencyMs:
+          type: integer
+          minimum: 0
+
+    SentryEventIngestResponse:
+      type: object
+      properties:
+        status:
+          type: string
+        eventId:
+          type: string
+        queueDepth:
+          type: integer
+        whaleThresholdUnits:
+          type: integer
+        retailCapUnits:
+          type: integer
+        processedAt:
+          type: string
+          format: date-time
+
+    SentryEventListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              eventId:
+                type: string
+              timeUtc:
+                type: string
+                format: date-time
+              action:
+                type: string
+              status:
+                type: string
+              userRef:
+                type: string
+              didHash:
+                type: string
+              unitsClaimed:
+                type: integer
+              allocationPct:
+                type: number
+              investorCredentialType:
+                type: string
+                enum: [StandardInvestor, InstitutionalEntity]
+              dataResidency:
+                type: string
+              latencyMs:
+                type: integer
+        count:
+          type: integer
+        generatedAt:
+          type: string
+          format: date-time
+
+    FirstTenOnboardingStatus:
+      type: object
+      properties:
+        progress:
+          type: object
+          properties:
+            onboarded:
+              type: integer
+            target:
+              type: integer
+        dataResidency:
+          type: object
+          properties:
+            expected:
+              type: string
+            compliant:
+              type: boolean
+        systemIntegrity:
+          type: string
+        latencyMs:
+          type: integer
+        status:
+          type: string
+        generatedAt:
+          type: string
+          format: date-time
+
+    WhalePauseMintRequest:
+      type: object
+      required: [didHash, mode]
+      properties:
+        didHash:
+          type: string
+        mode:
+          type: string
+          enum: [LOCK, UNLOCK]
+        reason:
+          type: string
+
+    WhalePauseMintResponse:
+      type: object
+      properties:
+        status:
+          type: string
+        didHash:
+          type: string
+        mintState:
+          type: string
+          enum: [LOCKED, OPEN]
+        reason:
+          type: string
+        processedAt:
+          type: string
+          format: date-time
+
+    WhaleAlertStatus:
+      type: object
+      properties:
+        active:
+          type: boolean
+        cluster:
+          type: string
+        thresholdUnits:
+          type: integer
+        retailCapUnits:
+          type: integer
+        totalMintedUnits:
+          type: integer
+        alerts:
+          type: array
+          items:
+            type: object
+            properties:
+              alertId:
+                type: string
+              didHash:
+                type: string
+              units:
+                type: integer
+              allocationPct:
+                type: number
+              institutionalTier:
+                type: string
+              terminalFlash:
+                type: string
+              detectedAt:
+                type: string
+                format: date-time
+        pausedDidCount:
+          type: integer
+        watchlist:
+          type: array
+          items:
+            type: object
+            properties:
+              didHash:
+                type: string
+              units:
+                type: integer
+              allocationPct:
+                type: number
+              state:
+                type: string
+                enum: [NORMAL, WATCH, WHALE_DETECTED]
+        generatedAt:
+          type: string
+          format: date-time
+
+    GenesisSelloutReport:
+      type: object
+      properties:
+        protocol:
+          type: string
+        assetId:
+          type: string
+        pilot:
+          type: object
+          properties:
+            valuationUsd:
+              type: integer
+            totalUnits:
+              type: integer
+            allocatedUnits:
+              type: integer
+            allocationPct:
+              type: number
+            status:
+              type: string
+              enum: [IN_PROGRESS, SOLD_OUT]
+        allocationSummary:
+          type: object
+          properties:
+            institutionalAnchors:
+              $ref: '#/components/schemas/GovernanceAllocationBucket'
+            retailWhales:
+              $ref: '#/components/schemas/GovernanceAllocationBucket'
+            standardRetail:
+              $ref: '#/components/schemas/GovernanceAllocationBucket'
+        compliance:
+          type: object
+          properties:
+            integrity:
+              type: string
+            retailOwnershipCapUnits:
+              type: integer
+            blockedCapViolations:
+              type: integer
+        ccp302AutoTriggered:
+          type: boolean
+        ccp302AutoTriggeredAt:
+          type: [string, 'null']
+          format: date-time
+        generatedAt:
+          type: string
+          format: date-time
+
+    GovernanceAllocationBucket:
+      type: object
+      properties:
+        entities:
+          type: integer
+        units:
+          type: integer
+
+    Ccp302AutoTriggerRequest:
+      type: object
+      properties:
+        force:
+          type: boolean
+          default: false
+        operatorNote:
+          type: string
+
+    Ccp302AutoTriggerResponse:
+      type: object
+      properties:
+        status:
+          type: string
+        triggerMode:
+          type: string
+          enum: [manual_force, sellout_auto]
+        ccp302AutoTriggeredAt:
+          type: string
+          format: date-time
+        operatorNote:
+          type: string
+        proposal:
+          type: object
+          properties:
+            protocol:
+              type: string
+            status:
+              type: string
+            expansionTargetUsd:
+              type: integer
+            totalUnits:
+              type: integer
+            jurisdiction:
+              type: string
+            assets:
+              type: array
+              items:
+                type: object
+                properties:
+                  assetId:
+                    type: string
+                  valuationUsd:
+                    type: integer
+                  class:
+                    type: string
+            upgrades:
+              type: array
+              items:
+                type: string
+        genesisSelloutReport:
+          $ref: '#/components/schemas/GenesisSelloutReport'
+
+    FinalSettlementRequest:
+      type: object
+      properties:
+        assetId:
+          type: string
+          default: SG-COMM-MBFC-001
+        settlementAmountUsd:
+          type: integer
+          minimum: 1
+          default: 1000000
+        unitCount:
+          type: integer
+          minimum: 1
+          default: 1000
+        settlementRail:
+          type: string
+          enum: [wCBDC, tUSD]
+          default: wCBDC
+        custodyVault:
+          type: string
+        legalMirror:
+          type: boolean
+          default: true
+
+    FinalSettlementRecord:
+      type: object
+      properties:
+        settlementId:
+          type: string
+        assetId:
+          type: string
+        settlementAmountUsd:
+          type: integer
+        unitCount:
+          type: integer
+        settlementRail:
+          type: string
+          enum: [wCBDC, tUSD]
+        custodyVault:
+          type: string
+        legalMirror:
+          type: boolean
+        systemState:
+          type: string
+          enum: [SOVEREIGN_EXPANSION_ACTIVE]
+        settledAt:
+          type: string
+          format: date-time
+
+    FinalSettlementResponse:
+      type: object
+      properties:
+        status:
+          type: string
+        settlement:
+          $ref: '#/components/schemas/FinalSettlementRecord'
+        dVp:
+          type: object
+          properties:
+            mode:
+              type: string
+            tokenLock:
+              type: string
+            legalMirror:
+              type: boolean
+        revenueAnchor:
+          type: string
+        note:
+          type: string
+
+    FinalSettlementStatus:
+      type: object
+      properties:
+        finalSettlementRecord:
+          oneOf:
+            - $ref: '#/components/schemas/FinalSettlementRecord'
+            - type: 'null'
+        retailMintingClosed:
+          type: boolean
+        tvvUsd:
+          type: integer
+        systemState:
+          type: string
+        generatedAt:
+          type: string
+          format: date-time
+
+    CapitalCallInitiateRequest:
+      type: object
+      properties:
+        targetAmountUsd:
+          type: integer
+          minimum: 1
+          default: 4000000
+        fundingWindowHours:
+          type: integer
+          minimum: 1
+          maximum: 168
+          default: 48
+        settlementAsset:
+          type: string
+          enum: [wCBDC, tUSD]
+          default: wCBDC
+
+    CapitalCallCore:
+      type: object
+      properties:
+        targetAmountUsd:
+          type: integer
+        raisedAmountUsd:
+          type: integer
+        fundingWindowHours:
+          type: integer
+        settlementAsset:
+          type: string
+          enum: [wCBDC, tUSD]
+        startedAt:
+          type: string
+          format: date-time
+        closesAt:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [ACTIVE, CLOSED, INACTIVE]
+
+    CapitalCallPartner:
+      type: object
+      properties:
+        partnerId:
+          type: string
+          enum: [ANCHOR_A, ANCHOR_B, ANCHOR_C]
+        partnerName:
+          type: string
+        commitmentUsd:
+          type: integer
+        status:
+          type: string
+          enum: [PENDING, SIGNED, FUNDED, FAILED]
+        verification:
+          type: string
+        receivedAmountUsd:
+          type: integer
+        updatedAt:
+          type: string
+          format: date-time
+        note:
+          type: string
+
+    CapitalCallInitiateResponse:
+      type: object
+      properties:
+        status:
+          type: string
+        capitalCall:
+          $ref: '#/components/schemas/CapitalCallCore'
+        partners:
+          type: array
+          items:
+            $ref: '#/components/schemas/CapitalCallPartner'
+        systemState:
+          type: string
+
+    CapitalCallPartnerUpdateRequest:
+      type: object
+      required: [partnerId, status]
+      properties:
+        partnerId:
+          type: string
+          enum: [ANCHOR_A, ANCHOR_B, ANCHOR_C]
+        status:
+          type: string
+          enum: [PENDING, SIGNED, FUNDED, FAILED]
+        receivedAmountUsd:
+          type: integer
+          minimum: 0
+          default: 0
+        verification:
+          type: string
+        note:
+          type: string
+
+    CapitalCallPartnerUpdateResponse:
+      type: object
+      properties:
+        status:
+          type: string
+        partner:
+          $ref: '#/components/schemas/CapitalCallPartner'
+        capitalCall:
+          allOf:
+            - $ref: '#/components/schemas/CapitalCallCore'
+            - type: object
+              properties:
+                progressPct:
+                  type: number
+        autoMint:
+          type: object
+          properties:
+            techHubAlphaMinted:
+              type: boolean
+            mintedAt:
+              oneOf:
+                - type: string
+                  format: date-time
+                - type: 'null'
+
+    CapitalCallStatusResponse:
+      type: object
+      properties:
+        tvvUsd:
+          type: integer
+        capitalCall:
+          allOf:
+            - $ref: '#/components/schemas/CapitalCallCore'
+            - type: object
+              properties:
+                progressPct:
+                  type: number
+        partners:
+          type: array
+          items:
+            $ref: '#/components/schemas/CapitalCallPartner'
+        rails:
+          type: object
+          properties:
+            monitored:
+              type: boolean
+            firstMillionEvent:
+              type: object
+              properties:
+                status:
+                  type: string
+                mintedAt:
+                  type: string
+                  format: date-time
+        generatedAt:
+          type: string
+          format: date-time
+
+    PrivateCapitalUpdateRequest:
+      type: object
+      properties:
+        partnerId:
+          type: string
+          enum: [ANCHOR_C]
+          default: ANCHOR_C
+
+    PrivateCapitalUpdateResponse:
+      type: object
+      properties:
+        status:
+          type: string
+        recipient:
+          type: string
+        subject:
+          type: string
+        message:
+          type: array
+          items:
+            type: string
+        snapshot:
+          type: object
+          properties:
+            tvvUsd:
+              type: integer
+            expansionTargetUsd:
+              type: integer
+            raisedUsd:
+              type: integer
+            remainingExpansionUsd:
+              type: integer
+            vaultTargetUsd:
+              type: integer
+            vaultCurrentUsd:
+              type: integer
+            vaultProgressPct:
+              type: number
+            anchorAReceivedUsd:
+              type: integer
+            anchorBReceivedUsd:
+              type: integer
+            anchorCReceivedUsd:
+              type: integer
+        cta:
+          type: object
+          properties:
+            action:
+              type: string
+            settlementAsset:
+              type: string
+              enum: [wCBDC, tUSD]
+            closesAt:
+              oneOf:
+                - type: string
+                  format: date-time
+                - type: 'null'
+        generatedAt:
+          type: string
+          format: date-time
+
+    AgenticStatusResponse:
+      type: object
+      properties:
+        layer:
+          type: string
+        mode:
+          type: string
+        corridor:
+          type: string
+        hitlThreshold:
+          type: integer
+        liabilityWrapper:
+          type: string
+        generatedAt:
+          type: string
+          format: date-time
+
+    AgentFoundryCapabilitiesResponse:
+      type: object
+      properties:
+        orchestrator:
+          type: object
+          properties:
+            enabled:
+              type: boolean
+            delegates:
+              type: array
+              items:
+                type: string
+        complianceCore:
+          type: object
+          properties:
+            enabled:
+              type: boolean
+            policyAsCode:
+              type: string
+        settlement:
+          type: object
+          properties:
+            rails:
+              type: array
+              items:
+                type: string
+        identity:
+          type: object
+          properties:
+            frameworks:
+              type: array
+              items:
+                type: string
+        generatedAt:
+          type: string
+          format: date-time
+
+    AgenticJourneyPlanRequest:
+      type: object
+      required: [travelerId, origin, destination, departureDate, budget]
+      properties:
+        travelerId:
+          type: string
+        origin:
+          type: string
+        destination:
+          type: string
+        departureDate:
+          type: string
+        returnDate:
+          type: string
+        budget:
+          type: number
+        currency:
+          type: string
+          minLength: 3
+          maxLength: 3
+          default: USD
+        carbonCapKg:
+          type: number
+        policyProfile:
+          type: string
+          enum: [STANDARD, STRICT, SOVEREIGN]
+          default: SOVEREIGN
+
+    AgenticJourneyPlanResponse:
+      type: object
+      properties:
+        status:
+          type: string
+        travelerId:
+          type: string
+        corridor:
+          type: string
+        itinerary:
+          type: object
+          properties:
+            origin:
+              type: string
+            destination:
+              type: string
+            departureDate:
+              type: string
+            returnDate:
+              oneOf:
+                - type: string
+                - type: 'null'
+        orchestration:
+          type: object
+        compliance:
+          type: object
+        settlement:
+          type: object
+        generatedAt:
+          type: string
+          format: date-time
+
+    AgenticA2ANegotiationRequest:
+      type: object
+      required: [negotiationId, buyerAgent, sellerAgent, serviceType, initialQuote, maxBudget, settlementMode]
+      properties:
+        negotiationId:
+          type: string
+        buyerAgent:
+          type: string
+        sellerAgent:
+          type: string
+        serviceType:
+          type: string
+          enum: [FLIGHT, LODGE, GROUND]
+        initialQuote:
+          type: number
+        maxBudget:
+          type: number
+        settlementMode:
+          type: string
+          enum: [FIAT, STABLECOIN_INSTANT]
+        policyProfile:
+          type: string
+          enum: [STANDARD, STRICT, SOVEREIGN]
+          default: SOVEREIGN
+
+    AgenticA2ANegotiationResponse:
+      type: object
+      properties:
+        status:
+          type: string
+        negotiationId:
+          type: string
+        serviceType:
+          type: string
+        parties:
+          type: object
+        pricing:
+          type: object
+        settlement:
+          type: object
+        policyProfile:
+          type: string
+        generatedAt:
+          type: string
+          format: date-time
+
+    AgenticLiabilityEvalRequest:
+      type: object
+      required: [actionType, actorType, confidence, jurisdiction]
+      properties:
+        actionType:
+          type: string
+          enum: [BOOKING, PAYMENT, ISSUANCE, IDENTITY_ASSERTION]
+        actorType:
+          type: string
+          enum: [HUMAN, AGENT]
+        confidence:
+          type: number
+          minimum: 0
+          maximum: 100
+        jurisdiction:
+          type: string
+        requiresBiometric:
+          type: boolean
+          default: false
+        policyProfile:
+          type: string
+          enum: [STANDARD, STRICT, SOVEREIGN]
+          default: SOVEREIGN
+
+    AgenticLiabilityEvalResponse:
+      type: object
+      properties:
+        status:
+          type: string
+        actionType:
+          type: string
+        actorType:
+          type: string
+        confidence:
+          type: number
+        wrapper:
+          type: object
+        hitl:
+          type: object
+        generatedAt:
+          type: string
+          format: date-time
+
+    AgentCard:
+      type: object
+      required: [id, name, did, vendor, signatureIssuer, capabilities, endpoint]
+      properties:
+        '@context':
+          type: string
+        id:
+          type: string
+        name:
+          type: string
+        did:
+          type: string
+        vendor:
+          type: string
+        signatureIssuer:
+          type: string
+        capabilities:
+          type: array
+          items:
+            type: string
+        endpoint:
+          type: string
+        active:
+          type: boolean
+
+    AgentRegistryListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            type: object
+        count:
+          type: integer
+        generatedAt:
+          type: string
+          format: date-time
+
+    A2AHandshakeSimulationRequest:
+      type: object
+      required: [origin, destination, departureDate, maxBudgetUsd, carbonCapTons]
+      properties:
+        origin:
+          type: string
+        destination:
+          type: string
+        departureDate:
+          type: string
+        cabinClass:
+          type: string
+          enum: [ECONOMY, PREMIUM_ECONOMY, BUSINESS, FIRST]
+        maxBudgetUsd:
+          type: number
+        carbonCapTons:
+          type: number
+
+    A2AHandshakeSimulationResponse:
+      type: object
+      properties:
+        status:
+          type: string
+        corridor:
+          type: string
+        transcript:
+          type: array
+          items:
+            type: object
+        outcome:
+          type: object
+        generatedAt:
+          type: string
+          format: date-time
+
+    AgenticGuardrailCheckRequest:
+      type: object
+      required: [actionType, confidence, transactionValueUsd, origin, destination, carrier, carbonCapTons]
+      properties:
+        actionType:
+          type: string
+          enum: [BOOKING, PAYMENT, ISSUANCE, IDENTITY_ASSERTION]
+        confidence:
+          type: number
+        transactionValueUsd:
+          type: number
+        origin:
+          type: string
+        destination:
+          type: string
+        carrier:
+          type: string
+        carbonCapTons:
+          type: number
+        policyProfile:
+          type: string
+          enum: [STANDARD, STRICT, SOVEREIGN]
+
+    AgenticGuardrailCheckResponse:
+      type: object
+      properties:
+        status:
+          type: string
+        decision:
+          type: string
+        compliance:
+          type: object
+        fiscal:
+          type: object
+        hitl:
+          type: object
+        generatedAt:
+          type: string
+          format: date-time
+
+    ZeroTouchSandboxRequest:
+      type: object
+      required: [travelerId, destinationHotelId]
+      properties:
+        travelerId:
+          type: string
+        destinationHotelId:
+          type: string
+        destinationCity:
+          type: string
+        identityProvider:
+          type: string
+          enum: [SINGPASS, UAE_PASS]
+
+    ZeroTouchSandboxResponse:
+      type: object
+      properties:
+        status:
+          type: string
+        corridor:
+          type: string
+        travelerId:
+          type: string
+        identity:
+          type: object
+        hotelPreAuthorization:
+          type: object
+        generatedAt:
+          type: string
+          format: date-time
+
+    BiometricSettlementTriggerRequest:
+      type: object
+      required: [bookingId, travelerDid, supplierId, oidcProvider, verificationHash, escrowAmountUsd]
+      properties:
+        bookingId:
+          type: string
+        travelerDid:
+          type: string
+        supplierId:
+          type: string
+        oidcProvider:
+          type: string
+          enum: [SINGPASS, UAE_PASS]
+        verificationHash:
+          type: string
+        escrowAmountUsd:
+          type: number
+        confidence:
+          type: number
+
+    BiometricSettlementTriggerResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [FUNDS_RELEASED, RETRY_VERIFICATION]
+        flow:
+          type: object
+        settlement:
+          type: object
+        generatedAt:
+          type: string
+          format: date-time
+
+    AgenticCfoDashboardResponse:
+      type: object
+      properties:
+        summary:
+          type: object
+        complianceSentry:
+          type: object
+        settlementRail:
+          type: object
+        generatedAt:
+          type: string
+          format: date-time
+
+    AustinDisruptionSimulationRequest:
+      type: object
+      properties:
+        eventCode:
+          type: string
+        affectedTravelers:
+          type: integer
+        corridor:
+          type: string
+
+    AustinDisruptionSimulationResponse:
+      type: object
+      properties:
+        status:
+          type: string
+        eventCode:
+          type: string
+        affectedTravelers:
+          type: integer
+        timelineSeconds:
+          type: integer
+        actions:
+          type: array
+          items:
+            type: object
+        humanInLoopInterventions:
+          type: integer
+        estimatedManualSupportSavingsUsd:
+          type: number
+        generatedAt:
+          type: string
+          format: date-time
+
+    AgenticGenesisExpansionReportResponse:
+      type: object
+      properties:
+        reportDate:
+          type: string
+          format: date-time
+        executiveSummary:
+          type: object
+        portfolio:
+          type: array
+          items:
+            type: object
+        moats:
+          type: object
+
+    GenesisRevenueDistributionRequest:
+      type: object
+      properties:
+        cycleId:
+          type: string
+        netRentalIncomeUsd:
+          type: number
+        applyLoyaltyMultiplier:
+          type: boolean
+
+    GenesisRevenueDistributionResponse:
+      type: object
+      properties:
+        status:
+          type: string
+        cycleId:
+          type: string
+        revenueSnapshotUsd:
+          type: number
+        payout:
+          type: object
+        deliveryRails:
+          type: object
+        generatedAt:
+          type: string
+          format: date-time
+
+    AgenticWhaleSentimentResponse:
+      type: object
+      properties:
+        whaleDid:
+          type: string
+        currentHolding:
+          type: object
+        sentiment:
+          type: object
+        sentimentMatrix:
+          type: array
+          items:
+            type: object
+        generatedAt:
+          type: string
+          format: date-time
+
+    WhaleLondonPartnershipDraftRequest:
+      type: object
+      required: [whaleDid]
+      properties:
+        whaleDid:
+          type: string
+        lockMonths:
+          type: integer
+        mbfcUnitsLock:
+          type: integer
+        usdcLock:
+          type: number
+
+    WhaleLondonPartnershipDraftResponse:
+      type: object
+      properties:
+        status:
+          type: string
+        expansionTarget:
+          type: string
+        agreement:
+          type: object
+        signatureStatus:
+          type: string
+        generatedAt:
+          type: string
+          format: date-time
+
+    AgenticSustainabilityAuditResponse:
+      type: object
+      properties:
+        status:
+          type: string
+        progressPct:
+          type: number
+        assets:
+          type: array
+          items:
+            type: object
+        integrations:
+          type: object
+        filingDeadline:
+          type: string
+        generatedAt:
+          type: string
+          format: date-time

@@ -92,9 +92,8 @@ type AuthUser = {
 };
 
 type AuthResponse = {
-  accessToken?: string;
-  refreshToken?: string;
-  token?: string;
+  message?: string;
+  expiresIn?: number;
   user: AuthUser;
 };
 
@@ -104,7 +103,6 @@ function DashboardContent() {
   const [metrics, setMetrics] = useState(dashboardData.stats);
   const [recentBookings, setRecentBookings] = useState(dashboardData.recentBookings);
   const [authUser, setAuthUser] = useState<AuthUser | null>(null);
-  const [authToken, setAuthToken] = useState<string | null>(null);
   const [authError, setAuthError] = useState<string | null>(null);
   const [authLoading, setAuthLoading] = useState(false);
   const [authMode, setAuthMode] = useState<"login" | "register">("login");
@@ -115,12 +113,9 @@ function DashboardContent() {
   const [formLastName, setFormLastName] = useState("");
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const storedToken = sessionStorage.getItem("auth_token");
-      const storedUser = sessionStorage.getItem("auth_user");
-      if (storedToken) setAuthToken(storedToken);
-      if (storedUser) setAuthUser(JSON.parse(storedUser));
-    }
+    apiGet<AuthUser>("/auth/me")
+      .then((user) => setAuthUser(user))
+      .catch(() => setAuthUser(null));
 
     apiGet<any>("/analytics/dashboard")
       .then((data) => {
@@ -162,13 +157,7 @@ function DashboardContent() {
         authMode === "login" ? "/auth/login" : "/auth/register",
         payload
       );
-      const token = res.accessToken || res.token || "";
-      if (token) {
-        setAuthToken(token);
-        sessionStorage.setItem("auth_token", token);
-      }
       setAuthUser(res.user);
-      sessionStorage.setItem("auth_user", JSON.stringify(res.user));
       if (res.user?.roles?.[0]) {
         setRole(res.user.roles[0]);
       }
@@ -180,11 +169,13 @@ function DashboardContent() {
     }
   }
 
-  function handleLogout() {
+  async function handleLogout() {
+    try {
+      await apiPost<{ message: string }>("/auth/logout", {});
+    } catch {
+      // best effort logout
+    }
     setAuthUser(null);
-    setAuthToken(null);
-    sessionStorage.removeItem("auth_token");
-    sessionStorage.removeItem("auth_user");
   }
 
   const statusColors = {

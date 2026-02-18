@@ -315,6 +315,57 @@ Notes:
 - **Data encryption**: Encrypt sensitive fields at rest (e.g., access codes, payment metadata). Enforce TLS in transit for all API calls.
 - **Logging**: Redact emails, phone numbers, and access codes from logs. Keep a data-retention policy for audit trails.
 
+## Frontend Setup for HttpOnly Cookie Auth (React/Vue)
+
+When backend auth uses HttpOnly cookies, frontend code should **not** store JWTs in local/session storage.
+The browser stores/sends cookies automatically, but only if credentials are enabled.
+
+### React / Next.js (fetch)
+
+```ts
+const API = process.env.NEXT_PUBLIC_API_BASE;
+
+await fetch(`${API}/v1/auth/login`, {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  credentials: "include",
+  body: JSON.stringify({ email, password }),
+});
+
+const me = await fetch(`${API}/v1/auth/me`, {
+  credentials: "include",
+});
+```
+
+### Vue/React (Axios)
+
+```ts
+import axios from "axios";
+
+export const api = axios.create({
+  baseURL: import.meta.env.VITE_API_BASE || process.env.NEXT_PUBLIC_API_BASE,
+  withCredentials: true,
+});
+```
+
+### Login state strategy
+
+Because HttpOnly cookies are not readable by JavaScript:
+
+1. On app load, call `/v1/auth/me`.
+2. If 200, store returned user profile in app state.
+3. If 401, treat as logged out.
+
+### CORS/cookie alignment checklist
+
+- Backend CORS must include exact frontend origin(s): `ALLOWED_ORIGINS`
+- Backend must allow credentials (`credentials: true`)
+- Frontend must send credentials (`credentials: "include"` or `withCredentials: true`)
+- For cross-site production cookies, use:
+  - `COOKIE_SECURE=true`
+  - `COOKIE_SAME_SITE=none`
+  - HTTPS only
+
 ## UI Shells & CI Enhancements (Latest)
 
 ### Frontend route shells

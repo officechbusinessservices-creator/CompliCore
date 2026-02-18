@@ -1,0 +1,55 @@
+{
+  "protocol": "CCP-302",
+  "version": "draft-2026-02-12",
+  "title": "Institutional RWA Expansion Manifest",
+  "status": "DRAFT",
+  "expansion_target_usd": 5000000,
+  "fractions": {
+    "total_units": 5000,
+    "unit_value_usd": 1000
+  },
+  "jurisdiction": {
+    "mode": "Dual-Sync",
+    "frameworks": ["Singapore MAS", "US GENIUS Act"]
+  },
+  "portfolio": [
+    {
+      "asset_id": "SG-COMM-MBFC-001",
+      "class": "Commercial Real Estate",
+      "valuation_usd": 1000000,
+      "role": "Baseline Yield"
+    },
+    {
+      "asset_id": "US-TECH-AUSTIN-ALPHA",
+      "class": "Tech Hub",
+      "valuation_usd": 2500000,
+      "role": "Growth Anchor"
+    },
+    {
+      "asset_id": "SG-LOGI-CHANGI-B",
+      "class": "Logistics",
+      "valuation_usd": 1500000,
+      "role": "Institutional Stability"
+    }
+  ],
+  "protocol_upgrades": {
+    "rpor": {
+      "enabled": true,
+      "cadence": "24h",
+      "enforcement": "Tier-1 SPV Wrapper"
+    },
+    "issi_fast_track": {
+      "enabled": true,
+      "eligibility_aum_usd": 10000000
+    },
+    "yield_swaps": {
+      "enabled": true,
+      "supported_tokens": ["USDC", "XSGD"]
+    }
+  },
+  "governance": {
+    "trigger_condition": "Pilot sell-out (1000/1000)",
+    "signature_required": true,
+    "manifest_id": "CCP-302-MAV-001"
+  }
+}

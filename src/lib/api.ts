@@ -2,17 +2,12 @@ const defaultBase = process.env.NODE_ENV === "development" ? "http://localhost:4
 export const API_BASE = process.env.NEXT_PUBLIC_API_BASE || defaultBase;
 export const API_PREFIX = "/v1";
 
-function getStoredToken() {
-  if (typeof window === "undefined") return null;
-  return sessionStorage.getItem("auth_token");
-}
-
 export async function apiGet<T>(path: string, token?: string): Promise<T> {
-  const authToken = token || getStoredToken();
   const res = await fetch(`${API_BASE}${API_PREFIX}${path}`, {
     cache: "no-store",
+    credentials: "include",
     headers: {
-      ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
   });
   if (!res.ok) throw new Error(`GET ${path} failed (${res.status})`);
@@ -20,12 +15,12 @@ export async function apiGet<T>(path: string, token?: string): Promise<T> {
 }
 
 export async function apiPost<T>(path: string, body: any, token?: string): Promise<T> {
-  const authToken = token || getStoredToken();
   const res = await fetch(`${API_BASE}${API_PREFIX}${path}`, {
     method: "POST",
+    credentials: "include",
     headers: {
       "Content-Type": "application/json",
-      ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
     body: JSON.stringify(body),
   });

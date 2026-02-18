@@ -14,7 +14,7 @@ const apiEndpoints = {
       description: "Create a new user account with email, password, and profile information.",
       requestBody: {
         email: "string (required)",
-        password: "string (min 12 chars)",
+        password: "string (min 8 chars)",
         firstName: "string (required)",
         lastName: "string (required)",
         phone: "string (optional)",

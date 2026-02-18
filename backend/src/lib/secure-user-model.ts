@@ -1,0 +1,110 @@
+import argon2 from "argon2";
+import crypto from "crypto";
+
+export type SecureUserRecord = {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  roles: string[];
+  passwordHash: string;
+  passwordResetTokenHash?: string;
+  passwordResetExpiresAt?: number;
+  createdAt: string;
+};
+
+const usersByEmail = new Map<string, SecureUserRecord>();
+
+export async function hashPassword(password: string): Promise<string> {
+  return argon2.hash(password, {
+    type: argon2.argon2id,
+    memoryCost: 19456,
+    timeCost: 2,
+    parallelism: 1,
+  });
+}
+
+export async function verifyPassword(passwordHash: string, candidatePassword: string): Promise<boolean> {
+  return argon2.verify(passwordHash, candidatePassword);
+}
+
+export function findUserByEmail(email: string): SecureUserRecord | undefined {
+  return usersByEmail.get(email.toLowerCase());
+}
+
+export function findUserById(id: string): SecureUserRecord | undefined {
+  return [...usersByEmail.values()].find((user) => user.id === id);
+}
+
+export function createUser(input: {
+  email: string;
+  firstName: string;
+  lastName: string;
+  roles: string[];
+  passwordHash: string;
+}): SecureUserRecord {
+  const email = input.email.toLowerCase();
+  const user: SecureUserRecord = {
+    id: `usr_${Math.random().toString(36).slice(2, 10)}`,
+    email,
+    firstName: input.firstName,
+    lastName: input.lastName,
+    roles: input.roles,
+    passwordHash: input.passwordHash,
+    createdAt: new Date().toISOString(),
+  };
+
+  usersByEmail.set(email, user);
+  return user;
+}
+
+export function createPasswordResetToken(userId: string, ttlMs = 10 * 60 * 1000) {
+  const user = findUserById(userId);
+  if (!user) return null;
+
+  const resetToken = crypto.randomBytes(32).toString("hex");
+  const tokenHash = crypto.createHash("sha256").update(resetToken).digest("hex");
+
+  user.passwordResetTokenHash = tokenHash;
+  user.passwordResetExpiresAt = Date.now() + ttlMs;
+
+  return {
+    resetToken,
+    tokenHash,
+    expiresAt: user.passwordResetExpiresAt,
+  };
+}
+
+export function findUserByPasswordResetToken(token: string): SecureUserRecord | undefined {
+  const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
+
+  return [...usersByEmail.values()].find(
+    (user) =>
+      user.passwordResetTokenHash === tokenHash &&
+      typeof user.passwordResetExpiresAt === "number" &&
+      user.passwordResetExpiresAt > Date.now(),
+  );
+}
+
+export function updateUserPassword(userId: string, passwordHash: string): SecureUserRecord | undefined {
+  const user = findUserById(userId);
+  if (!user) return undefined;
+
+  user.passwordHash = passwordHash;
+  user.passwordResetTokenHash = undefined;
+  user.passwordResetExpiresAt = undefined;
+  return user;
+}
+
+export function clearPasswordResetToken(userId: string): SecureUserRecord | undefined {
+  const user = findUserById(userId);
+  if (!user) return undefined;
+
+  user.passwordResetTokenHash = undefined;
+  user.passwordResetExpiresAt = undefined;
+  return user;
+}
+
+export function userHasAnyRole(user: SecureUserRecord, allowedRoles: string[]): boolean {
+  return user.roles.some((role) => allowedRoles.includes(role));
+}

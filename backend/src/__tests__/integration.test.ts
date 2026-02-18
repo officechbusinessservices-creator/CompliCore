@@ -11,17 +11,38 @@ afterAll(async () => {
   if (server) await server.close();
 });
 
+async function registerAndLogin() {
+  const email = `integration-${Date.now()}-${Math.random().toString(16).slice(2)}@example.com`;
+  const password = "IntegrationPass123!";
+
+  const register = await server.inject({
+    method: "POST",
+    url: "/api/auth/register",
+    payload: {
+      email,
+      password,
+      firstName: "Integration",
+      lastName: "Tester",
+      role: "guest",
+    },
+  });
+  expect(register.statusCode).toBe(201);
+
+  const login = await server.inject({
+    method: "POST",
+    url: "/api/auth/login",
+    payload: { email, password },
+  });
+  expect(login.statusCode).toBe(200);
+  const loginBody = JSON.parse(login.payload);
+  const token = loginBody.accessToken || loginBody.token;
+  expect(token).toBeTruthy();
+  return token as string;
+}
+
 describe("Auth + booking flow", () => {
   it("login -> create booking -> cancel booking", async () => {
-    const login = await server.inject({
-      method: "POST",
-      url: "/api/auth/login",
-      payload: { email: "dev@local" },
-    });
-    expect(login.statusCode).toBe(200);
-    const loginBody = JSON.parse(login.payload);
-    const token = loginBody.accessToken || loginBody.token;
-    expect(token).toBeTruthy();
+    const token = await registerAndLogin();
 
     const created = await server.inject({
       method: "POST",
@@ -29,6 +50,7 @@ describe("Auth + booking flow", () => {
       headers: { Authorization: `Bearer ${token}` },
       payload: {
         confirmation_code: "TST-BOOK",
+        listing_id: 1,
         guest_name: "Tester",
         property: "Demo",
         check_in: "2026-03-01",

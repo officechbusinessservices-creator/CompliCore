@@ -1,7 +1,13 @@
 "use client";
 
 import { useEffect } from "react";
+import dynamic from "next/dynamic";
 import { ThemeProvider } from "@/components/ThemeProvider";
+
+const SystemHUD = dynamic(() => import("@/components/SystemHUD"), {
+  ssr: false,
+  loading: () => null,
+});
 
 export default function ClientBody({
   children,
@@ -21,6 +27,7 @@ export default function ClientBody({
       enableSystem
       disableTransitionOnChange
     >
+      <SystemHUD />
       <div className="antialiased">{children}</div>
     </ThemeProvider>
   );

@@ -138,9 +138,6 @@ export default function AnimatedLandingPage() {
 
           <div className="relative">
             <div className="absolute -inset-10 bg-gradient-to-br from-emerald-500/30 via-cyan-500/10 to-violet-500/30 blur-3xl" />
-            <div className="absolute left-1/2 top-10 h-72 w-72 -translate-x-1/2 rounded-full bg-emerald-400/10 blur-3xl" />
-            <div className="absolute right-10 top-16 h-32 w-32 rounded-full bg-cyan-400/30 blur-2xl animate-float-reverse" />
-            <div className="absolute left-8 bottom-10 h-40 w-40 rounded-full bg-violet-400/30 blur-2xl animate-float-slow" />
             <div className="relative grid gap-6 [perspective:1400px]">
               <div className="relative rounded-[36px] border border-white/10 bg-zinc-900/70 backdrop-blur p-8 shadow-[0_0_40px_rgba(56,189,248,0.25)]">
                 <div className="flex items-center justify-between">

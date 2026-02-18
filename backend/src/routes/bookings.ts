@@ -1,10 +1,12 @@
 import { FastifyInstance } from "fastify";
-import { query } from "../db";
+import { query, streamQuery } from "../db";
 import { z } from "zod";
 import { formatZodError } from "../lib/validation";
+import { once } from "events";
 
 const listSchema = z.object({
   confirmationCode: z.string().min(3).max(64).optional(),
+  stream: z.enum(["true", "false"]).optional(),
 });
 
 const createSchema = z.object({
@@ -49,6 +51,32 @@ export default async function bookingsRoutes(fastify: FastifyInstance) {
         );
         if (res.rows.length === 0) return reply.status(404).send({ error: "not found" });
         return res.rows[0];
+      }
+
+      if (q.stream === "true") {
+        reply.header("Content-Type", "application/json; charset=utf-8");
+        const stream = await streamQuery(
+          "SELECT id, confirmation_code, guest_name, property, check_in, check_out, status FROM bookings ORDER BY id DESC"
+        );
+        reply.raw.write("[");
+        let first = true;
+        stream.on("data", (row: any) => {
+          if (!first) reply.raw.write(",");
+          reply.raw.write(JSON.stringify(row));
+          first = false;
+        });
+        stream.on("end", () => {
+          reply.raw.write("]");
+          reply.raw.end();
+        });
+        stream.on("error", () => {
+          if (!reply.raw.writableEnded) {
+            reply.raw.write("]");
+            reply.raw.end();
+          }
+        });
+        await once(stream, "end");
+        return reply;
       }
 
       const res = await query(

@@ -335,3 +335,261 @@ Total Critical Path: 14 weeks (with 2-week buffer = 16 weeks for MVP)
 | Beta → GA | 95% bug-free, performance targets met, 50+ beta users | CEO + CTO |
 | GA → Scale | Unit economics proven, product-market fit signals | Board |
 | Scale → Enterprise | $1M ARR, 85% retention, enterprise pipeline | CEO |
+
+---
+
+## 5.8 Network Layer Blueprint: From Visual Engine to Protocol
+
+To evolve the product into a protocol-grade platform, the architecture must prove **interconnectivity** with external systems of truth (finance, legal registries, and physical infrastructure). This capability is represented in-product through the **Protocol Bridge** and delivered in the backend through the integrations below.
+
+### Pillar 1 — Financial Integration (The Float)
+
+**Objective:** Connect payout and settlement flows to real-time rails (FedNow / SEPA), while maintaining an internal ledger and collateral scoring layer.
+
+**Protocol Logic:**
+- If CompliCore orchestrates large-scale rent flows and temporarily holds settlement balances, it gains bank-like float economics.
+- The ledger becomes a capital signal for credit underwriting and instant portfolio expansion.
+
+**Target Capabilities:**
+- Real-time payment ingress/egress (FedNow, SEPA, ACH fallback)
+- Treasury routing and liquidity windows
+- Auto-collateralization workflow for "Expand Portfolio" actions
+- Millisecond underwriting package generated from Deep-Data Ledger
+
+**KPIs:**
+- Payout latency < 60s (instant rail paths)
+- Collateral package generation < 500ms
+- Ledger reconciliation success > 99.95%
+
+### Pillar 2 — Legal Integration (Immutable Truth)
+
+**Objective:** Synchronize title/state data with municipal property registries and optionally anchor critical records on-chain.
+
+**Protocol Logic:**
+- When CompliCore becomes a trusted source of title/state truth, legal friction (manual verification, duplicated due diligence, excess title overhead) collapses.
+- Value shifts from document handling to protocol verification.
+
+**Target Capabilities:**
+- Registry connectors (city/county APIs, state feeds)
+- Hash-based deed and encumbrance verification
+- Event-driven legal state updates (liens, transfers, permits)
+- Zero-doc closing workflow for compliant jurisdictions
+
+**KPIs:**
+- Title verification turnaround < 2 minutes
+- Legal exception rate < 0.5%
+- Closing-time reduction vs baseline > 80%
+
+### Pillar 3 — Physical Integration (The Edge)
+
+**Objective:** Ingest BMS/IoT telemetry directly and tie physical asset conditions to valuation, compliance, and insurance logic.
+
+**Protocol Logic:**
+- CompliCore moves from dashboard software to operational control plane.
+- Hardware events (HVAC, access, structural sensors) become machine-readable financial and legal triggers.
+
+**Target Capabilities:**
+- Unified device ingest bus (HVAC, locks, elevators, sensors)
+- Real-time anomaly detection for asset degradation
+- Automated depreciation updates in Deep-Data Ledger
+- Insurance event triggers and claim packet prefill
+
+**KPIs:**
+- Sensor event ingest latency < 2s
+- Automated incident-to-claim initiation < 30s
+- Maintenance dispatch automation rate > 85%
+
+---
+
+## 5.9 Ecosystem Trap: SDK + API Flywheel
+
+Durable platform defensibility comes from turning CompliCore into a developer ecosystem rather than a standalone application.
+
+### Public API Surface (`api.complicore.com`)
+
+**Phase 1 Endpoints (public + partner):**
+- `POST /v1/leases/create`
+- `POST /v1/leases/execute`
+- `GET /v1/properties/{id}/compliance-score`
+- `POST /v1/portfolio/collateralize`
+- `POST /v1/events/registry-sync`
+- `POST /v1/events/iot-ingest`
+- `GET /v1/yield/forecast`
+- `POST /v1/webhooks/subscriptions`
+
+### "Lease with CompliCore" Button
+
+**Distribution Strategy:**
+- Publish embeddable JS SDK + React component for one-click adoption
+- Standard OAuth scopes for listing, lease, and compliance actions
+- Hosted UI fallback for low-code integrators
+
+**SDK Building Blocks:**
+- `@complicore/sdk-core`
+- `@complicore/sdk-react`
+- `@complicore/button`
+- Official webhook verification package
+
+### Data Moat and Yield Compounding
+
+As external adoption grows, the system accumulates a unique time-series dataset across:
+- payment behavior,
+- legal state transitions,
+- asset health telemetry,
+- operating outcomes.
+
+That dataset improves underwriting and yield orchestration accuracy, which attracts additional partners and further compounds model performance.
+
+### Ecosystem Success Metrics
+
+| Metric | 12-Month Target |
+|--------|------------------|
+| External developers onboarded | 1,000+ |
+| Active API partner orgs | 150+ |
+| Button-powered lease initiations | 25% of new lease flow |
+| SDK monthly calls | 100M+ |
+| Yield model forecast error reduction | 30%+ |
+
+---
+
+## 5.10 Trillion-Dollar API Hook: Dominant Integration Features
+
+To transition from product to market infrastructure, the API layer must expose protocol features that compress time, legal complexity, and institutional integration friction.
+
+### 5.10.1 Atomic Settlement Protocol
+
+**Core Idea:** Settlement should execute as a single atomic operation across funds movement, title state update, and tax event emission.
+
+**Reference Transaction Chain:**
+1. `POST /v1/settlements/atomic/init`
+2. Reserve liquidity and validate counterparty signatures
+3. Trigger legal state mutation (deed/encumbrance update)
+4. Trigger tax payload emission to jurisdictional adapter
+5. Commit all three steps or roll back all (all-or-nothing)
+
+**Why it matters:**
+- Replaces 30–60 day multi-party closings with machine-time settlement windows.
+- Converts CompliCore from orchestration SaaS to transaction marketplace substrate.
+
+**KPIs:**
+- End-to-end settlement finality < 1 second (target path)
+- Failed partial-state writes = 0
+- Regulatory filing completeness > 99.99%
+
+### 5.10.2 Legal-as-Code (LaC) Layer
+
+**Core Idea:** Jurisdictional law and zoning constraints become executable policy modules attached to API workflows.
+
+**Execution Model:**
+- Policy packages (city/state/country) versioned and signed
+- Endpoint preflight evaluation before write operations (e.g., `POST /register`)
+- Automatic deny/warn/transform decisions based on local legal rules
+
+**Why it matters:**
+- Developers integrate once while CompliCore handles legal variance.
+- Compliance becomes default behavior rather than bespoke legal engineering.
+
+**KPIs:**
+- Policy evaluation latency < 50ms
+- Coverage of top target metros > 90%
+- Post-registration compliance exceptions < 0.25%
+
+### 5.10.3 Institutional On-Ramp Bridge
+
+**Core Idea:** Provide enterprise-grade interoperability for banks, funds, and public infrastructure operators using legacy and modern rails.
+
+**Bridge Capabilities:**
+- SWIFT/ISO20022 adapter layer
+- Batch + real-time ingestion for enterprise service buses
+- Mainframe-compatible message gateway (including COBOL-era payload mapping)
+- Trust controls: signed envelopes, deterministic audit trails, replay protection
+
+**Why it matters:**
+- Enables large capital pools to deploy through CompliCore without replacing core banking stack.
+- Positions CompliCore as the default ingress layer for real-estate capital digitization.
+
+**KPIs:**
+- Institutional integration lead time < 30 days
+- Message translation fidelity > 99.99%
+- Enterprise uptime SLA: 99.99%
+
+---
+
+## 5.11 Final Puzzle Piece: Governance Layer
+
+At protocol scale, governance defines long-term legitimacy.
+
+### Governance Components
+
+- **Policy Council:** approves jurisdictional legal-as-code modules and change windows.
+- **Risk & Compliance Board:** supervises settlement risk, fraud controls, and incident playbooks.
+- **Developer Standards Committee:** versioning, deprecation policy, SDK compatibility guarantees.
+- **Data Stewardship Charter:** usage boundaries, retention controls, and transparency reporting.
+
+### Governance Operating Model
+
+- Immutable decision logs for policy changes
+- Formal release channels (`canary` → `regulated` → `global`)
+- Jurisdiction-specific kill switches for emergency legal changes
+- Public changelog + signed protocol releases
+
+### Governance Success Metrics
+
+| Metric | Target |
+|--------|--------|
+| Critical policy rollout time | < 4 hours |
+| Backward-compatible API upgrades | > 95% |
+| Governance action auditability | 100% |
+| Regulatory incident response SLA | < 60 minutes |
+
+---
+
+## 5.12 Final Strategic Specifics for $1T Trajectory
+
+### 5.12.1 Deed-as-a-Token Liquidity Layer
+
+**Specific Integration Path:**
+- Add tokenization adapters for Ethereum / Polygon and private-ledger option (Hyperledger-style deployments for regulated institutions).
+- Represent deed control, encumbrance state, and transfer rights as programmable token primitives.
+- Support fractional ownership rails (e.g., 10% blocks) with compliance-aware transfer restrictions.
+
+**Why it compounds value:**
+- Converts traditionally illiquid real-estate title into composable digital liquidity.
+- Enables instant secondary transfer mechanisms and broader capital participation.
+
+**Target outcomes:**
+- Fractional issuance settlement < 5 seconds
+- Secondary transfer availability 24/7
+- Jurisdiction-compliant transfer enforcement by policy engine
+
+### 5.12.2 Automated Tax Siphon (Sovereign Integration)
+
+**Specific Integration Path:**
+- Build direct tax authority connectors (IRS, HMRC, and jurisdictional expansion packs).
+- At rent settlement, auto-calculate withholding obligations and isolate tax reserves in real time.
+- Emit machine-verifiable reporting payloads per jurisdictional schema.
+
+**Why it compounds value:**
+- Moves CompliCore from optional software to fiscal infrastructure utility.
+- Reduces compliance leakage for operators while improving collection confidence for governments.
+
+**Target outcomes:**
+- Tax reserve accuracy > 99.9%
+- Filing packet generation latency < 60s
+- Audit discrepancy rate < 0.1%
+
+### 5.12.3 Total Information Symmetry via CompliScore
+
+**Specific Integration Path:**
+- Train and maintain a universal building risk/quality index (`CompliScore`) sourced from Deep Data Ledger events.
+- Include legal state, payment behavior, physical telemetry, and incident history in score composition.
+- Expose score and factor transparency endpoints for insurers, lenders, and exchanges.
+
+**Why it compounds value:**
+- Establishes protocol-native truth signal for underwriting and insurability.
+- Creates a market convention where low-information assets lose financing priority.
+
+**Target outcomes:**
+- Global score coverage expansion plan across priority metros
+- Score refresh SLA < 15 minutes for active assets
+- Explainability payload available for every score decision

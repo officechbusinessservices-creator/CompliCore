@@ -1,72 +1,146 @@
 import { FastifyInstance } from "fastify";
+import { z } from "zod";
+import { formatZodError } from "../lib/validation";
+import { createAuthController } from "../controllers/auth-controller";
 
-function buildAuthResponse(fastify: FastifyInstance, user: any) {
-  const accessToken = (fastify as any).jwt.sign({
-    userId: user.id,
-    email: user.email,
-    roles: user.roles || ["guest"],
-  });
-  const refreshToken = (fastify as any).jwt.sign({ userId: user.id, type: "refresh" });
-  return {
-    accessToken,
-    refreshToken,
-    expiresIn: 3600,
-    user,
-    // backward-compatible field
-    token: accessToken,
-  };
-}
+const usernameSchema = z
+  .string()
+  .min(3, "Username must be at least 3 characters")
+  .max(20, "Username must be at most 20 characters")
+  .regex(/^[a-zA-Z0-9_]+$/, "Username can only include letters, numbers, and underscore");
+
+const registerSchema = z.object({
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(8, "Password must be at least 8 characters"),
+  firstName: z.string().min(1).max(80),
+  lastName: z.string().min(1).max(80),
+  username: usernameSchema.optional(),
+  role: z.enum(["guest", "host", "enterprise", "admin"]).optional(),
+});
+
+const loginSchema = z.object({
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(8, "Password must be at least 8 characters"),
+  role: z.enum(["guest", "host", "enterprise", "admin"]).optional(),
+});
+
+const refreshSchema = z.object({
+  refreshToken: z.string().min(10, "refreshToken is required").optional(),
+});
+
+const forgotPasswordSchema = z.object({
+  email: z.string().email("Invalid email address"),
+});
+
+const resetPasswordSchema = z.object({
+  password: z.string().min(8, "Password must be at least 8 characters"),
+});
 
 export default async function authRoutes(fastify: FastifyInstance) {
-  fastify.post("/auth/register", async (request) => {
-    const body = request.body as any;
-    const user = {
-      id: "dev-user-id",
-      email: body.email,
-      firstName: body.firstName,
-      lastName: body.lastName,
-      displayName: `${body.firstName} ${body.lastName}`,
-      roles: body.role ? [body.role] : ["guest"],
-      createdAt: new Date().toISOString(),
-    };
-    return buildAuthResponse(fastify, user);
+  const authController = createAuthController(fastify);
+
+  fastify.post("/auth/register", async (request, reply) => {
+    const parsed = registerSchema.safeParse(request.body);
+    if (!parsed.success) {
+      return reply.status(400).send({
+        type: "urn:problem:validation",
+        title: "Request validation failed",
+        status: 400,
+        detail: "Invalid register payload",
+        errors: formatZodError(parsed.error),
+        instance: request.url,
+        traceId: request.id,
+      });
+    }
+
+    return authController.signup(request, reply, parsed.data);
   });
 
-  fastify.post("/auth/login", async (request) => {
-    const body = request.body as any;
-    const user = {
-      id: "dev-user-id",
-      email: body.email || "dev@local",
-      firstName: "Dev",
-      lastName: "User",
-      displayName: "Dev User",
-      roles: body.role ? [body.role] : ["guest"],
-      createdAt: new Date().toISOString(),
-    };
-    return buildAuthResponse(fastify, user);
+  fastify.post("/auth/login", async (request, reply) => {
+    const parsed = loginSchema.safeParse(request.body);
+    if (!parsed.success) {
+      return reply.status(400).send({
+        type: "urn:problem:validation",
+        title: "Request validation failed",
+        status: 400,
+        detail: "Invalid login payload",
+        errors: formatZodError(parsed.error),
+        instance: request.url,
+        traceId: request.id,
+      });
+    }
+
+    return authController.login(request, reply, parsed.data);
   });
 
-  fastify.post("/auth/refresh", async (request) => {
-    const user = {
-      id: "dev-user-id",
-      email: "dev@local",
-      firstName: "Dev",
-      lastName: "User",
-      displayName: "Dev User",
-      roles: ["guest"],
-      createdAt: new Date().toISOString(),
-    };
-    return buildAuthResponse(fastify, user);
+  fastify.post("/auth/refresh", async (request, reply) => {
+    const parsed = refreshSchema.safeParse(request.body);
+    if (!parsed.success) {
+      return reply.status(400).send({
+        type: "urn:problem:validation",
+        title: "Request validation failed",
+        status: 400,
+        detail: "Invalid refresh payload",
+        errors: formatZodError(parsed.error),
+        instance: request.url,
+        traceId: request.id,
+      });
+    }
+    return authController.refresh(request, reply, parsed.data.refreshToken);
+  });
+
+  fastify.post("/auth/logout", async (_request, reply) => {
+    return authController.logout(reply);
+  });
+
+  fastify.post("/auth/forgot-password", async (request, reply) => {
+    const parsed = forgotPasswordSchema.safeParse(request.body);
+    if (!parsed.success) {
+      return reply.status(400).send({
+        type: "urn:problem:validation",
+        title: "Request validation failed",
+        status: 400,
+        detail: "Invalid forgot-password payload",
+        errors: formatZodError(parsed.error),
+        instance: request.url,
+        traceId: request.id,
+      });
+    }
+
+    return authController.forgotPassword(request, reply, parsed.data);
+  });
+
+  fastify.post("/auth/reset-password/:token", async (request, reply) => {
+    const parsed = resetPasswordSchema.safeParse(request.body);
+    if (!parsed.success) {
+      return reply.status(400).send({
+        type: "urn:problem:validation",
+        title: "Request validation failed",
+        status: 400,
+        detail: "Invalid reset-password payload",
+        errors: formatZodError(parsed.error),
+        instance: request.url,
+        traceId: request.id,
+      });
+    }
+
+    const token = (request.params as { token?: string }).token;
+    if (!token) {
+      return reply.status(400).send({ error: "reset token is required" });
+    }
+
+    return authController.resetPassword(request, reply, token, parsed.data);
   });
 
   // Backward compatible dev endpoint
   fastify.get("/auth/me", async (request, reply) => {
-    try {
-      const req = request as any;
-      await req.jwtVerify();
-      return { id: "dev-user-id", email: "dev@local", firstName: "Dev", lastName: "User" };
-    } catch (err) {
-      return reply.status(401).send({ error: "unauthorized" });
-    }
+    return authController.me(request, reply);
+  });
+
+  fastify.get("/auth/admin/ping", async (request, reply) => {
+    const guard = await authController.requireRoles(request, reply, ["admin"]);
+    if (guard) return guard;
+
+    return reply.send({ ok: true, scope: "admin" });
   });
 }

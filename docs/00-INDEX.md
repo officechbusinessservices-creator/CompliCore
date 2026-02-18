@@ -25,6 +25,9 @@ This document suite provides a comprehensive, vendor-neutral architecture for a 
 | 6 | [Risks](./06-RISKS.md) | Risk assessment, mitigation strategies |
 | 7 | [Data Models](./07-DATA-MODELS.md) | Entity definitions, MVP backlog |
 | 8 | [Constraints](./08-CONSTRAINTS.md) | Scope boundaries, assumptions, dependencies |
+| 9 | [Economic Expansion](./09-ECONOMIC-EXPANSION.md) | CCP-301 RWA bridge + SSI rollout plan |
+| 10 | [Agentic OS Doctrine](./10-AGENTIC-OS-DOCTRINE.md) | Strategic doctrine for sovereign agentic operating model |
+| 11 | [Agentic Mesh Architecture](./11-AGENTIC-MESH-ARCHITECTURE.md) | Runtime architecture, controls, rollout blueprint |
 
 ---
 
@@ -105,6 +108,8 @@ This document suite provides a comprehensive, vendor-neutral architecture for a 
 1. Review [Constraints](./08-CONSTRAINTS.md) for scope and assumptions
 2. Study [Risks](./06-RISKS.md) for risk assessment
 3. Check [Roadmap](./05-ROADMAP.md) for milestones
+4. Review [Economic Expansion](./09-ECONOMIC-EXPANSION.md) for post-activation growth protocol
+5. Review [Agentic OS Doctrine](./10-AGENTIC-OS-DOCTRINE.md) and [Agentic Mesh Architecture](./11-AGENTIC-MESH-ARCHITECTURE.md) for sovereign AI expansion
 
 ---
 

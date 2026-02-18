@@ -1,0 +1,14 @@
+route:
+  receiver: "slack-notifications"
+  group_by: ["alertname", "severity"]
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 2h
+
+receivers:
+  - name: "slack-notifications"
+    slack_configs:
+      - api_url: "__ALERTMANAGER_SLACK_WEBHOOK_URL__"
+        channel: "__ALERTMANAGER_SLACK_CHANNEL__"
+        send_resolved: true
+        text: "Alert: {{ .CommonAnnotations.summary }}"

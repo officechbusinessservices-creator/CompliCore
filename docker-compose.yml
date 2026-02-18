@@ -1,4 +1,38 @@
 services:
+  web:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_BASE=http://localhost:4000
+    depends_on:
+      - api
+
+  api:
+    build: ./backend
+    ports:
+      - "4000:4000"
+    environment:
+      - DATABASE_URL=postgres://postgres:password@db:5432/rental_dev
+      - JWT_SECRET=dev_super_secret_key_please_change_1234567890
+      - ALLOWED_ORIGINS=http://localhost:3000
+      - WS_ALLOWED_ORIGINS=http://localhost:3000
+      - REDIS_URL=
+      - DB_SLOW_QUERY_THRESHOLD_MS=100
+    depends_on:
+      - db
+
+  db:
+    image: postgres:16-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=rental_dev
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
   complicore-rag:
     build: ./ai-engineering-hub/agentic_rag_service
     ports:
@@ -17,3 +51,105 @@ services:
     environment:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
+
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./monitoring/alert_rules.yml:/etc/prometheus/alert_rules.yml:ro
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      - prometheus
+
+  alertmanager:
+    image: prom/alertmanager:latest
+    entrypoint: ["/bin/sh", "/etc/alertmanager/entrypoint.sh"]
+    ports:
+      - "9093:9093"
+    environment:
+      - ALERTMANAGER_SLACK_WEBHOOK_URL=${ALERTMANAGER_SLACK_WEBHOOK_URL:-}
+      - ALERTMANAGER_SLACK_CHANNEL=${ALERTMANAGER_SLACK_CHANNEL:-#alerts}
+    volumes:
+      - ./monitoring/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - ./monitoring/alertmanager-entrypoint.sh:/etc/alertmanager/entrypoint.sh:ro
+
+  db-backup:
+    image: amazon/aws-cli:2.15.53
+    entrypoint: ["/bin/sh", "-c"]
+    command: |
+      apk add --no-cache postgresql-client && \
+      echo "0 0 * * * /scripts/db_backup.sh" > /etc/crontabs/root && \
+      crond -f
+    environment:
+      - S3_BUCKET_NAME=${S3_BUCKET_NAME}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION:-us-east-1}
+      - BACKUP_RETENTION_DAYS=${BACKUP_RETENTION_DAYS}
+      - S3_SSE=${S3_SSE}
+      - S3_SSE_KMS_KEY_ID=${S3_SSE_KMS_KEY_ID}
+      - POSTGRES_HOST=db
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=rental_dev
+    volumes:
+      - ./scripts/db_backup.sh:/scripts/db_backup.sh:ro
+      - ./scripts/db_restore.sh:/scripts/db_restore.sh:ro
+    depends_on:
+      - db
+
+  db-restore:
+    image: amazon/aws-cli:2.15.53
+    entrypoint: ["/bin/sh", "-c"]
+    command: |
+      apk add --no-cache postgresql-client && \
+      /scripts/db_restore.sh
+    environment:
+      - RESTORE_BACKUP_NAME=${RESTORE_BACKUP_NAME}
+      - S3_BUCKET_NAME=${S3_BUCKET_NAME}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION:-us-east-1}
+      - POSTGRES_HOST=db
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=rental_dev
+    volumes:
+      - ./scripts/db_restore.sh:/scripts/db_restore.sh:ro
+    depends_on:
+      - db
+
+  db-restore-interactive:
+    image: amazon/aws-cli:2.15.53
+    entrypoint: ["/bin/sh", "-c"]
+    command: |
+      apk add --no-cache postgresql-client && \
+      /scripts/db_restore_interactive.sh
+    environment:
+      - S3_BUCKET_NAME=${S3_BUCKET_NAME}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION:-us-east-1}
+      - POSTGRES_HOST=db
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=rental_dev
+    volumes:
+      - ./scripts/db_restore_interactive.sh:/scripts/db_restore_interactive.sh:ro
+    depends_on:
+      - db
+
+volumes:
+  postgres_data:

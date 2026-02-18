@@ -1,0 +1,36 @@
+groups:
+- name: CompliCore_Alerts
+  rules:
+  - alert: InstanceDown
+    expr: max(up{job="complicore-backend"}) == 0
+    for: 1m
+    labels:
+      severity: critical
+    annotations:
+      summary: "CompliCore backend is unavailable across all deployment slots."
+
+  - alert: HighErrorRate
+    expr: |
+      (
+        sum(rate(http_requests_total{job="complicore-backend",status_code=~"5.."}[5m]))
+        /
+        clamp_min(sum(rate(http_requests_total{job="complicore-backend"}[5m])), 1)
+      ) > 0.05
+    for: 2m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Backend 5xx error ratio is above 5%."
+
+  - alert: SlowResponses
+    expr: |
+      (
+        sum(rate(http_request_duration_seconds_sum{job="complicore-backend"}[5m]))
+        /
+        clamp_min(sum(rate(http_request_duration_seconds_count{job="complicore-backend"}[5m])), 1)
+      ) > 0.5
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Backend average response latency is above 500ms (5m window)."

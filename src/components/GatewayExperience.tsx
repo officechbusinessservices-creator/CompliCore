@@ -93,10 +93,6 @@ export default function GatewayExperience() {
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(59,130,246,0.2),_transparent_55%)] opacity-70" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(15,23,42,0.9),_transparent_70%)]" />
 
-      <div className="pointer-events-none absolute inset-0 z-20">
-        <div ref={streakRef} className="absolute inset-0 gateway-data-streaks opacity-0" />
-      </div>
-
       {phase !== 'landed' && (
         <div className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center">
           <div
@@ -136,6 +132,7 @@ export default function GatewayExperience() {
             onClick={handleInitialize}
             className="vault-dial relative"
             aria-label="Unlock neural vault"
+            suppressHydrationWarning
           >
             <span className="vault-brain" />
             {plateAngles.map((angle, index) => (

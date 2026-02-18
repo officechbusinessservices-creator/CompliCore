@@ -1,6 +1,6 @@
 import Redis from "ioredis";
 
-type RedisClient = Redis.Redis | null;
+type RedisClient = Redis | null;
 
 let client: RedisClient = null;
 
