@@ -7,10 +7,18 @@ export type SecureUserRecord = {
   firstName: string;
   lastName: string;
   roles: string[];
+  webauthnCredentials: WebAuthnCredentialRecord[];
   passwordHash: string;
   passwordResetTokenHash?: string;
   passwordResetExpiresAt?: number;
   createdAt: string;
+};
+
+export type WebAuthnCredentialRecord = {
+  id: string;
+  publicKey: string;
+  counter: number;
+  transports?: string[];
 };
 
 const usersByEmail = new Map<string, SecureUserRecord>();
@@ -50,6 +58,7 @@ export function createUser(input: {
     firstName: input.firstName,
     lastName: input.lastName,
     roles: input.roles,
+    webauthnCredentials: [],
     passwordHash: input.passwordHash,
     createdAt: new Date().toISOString(),
   };
@@ -107,4 +116,53 @@ export function clearPasswordResetToken(userId: string): SecureUserRecord | unde
 
 export function userHasAnyRole(user: SecureUserRecord, allowedRoles: string[]): boolean {
   return user.roles.some((role) => allowedRoles.includes(role));
+}
+
+export function userNeedsPrivilegedStepUp(user: SecureUserRecord): boolean {
+  return user.roles.some((role) => role === "host" || role === "admin");
+}
+
+export function listWebAuthnCredentials(userId: string): WebAuthnCredentialRecord[] {
+  const user = findUserById(userId);
+  if (!user) return [];
+  return user.webauthnCredentials || [];
+}
+
+export function findWebAuthnCredential(
+  userId: string,
+  credentialId: string,
+): WebAuthnCredentialRecord | undefined {
+  const user = findUserById(userId);
+  if (!user) return undefined;
+  return (user.webauthnCredentials || []).find((credential) => credential.id === credentialId);
+}
+
+export function upsertWebAuthnCredential(
+  userId: string,
+  nextCredential: WebAuthnCredentialRecord,
+): WebAuthnCredentialRecord | undefined {
+  const user = findUserById(userId);
+  if (!user) return undefined;
+
+  if (!user.webauthnCredentials) user.webauthnCredentials = [];
+  const existingIndex = user.webauthnCredentials.findIndex(
+    (credential) => credential.id === nextCredential.id,
+  );
+  if (existingIndex >= 0) {
+    user.webauthnCredentials[existingIndex] = nextCredential;
+  } else {
+    user.webauthnCredentials.push(nextCredential);
+  }
+  return nextCredential;
+}
+
+export function updateWebAuthnCredentialCounter(
+  userId: string,
+  credentialId: string,
+  counter: number,
+): WebAuthnCredentialRecord | undefined {
+  const credential = findWebAuthnCredential(userId, credentialId);
+  if (!credential) return undefined;
+  credential.counter = counter;
+  return credential;
 }

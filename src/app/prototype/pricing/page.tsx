@@ -3,7 +3,15 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { apiGet, apiPost } from "@/lib/api";
-import { PRICING, calculateCorporateCommission, calculateHostClubMonthly, calculateMarkupToCoverCommission } from "@/lib/pricing";
+import {
+  PRICING,
+  calculateCorporateCommission,
+  calculateHostClubAiMonthly,
+  calculateHostClubMonthly,
+  calculateMarkupToCoverCommission,
+  calculatePortfolioProMonthly,
+} from "@/lib/pricing";
+import { LANDING_PLAN_COPY, portfolioBridgeCopy } from "@/lib/landing-copy";
 
 // Types
 interface PricingRule {
@@ -98,6 +106,8 @@ const ruleTypes = [
 export default function PricingEditorPage() {
   const [property, setProperty] = useState<PropertyPricing>(mockProperties[0]);
   const [hostProperties, setHostProperties] = useState(5);
+  const [hostClubAiProperties, setHostClubAiProperties] = useState(8);
+  const [portfolioProperties, setPortfolioProperties] = useState(PRICING.portfolioProIncludedProperties);
   const [plans, setPlans] = useState<any[]>([]);
   const [subscriptions, setSubscriptions] = useState<any[]>([]);
   const [billingMessage, setBillingMessage] = useState<string | null>(null);
@@ -231,6 +241,10 @@ export default function PricingEditorPage() {
     setEditingRule(newRule.id);
   };
 
+  const portfolioProMonthly = calculatePortfolioProMonthly(portfolioProperties);
+  const hostClubAiEquivalent = calculateHostClubAiMonthly(portfolioProperties);
+  const portfolioSavings = hostClubAiEquivalent - portfolioProMonthly;
+
   return (
     <div className="min-h-screen bg-zinc-100 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">
       {/* Header */}
@@ -260,15 +274,15 @@ export default function PricingEditorPage() {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-6 py-8">
-        <div className="grid md:grid-cols-3 gap-4 mb-8">
+        <div className="grid md:grid-cols-2 xl:grid-cols-4 gap-4 mb-4">
           <div className="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
-            <h2 className="font-semibold mb-2">Host Club</h2>
-            <p className="text-sm text-zinc-500 mb-3">$18/property/month up to 10 properties.</p>
+            <h2 className="font-semibold mb-2">{LANDING_PLAN_COPY.hostClub.name}</h2>
+            <p className="text-sm text-zinc-500 mb-3">{LANDING_PLAN_COPY.hostClub.priceLabel} · {LANDING_PLAN_COPY.hostClub.summary}</p>
             <div className="flex items-center gap-2">
               <input
                 type="number"
                 min={1}
-                max={10}
+                max={PRICING.portfolioProIncludedProperties}
                 value={hostProperties}
                 onChange={(e) => setHostProperties(Number(e.target.value))}
                 className="w-20 px-2 py-1 bg-zinc-100 dark:bg-zinc-800 rounded"
@@ -284,9 +298,59 @@ export default function PricingEditorPage() {
             </button>
           </div>
           <div className="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
-            <h2 className="font-semibold mb-2">Enterprise</h2>
-            <p className="text-sm text-zinc-500 mb-3">Flat $888/month for 10+ properties.</p>
+            <h2 className="font-semibold mb-2">{LANDING_PLAN_COPY.hostClubAi.name}</h2>
+            <p className="text-sm text-zinc-500 mb-3">{LANDING_PLAN_COPY.hostClubAi.priceLabel} · {LANDING_PLAN_COPY.hostClubAi.summary}</p>
+            <div className="flex items-center gap-2">
+              <input
+                type="number"
+                min={1}
+                value={hostClubAiProperties}
+                onChange={(e) => setHostClubAiProperties(Number(e.target.value))}
+                className="w-20 px-2 py-1 bg-zinc-100 dark:bg-zinc-800 rounded"
+              />
+              <span className="text-sm">properties →</span>
+              <span className="font-semibold">${calculateHostClubAiMonthly(hostClubAiProperties)}/mo</span>
+            </div>
+            <button
+              onClick={() => subscribeToPlan("host_club_ai")}
+              className="mt-3 w-full px-3 py-2 text-sm bg-emerald-500 text-white rounded-lg hover:bg-emerald-600"
+            >
+              Subscribe
+            </button>
+          </div>
+          <div className="p-4 rounded-xl bg-primary text-primary-foreground border border-primary/20">
+            <h2 className="font-semibold mb-2">{LANDING_PLAN_COPY.portfolioPro.name}</h2>
+            <p className="text-sm text-primary-foreground/80 mb-3">{LANDING_PLAN_COPY.portfolioPro.priceLabel} · {LANDING_PLAN_COPY.portfolioPro.summary}</p>
+            <div className="flex items-center gap-2">
+              <input
+                type="number"
+                min={1}
+                value={portfolioProperties}
+                onChange={(e) => setPortfolioProperties(Number(e.target.value))}
+                className="w-20 px-2 py-1 bg-white/15 rounded"
+              />
+              <span className="text-sm">properties →</span>
+              <span className="font-semibold">${portfolioProMonthly}/mo</span>
+            </div>
+            <p className="text-xs text-primary-foreground/75 mt-2">
+              {portfolioSavings > 0
+                ? `Saves $${portfolioSavings}/month vs ${LANDING_PLAN_COPY.hostClubAi.name} at this size.`
+                : `${LANDING_PLAN_COPY.portfolioPro.name} becomes the better value as portfolio size grows.`}
+            </p>
+            <button
+              onClick={() => subscribeToPlan("portfolio_pro")}
+              className="mt-3 w-full px-3 py-2 text-sm bg-white text-primary rounded-lg hover:bg-white/90"
+            >
+              Subscribe
+            </button>
+          </div>
+          <div className="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
+            <h2 className="font-semibold mb-2">{LANDING_PLAN_COPY.enterprise.name}</h2>
+            <p className="text-sm text-zinc-500 mb-3">{LANDING_PLAN_COPY.enterprise.priceLabel} · {LANDING_PLAN_COPY.enterprise.summary}</p>
             <span className="font-semibold">${PRICING.enterpriseFlat}/mo</span>
+            <p className="text-xs text-zinc-500 mt-2">
+              Recommended once you exceed {PRICING.enterpriseRecommendedFromProperties} properties.
+            </p>
             <button
               onClick={() => subscribeToPlan("enterprise")}
               className="mt-3 w-full px-3 py-2 text-sm bg-emerald-500 text-white rounded-lg hover:bg-emerald-600"
@@ -294,30 +358,32 @@ export default function PricingEditorPage() {
               Subscribe
             </button>
           </div>
-          <div className="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
-            <h2 className="font-semibold mb-2">Corporate SME</h2>
-            <p className="text-sm text-zinc-500 mb-3">8% commission per booking.</p>
-            <div className="flex items-center gap-2">
-              <input
-                type="number"
-                value={bookingAmount}
-                onChange={(e) => setBookingAmount(Number(e.target.value))}
-                className="w-24 px-2 py-1 bg-zinc-100 dark:bg-zinc-800 rounded"
-              />
-              <span className="text-sm">→ commission</span>
-              <span className="font-semibold">${calculateCorporateCommission(bookingAmount).toFixed(2)}</span>
-            </div>
-            <p className="text-xs text-zinc-500 mt-2">
-              Markup to cover commission: ${calculateMarkupToCoverCommission(bookingAmount).toFixed(2)}
-            </p>
-            <p className="text-xs text-zinc-500 mt-2">AI Power-Up: ${PRICING.aiPowerUp}/mo</p>
-            <button
-              onClick={() => subscribeToPlan("corporate_sme")}
-              className="mt-3 w-full px-3 py-2 text-sm bg-emerald-500 text-white rounded-lg hover:bg-emerald-600"
-            >
-              Subscribe
-            </button>
+        </div>
+        <div className="mb-8 p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
+          <h3 className="font-semibold mb-2">Corporate SME commission calculator</h3>
+          <p className="text-sm text-zinc-500 mb-3">8% commission per booking with optional markup coverage.</p>
+          <div className="flex items-center gap-2 flex-wrap">
+            <input
+              type="number"
+              value={bookingAmount}
+              onChange={(e) => setBookingAmount(Number(e.target.value))}
+              className="w-24 px-2 py-1 bg-zinc-100 dark:bg-zinc-800 rounded"
+            />
+            <span className="text-sm">booking amount → commission</span>
+            <span className="font-semibold">${calculateCorporateCommission(bookingAmount).toFixed(2)}</span>
           </div>
+          <p className="text-xs text-zinc-500 mt-2">
+            Markup to cover commission: ${calculateMarkupToCoverCommission(bookingAmount).toFixed(2)}
+          </p>
+          <p className="text-xs text-zinc-500 mt-2">
+            Bridge reference: at {portfolioBridgeCopy.thresholdProperties} properties, Host Club + AI is ${portfolioBridgeCopy.hostClubAiMonthlyAtThreshold}/month while Portfolio Pro is ${portfolioBridgeCopy.portfolioProMonthlyAtThreshold}/month.
+          </p>
+          <button
+            onClick={() => subscribeToPlan("corporate_sme")}
+            className="mt-3 px-3 py-2 text-sm bg-emerald-500 text-white rounded-lg hover:bg-emerald-600"
+          >
+            Subscribe Corporate SME
+          </button>
         </div>
         <div className="mb-6 p-4 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl">
           <div className="flex items-center justify-between mb-3">

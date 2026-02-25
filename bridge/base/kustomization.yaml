@@ -1,0 +1,14 @@
+#! kustomization.yaml
+# Generated code, do not edit
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+    - 0-rental-platform-architecture-namespace.yaml
+    - api-deployment.yaml
+    - api-expose.yaml
+    - backend-network-policy.yaml
+    - frontend-network-policy.yaml
+    - watchtower-deployment.yaml
+    - watchtower-expose.yaml
+    - web-deployment.yaml
+    - web-expose.yaml

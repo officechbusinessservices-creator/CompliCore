@@ -1,5 +1,9 @@
 import nodemailer from "nodemailer";
 import { env } from "../lib/env";
+import {
+  type LifecycleEmailStep,
+  renderLifecycleTemplate,
+} from "../lib/lifecycle-email-sequences";
 
 type EmailUser = {
   email: string;
@@ -57,5 +61,18 @@ export class Email {
       "Your password reset token (valid for 10 min)",
       `Hello ${this.firstName},\n\nForgot your password? Submit a request with your new password to:\n${this.url}\n\nIf you didn't request this, please ignore this email.`,
     );
+  }
+
+  async sendLifecycleStep(step: LifecycleEmailStep, ctaUrl?: string) {
+    const subject = renderLifecycleTemplate(step.subject, {
+      firstName: this.firstName,
+    });
+    const body = renderLifecycleTemplate(step.body, {
+      firstName: this.firstName,
+    });
+    const ctaSection = ctaUrl
+      ? `\n\n${step.ctaLabel}:\n${ctaUrl}`
+      : "";
+    await this.send(subject, `${body}${ctaSection}`);
   }
 }

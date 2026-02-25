@@ -16,7 +16,7 @@ servers:
     description: Production
   - url: https://api-staging.example.com/v1
     description: Staging
-  - url: http://localhost:3001/v1
+  - url: http://localhost:4000/v1
     description: Local Development
 
 tags:
@@ -88,6 +88,8 @@ paths:
                 $ref: '#/components/schemas/AuthResponse'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '429':
+          description: Too many failed attempts; account temporarily locked
 
   /auth/refresh:
     post:
@@ -145,6 +147,8 @@ paths:
           $ref: '#/components/responses/BadRequest'
         '404':
           $ref: '#/components/responses/NotFound'
+        '429':
+          description: Too many requests
 
   /auth/reset-password/{token}:
     post:
@@ -498,6 +502,25 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Booking'
+
+  /bookings/{bookingId}/access:
+    get:
+      tags: [Bookings]
+      summary: Get booking access credentials
+      operationId: getBookingAccess
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/BookingId'
+      responses:
+        '200':
+          description: Booking access credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingAccess'
+        '403':
+          $ref: '#/components/responses/Forbidden'
 
   /bookings/{bookingId}/cancel:
     post:
@@ -1748,9 +1771,6 @@ components:
         username:
           type: string
           pattern: '^[a-zA-Z0-9_]+$'
-        role:
-          type: string
-          enum: [guest, host, enterprise, admin]
         phone:
           type: string
 
@@ -1764,10 +1784,6 @@ components:
         password:
           type: string
           minLength: 8
-        role:
-          type: string
-          enum: [guest, host, enterprise, admin]
-
     RefreshRequest:
       type: object
       properties:
@@ -2230,6 +2246,20 @@ components:
         specialRequests:
           type: string
         paymentMethodId:
+          type: string
+
+    BookingAccess:
+      type: object
+      properties:
+        id:
+          type: integer
+        confirmation_code:
+          type: string
+        access_code:
+          type: string
+        wifi_name:
+          type: string
+        wifi_password:
           type: string
 
     BookingListResponse:

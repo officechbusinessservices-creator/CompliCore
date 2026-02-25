@@ -727,7 +727,7 @@ const RentalOSPlayground = () => {
 
                 <MiniApp title="Webhook Monitor" icon={Activity} theme={activeTheme} stat="Live" statLabel="Queue">
                   <div className="bg-black p-2 rounded text-[8px] font-mono text-green-400 h-24 overflow-hidden">
-                    {'> POST /api/booking'}
+                    {'> POST /v1/bookings'}
                     <br />
                     {'> 200 OK'}
                     <br />

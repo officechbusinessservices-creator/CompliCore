@@ -1,86 +1,118 @@
 import Link from "next/link";
+import { ArrowRight, CheckCircle2 } from "lucide-react";
+import {
+  LANDING_BRAND_COPY,
+  LANDING_PLAN_COPY,
+  LANDING_SHARED_COPY,
+} from "@/lib/landing-copy";
+
+const enterpriseCapabilities = [
+  {
+    title: "Governance & Compliance",
+    desc: "Advanced RBAC, approval chains, audit trails, and regional policy controls for high-stakes operations.",
+  },
+  {
+    title: "Integrations & Data",
+    desc: "Full API access, custom workflows, and system integration support for finance, BI, and internal platforms.",
+  },
+  {
+    title: "Scale Operations",
+    desc: "Multi-entity accounting, portfolio-wide automation, and SLA-backed support with a dedicated success lead.",
+  },
+];
 
 export default function EnterpriseLandingPage() {
   return (
-    <div className="min-h-screen bg-zinc-100 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">
-      <header className="border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/50">
+    <div className="min-h-screen bg-background text-foreground">
+      <header className="border-b border-border bg-background/80 backdrop-blur-md">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link href="/" className="font-semibold">Unified Travel Ecosystem</Link>
-          <div className="flex items-center gap-3">
-            <Link href="/portal/corporate" className="text-sm">Corporate Portal</Link>
-            <Link href="/prototype/pricing" className="text-sm px-3 py-1.5 bg-emerald-600 text-white rounded-lg">Enterprise Pricing</Link>
+          <Link href="/" className="font-semibold text-lg">{LANDING_BRAND_COPY.name}</Link>
+          <div className="flex items-center gap-3 text-sm">
+            <Link href="/#pricing" className="hover:text-foreground text-muted-foreground transition-colors">
+              {LANDING_SHARED_COPY.pricingLinkLabel}
+            </Link>
+            <Link href="/landing/host" className="hover:text-foreground text-muted-foreground transition-colors">
+              {LANDING_SHARED_COPY.hostsLinkLabel}
+            </Link>
+            <Link href="/portal/corporate" className="px-3 py-1.5 bg-primary text-primary-foreground rounded-lg font-medium">
+              {LANDING_SHARED_COPY.corporatePortalLabel}
+            </Link>
           </div>
         </div>
       </header>
 
-      <section className="max-w-6xl mx-auto px-6 py-12 grid lg:grid-cols-[1.2fr,0.8fr] gap-8 items-center">
+      <section className="max-w-6xl mx-auto px-6 py-14 grid lg:grid-cols-[1.2fr,0.8fr] gap-8 items-center">
         <div>
-          <span className="inline-flex items-center gap-2 px-3 py-1 text-xs uppercase tracking-wide bg-emerald-100 text-emerald-700 rounded-full">
+          <span className="inline-flex items-center gap-2 px-3 py-1 text-xs uppercase tracking-wide bg-primary/10 text-primary rounded-full">
             Enterprise & Corporate
           </span>
-          <h1 className="text-4xl font-bold mb-4 mt-4">Enterprise rentals at scale.</h1>
-          <p className="text-lg text-zinc-500 mb-6">
-            $888/month flat for 10+ properties. Includes API access, team management, multi-entity accounting, and forecasting.
+          <h1 className="text-4xl md:text-5xl font-bold mb-4 mt-4 leading-tight">
+            Enterprise control for complex rental portfolios.
+          </h1>
+          <p className="text-lg text-muted-foreground mb-6 leading-relaxed">
+            {LANDING_BRAND_COPY.name} Enterprise is built for operators who need governance, deep integration, and compliance confidence across markets and teams.
           </p>
           <div className="flex flex-wrap gap-3">
-            <Link href="/portal/corporate" className="px-4 py-2 bg-emerald-600 text-white rounded-lg">Corporate portal</Link>
-            <Link href="/prototype/pricing" className="px-4 py-2 bg-zinc-800 text-white rounded-lg">Compare plans</Link>
-            <Link href="/landing/host" className="px-4 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg">Host Club</Link>
+            <Link href="/portal/corporate" className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium">
+              Enter corporate portal
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+            <Link href="/#pricing" className="px-4 py-2 border border-border rounded-lg hover:bg-accent transition-colors">Compare all plans</Link>
+            <Link href="/landing/host" className="px-4 py-2 border border-border rounded-lg hover:bg-accent transition-colors">Start with Host plans</Link>
           </div>
-          <div className="mt-6 flex flex-wrap gap-4 text-xs text-zinc-500">
-            <span>Flat $888/month tier</span>
-            <span>Corporate SME: 8% commission</span>
-            <span>Optional AI Power-Up $28/month</span>
+          <div className="mt-6 flex flex-wrap gap-4 text-xs text-muted-foreground">
+            <span>{LANDING_PLAN_COPY.enterprise.priceLabel} flat</span>
+            <span>{LANDING_PLAN_COPY.enterprise.summary}</span>
+            <span>Dedicated onboarding and success support</span>
           </div>
         </div>
-        <div className="p-6 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
-          <h2 className="font-semibold mb-3">Enterprise Snapshot</h2>
-          <ul className="space-y-3 text-sm text-zinc-500">
-            <li>✔ API access + white-label options</li>
-            <li>✔ Team management & approvals</li>
-            <li>✔ Multi-entity accounting</li>
-            <li>✔ Corporate travel policy engine</li>
+
+        <div className="p-6 rounded-2xl bg-card border border-border">
+          <h2 className="font-semibold mb-3">When to move to Enterprise</h2>
+          <ul className="space-y-3 text-sm text-muted-foreground">
+            <li className="flex items-start gap-2"><CheckCircle2 className="w-4 h-4 mt-0.5 text-emerald-500" />You manage large portfolios or multiple legal entities.</li>
+            <li className="flex items-start gap-2"><CheckCircle2 className="w-4 h-4 mt-0.5 text-emerald-500" />You need custom API integrations, policy enforcement, and governance controls.</li>
+            <li className="flex items-start gap-2"><CheckCircle2 className="w-4 h-4 mt-0.5 text-emerald-500" />You require SLA-backed support and enterprise onboarding.</li>
           </ul>
-          <div className="mt-4 p-3 rounded-lg bg-emerald-50 text-emerald-700 text-sm">
-            Built for 10+ properties and corporate travel programs.
+          <div className="mt-4 p-3 rounded-lg bg-muted text-sm text-muted-foreground">
+            Not ready yet? {LANDING_PLAN_COPY.portfolioPro.name} bridges the gap at {LANDING_PLAN_COPY.portfolioPro.priceLabel} ({LANDING_PLAN_COPY.portfolioPro.summary}).
           </div>
         </div>
       </section>
 
-      <section className="max-w-6xl mx-auto px-6 py-8 grid md:grid-cols-3 gap-4">
-        {[
-          { title: "Policy controls", desc: "Rate caps, approvals, ESG tracking." },
-          { title: "Integrations", desc: "Concur, Navan, Amex GBT, CWT." },
-          { title: "Commission tools", desc: "8% corporate SME commission & markup." },
-        ].map((item) => (
-          <div key={item.title} className="p-5 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
+      <section className="max-w-6xl mx-auto px-6 pb-8 grid md:grid-cols-3 gap-4">
+        {enterpriseCapabilities.map((item) => (
+          <article key={item.title} className="p-5 rounded-xl bg-card border border-border">
             <h3 className="font-semibold mb-2">{item.title}</h3>
-            <p className="text-sm text-zinc-500">{item.desc}</p>
-          </div>
+            <p className="text-sm text-muted-foreground leading-relaxed">{item.desc}</p>
+          </article>
         ))}
       </section>
 
       <section className="max-w-6xl mx-auto px-6 py-10">
         <div className="grid md:grid-cols-2 gap-6">
-          <div className="p-6 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
-            <h3 className="font-semibold mb-2">Corporate SME bookings</h3>
-            <p className="text-sm text-zinc-500 mb-4">
-              8% commission per booking with optional host markup to cover the fee. Corporate listings require compliance + discount range.
+          <article className="p-6 rounded-xl bg-card border border-border">
+            <h3 className="font-semibold mb-2">Corporate travel distribution</h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              Manage corporate channels with policy-aware listings, compliance checks, and negotiated discount controls.
             </p>
-            <div className="grid grid-cols-2 gap-3 text-sm text-zinc-600">
-              <div>✔ Rate caps + approvals</div>
-              <div>✔ Discount range enforcement</div>
-              <div>✔ ESG tracking + reporting</div>
-              <div>✔ Expense system exports</div>
+            <div className="grid grid-cols-2 gap-3 text-sm text-muted-foreground">
+              <div>Rate caps + approvals</div>
+              <div>Discount guardrails</div>
+              <div>Audit-ready exports</div>
+              <div>ESG and duty-of-care logs</div>
             </div>
-          </div>
-          <div className="p-6 rounded-xl bg-zinc-900 text-white">
-            <h3 className="font-semibold mb-2">Launch enterprise at scale</h3>
-            <p className="text-sm text-zinc-300 mb-4">
-              Coordinate enterprise operations, supplier onboarding, and corporate travel policies in one platform.
+          </article>
+
+          <article className="p-6 rounded-xl bg-foreground text-background">
+            <h3 className="font-semibold mb-2">Need a custom rollout plan?</h3>
+            <p className="text-sm text-background/80 mb-4">
+              We map onboarding, migration, and governance controls to your portfolio structure before launch.
             </p>
-            <Link href="/portal/corporate" className="inline-flex px-4 py-2 bg-white text-zinc-900 rounded-lg">Enter corporate portal</Link>
-          </div>
+            <Link href="/portal/corporate" className="inline-flex px-4 py-2 bg-background text-foreground rounded-lg font-medium">
+              Talk to Enterprise Team
+            </Link>
+          </article>
         </div>
       </section>
     </div>

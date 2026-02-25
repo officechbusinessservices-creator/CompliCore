@@ -13,7 +13,9 @@
     "security:deps": "npm audit",
     "security:updates": "npx npm-check-updates --errorLevel 2",
     "security:secrets": "gitleaks detect --source . -v || npx gitleaks detect --source . -v",
-    "security-check": "npm run security:deps && npm run security:updates && npm run security:secrets"
+    "security-check": "npm run security:deps && npm run security:updates && npm run security:secrets",
+    "openapi:validate": "node scripts/validate-openapi.js",
+    "openapi:smoke": "npm run build --prefix backend && node scripts/smoke-backend-contract.js"
   },
   "dependencies": {
     "@next/bundle-analyzer": "^15.5.12",

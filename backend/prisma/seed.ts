@@ -65,9 +65,10 @@ async function main() {
     skipDuplicates: true,
     data: [
       { code: "host_club", name: "Host Club", interval: "month", price_per_property: 18, description: "Up to 10 properties" },
-      { code: "enterprise", name: "Enterprise", interval: "month", price_flat: 888, description: "10+ properties" },
+      { code: "host_club_ai", name: "Host Club + AI", interval: "month", price_per_property: 46, description: "AI pricing and screening for growth operators" },
+      { code: "portfolio_pro", name: "Portfolio Pro", interval: "month", price_flat: 399, description: "Includes 15 properties, +$25 each additional" },
+      { code: "enterprise", name: "Enterprise", interval: "month", price_flat: 888, description: "Best fit for 25+ properties and multi-entity operations" },
       { code: "corporate_sme", name: "Corporate SME", commission_rate: 0.08, description: "8% commission per booking" },
-      { code: "ai_powerup", name: "AI Power-Up", interval: "month", price_flat: 28 },
     ],
   });
 

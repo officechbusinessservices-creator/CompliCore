@@ -18,12 +18,11 @@ export default function SignupPage() {
     name: "",
     email: "",
     password: "",
-    role: "host",
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
+  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   }
 
@@ -38,18 +37,7 @@ export default function SignupPage() {
     // Simulate account creation — replace with real API call
     await new Promise((r) => setTimeout(r, 1200));
     setLoading(false);
-    // Redirect based on role
-    const destinations: Record<string, string> = {
-      host:        "/onboarding",
-      host_ai:     "/onboarding",
-      enterprise:  "/onboarding",
-      guest:       "/portal/guest",
-      cleaner:     "/portal/cleaner",
-      maintenance: "/portal/maintenance",
-      corporate:   "/portal/corporate",
-      admin:       "/dashboard",
-    };
-    window.location.href = destinations[form.role] ?? "/onboarding";
+    window.location.href = "/onboarding";
   }
 
   return (
@@ -65,10 +53,12 @@ export default function SignupPage() {
 
         <div>
           <h2 className="text-3xl font-bold mb-4 leading-tight">
-            The smarter way to manage your rentals.
+            Maximum Revenue.
+            <br />
+            Zero Compliance Headaches.
           </h2>
           <p className="text-primary-foreground/70 mb-10 leading-relaxed">
-            Join 12,000+ properties already automating their operations, maximizing revenue, and staying compliant — effortlessly.
+            Join 12,000+ properties using AI-powered pricing and compliance-first automation to scale safely.
           </p>
           <ul className="space-y-4">
             {perks.map((p) => (
@@ -174,27 +164,9 @@ export default function SignupPage() {
               </div>
             </div>
 
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium" htmlFor="role">
-                I am a…
-              </label>
-              <select
-                id="role"
-                name="role"
-                value={form.role}
-                onChange={handleChange}
-                className="w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-              >
-                <option value="host">Host — Host Club (1–10 properties, $18/property/mo)</option>
-                <option value="host_ai">Host — Host Club + AI (AI pricing & screening, $46/property/mo)</option>
-                <option value="enterprise">Enterprise Operator (10+ properties, $888/mo)</option>
-                <option value="guest">Guest</option>
-                <option value="cleaner">Cleaner</option>
-                <option value="maintenance">Maintenance Technician</option>
-                <option value="corporate">Corporate Manager</option>
-                <option value="admin">Admin</option>
-              </select>
-            </div>
+            <p className="text-xs text-muted-foreground">
+              Trial signups start on the host onboarding path. Team roles and access controls are configured after setup.
+            </p>
 
             <button
               type="submit"

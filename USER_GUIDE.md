@@ -28,6 +28,52 @@ npm run dev
 # Open browser to http://localhost:3000
 ```
 
+### First-Time Git Setup
+
+If this is your first time using Git on this machine, configure it once before contributing:
+
+- `--system`: applies to all users on the machine (`[path]/etc/gitconfig`)
+- `--global`: applies to your user account (`~/.gitconfig` or `~/.config/git/config`)
+- `--local`: applies only to the current repository (`.git/config`, default in repo)
+
+Precedence is `local > global > system`.
+
+```bash
+# Required identity for commit metadata
+git config --global user.name "Your Name"
+git config --global user.email "you@example.com"
+
+# Use main for new repositories
+git config --global init.defaultBranch main
+```
+
+Set your preferred editor (example uses VS Code):
+
+```bash
+git config --global core.editor "code --wait"
+```
+
+On Windows with Notepad++, use a full executable path:
+
+```bash
+git config --global core.editor "'C:/Program Files/Notepad++/notepad++.exe' -multiInst -notabbar -nosession -noPlugin"
+```
+
+Verify your final Git config values and where they come from:
+
+```bash
+git config --list --show-origin
+git config user.name
+git config user.email
+```
+
+Override identity for this repository only (optional):
+
+```bash
+git config --local user.name "Work Profile Name"
+git config --local user.email "work@example.com"
+```
+
 ### First Steps
 
 1. **Explore the Homepage** - Get an overview of the platform's capabilities
@@ -300,10 +346,10 @@ A: The platform is designed to work with Stripe, PayPal, and other major payment
 A: Yes, the platform includes PMS integration capabilities via API.
 
 **Q: How do I use the AI orchestrator API?**
-A: Use the `/api/ai/orchestrate` endpoint to route requests to AI Engineering Hub services. Example:
+A: Use the `/v1/ai/orchestrate` endpoint to route requests to AI Engineering Hub services. Example:
 
 ```bash
-curl -X POST http://localhost:4000/api/ai/orchestrate \
+curl -X POST http://localhost:4000/v1/ai/orchestrate \
   -H "Content-Type: application/json" \
   -d '{"prompt":"Summarize market trends","metadata":{"fileType":"text"}}'
 ```

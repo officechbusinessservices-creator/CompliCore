@@ -133,9 +133,6 @@ Explore the platform features:
 # Run all tests
 npm test
 
-# Run frontend tests
-npm run test:frontend
-
 # Run backend tests
 cd backend && npm test
 
@@ -175,7 +172,7 @@ npm run start
 ## 🛠️ Tech Stack
 
 ### Frontend
-- **Framework**: Next.js 14+ (App Router)
+- **Framework**: Next.js 16+ (App Router)
 - **Language**: TypeScript
 - **Styling**: Tailwind CSS
 - **UI Components**: shadcn/ui
@@ -188,7 +185,7 @@ npm run start
 - **Database**: PostgreSQL 16+
 - **ORM**: Prisma
 - **Cache**: Redis
-- **API**: REST + GraphQL
+- **API**: REST
 
 ### Infrastructure
 - **Hosting**: Netlify, Vercel, Render
@@ -400,7 +397,7 @@ This project includes a demo login using NextAuth Credentials. Add these to your
 ```
 NEXTAUTH_URL=http://localhost:3000
 NEXTAUTH_SECRET=change-me
-DEMO_EMAIL=demo@compli.core
+DEMO_EMAIL=demo@complicore.com
 DEMO_PASSWORD=Demo1234
 ```
 

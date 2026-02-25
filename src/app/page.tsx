@@ -20,42 +20,42 @@ import ThemeToggle from "@/components/ThemeToggle";
 
 const features = [
   {
-    icon: Building2,
-    title: "Multi-Property Management",
-    description:
-      "Manage unlimited listings across Airbnb, VRBO, and Booking.com from a single dashboard. Sync calendars, rates, and availability in real time.",
-    color: "text-emerald-500",
-    bg: "bg-emerald-500/10",
-  },
-  {
-    icon: Zap,
-    title: "AI-Powered Pricing",
-    description:
-      "Dynamic pricing engine analyzes market demand, seasonality, and competitor rates to maximize your revenue automatically.",
-    color: "text-amber-500",
-    bg: "bg-amber-500/10",
-  },
-  {
     icon: Shield,
     title: "Compliance by Design",
     description:
-      "Built-in GDPR, CCPA, and local STR regulation compliance. Automated tax reporting, permit tracking, and audit trails.",
+      "Automated permit tracking, local STR regulation alerts, tax workflows, and audit trails keep your portfolio protected from avoidable fines.",
     color: "text-blue-500",
     bg: "bg-blue-500/10",
   },
   {
-    icon: MessageSquare,
-    title: "Unified Messaging",
+    icon: Zap,
+    title: "AI-Powered Revenue Optimization",
     description:
-      "All guest communications in one inbox. AI-assisted replies, automated check-in instructions, and smart templates.",
+      "Dynamic pricing monitors market demand, seasonality, and competitor rates to maximize RevPAR without constant manual intervention.",
+    color: "text-amber-500",
+    bg: "bg-amber-500/10",
+  },
+  {
+    icon: Building2,
+    title: "Multi-Property Management",
+    description:
+      "Manage listings across Airbnb, VRBO, and Booking.com from one command center with synced calendars, rates, and availability.",
+    color: "text-emerald-500",
+    bg: "bg-emerald-500/10",
+  },
+  {
+    icon: MessageSquare,
+    title: "Unified Guest Messaging",
+    description:
+      "Keep all guest communication in one inbox with AI-assisted replies, automated check-in instructions, and smart templates.",
     color: "text-purple-500",
     bg: "bg-purple-500/10",
   },
   {
     icon: BarChart3,
-    title: "Revenue Analytics",
+    title: "Advanced Portfolio Analytics",
     description:
-      "Deep insights into occupancy, ADR, RevPAR, and booking trends. Forecast revenue and benchmark against local markets.",
+      "Compare ADR, occupancy, and RevPAR across properties and channels with dashboards tailored for operators scaling beyond solo hosting.",
     color: "text-rose-500",
     bg: "bg-rose-500/10",
   },
@@ -63,7 +63,7 @@ const features = [
     icon: Lock,
     title: "Smart Lock Automation",
     description:
-      "Auto-generate unique access codes per booking. Integrate with August, Schlage, Yale, and 20+ smart lock brands.",
+      "Generate unique booking access codes automatically and connect with August, Yale, Schlage, and other major lock providers.",
     color: "text-cyan-500",
     bg: "bg-cyan-500/10",
   },
@@ -74,14 +74,15 @@ const plans = [
     name: "Host Club",
     price: "$18",
     unit: "/property/month",
-    description: "Perfect for independent hosts with up to 10 properties.",
+    description: "For independent hosts and small portfolios with up to 10 properties.",
     highlight: false,
+    badge: "Starter",
     features: [
       "Up to 10 properties",
-      "Calendar sync & channel manager",
+      "Unlimited channel connections",
       "Smart lock automation",
-      "Cleaning & maintenance scheduling",
-      "Owner payouts & tax reports",
+      "Cleaning and maintenance scheduling",
+      "Owner payouts and tax reports",
       "24/7 support",
     ],
     cta: "Start free trial",
@@ -91,35 +92,88 @@ const plans = [
     name: "Host Club + AI",
     price: "$46",
     unit: "/property/month",
-    description: "Everything in Host Club plus AI-powered pricing and screening.",
-    highlight: true,
+    description: "Everything in Host Club plus AI pricing and screening for growth-focused hosts.",
+    highlight: false,
+    badge: "Growth",
     features: [
       "Everything in Host Club",
       "AI dynamic pricing engine",
-      "Guest screening & risk scoring",
+      "Guest screening and risk scoring",
       "Sentiment analysis on reviews",
-      "Automated upsells & add-ons",
+      "Automated upsells and add-ons",
       "Priority support",
     ],
     cta: "Start free trial",
     href: "/signup",
   },
   {
+    name: "Portfolio Pro",
+    price: "$399",
+    unit: "/month",
+    description: "Includes 15 properties, then +$25 per additional property.",
+    highlight: true,
+    badge: "Best for 10-25 properties",
+    features: [
+      "Everything in Host Club + AI",
+      "Basic team access (up to 3 roles)",
+      "Automated owner statements",
+      "Bulk-edit portfolio updates",
+      "Advanced portfolio analytics",
+      "Priority phone support",
+    ],
+    cta: "Upgrade to Portfolio Pro",
+    href: "/signup",
+  },
+  {
     name: "Enterprise",
     price: "$888",
     unit: "/month",
-    description: "For property management companies with 10+ properties.",
+    description: "For operators who need custom integrations, governance, and unlimited scale.",
     highlight: false,
+    badge: "Enterprise",
     features: [
       "Unlimited properties",
-      "Full API access",
-      "Team management & RBAC",
+      "Full API access and custom integrations",
+      "Advanced RBAC and org controls",
       "Multi-entity accounting",
-      "Custom integrations",
-      "Dedicated account manager",
+      "Dedicated onboarding and success manager",
+      "SLA-backed support",
     ],
     cta: "Contact sales",
     href: "/landing/enterprise",
+  },
+];
+
+const pricingFaq = [
+  {
+    question: "Do you take a percentage of my bookings?",
+    answer:
+      "No. CompliCore uses predictable flat pricing. We do not take a 1% to 2% cut of your booking revenue.",
+  },
+  {
+    question: "Am I locked into a long-term contract?",
+    answer:
+      "No. Host Club, Host Club + AI, and Portfolio Pro are month-to-month. You can upgrade, downgrade, or cancel anytime.",
+  },
+  {
+    question: "How does the 14-day free trial work?",
+    answer:
+      "You get full platform access for 14 days with no credit card required. Test pricing automation, messaging, and operations before committing.",
+  },
+  {
+    question: "Are there setup or onboarding fees?",
+    answer:
+      "No setup fee on standard plans. Enterprise includes dedicated onboarding and custom integration support.",
+  },
+  {
+    question: "What happens if my portfolio grows or shrinks?",
+    answer:
+      "CompliCore scales with you. Property changes are prorated and billing updates automatically on the next cycle.",
+  },
+  {
+    question: "Are channel and smart lock integrations included?",
+    answer:
+      "Yes. Core channel connections and supported smart lock integrations are included across all paid plans.",
   },
 ];
 
@@ -133,16 +187,16 @@ const testimonials = [
   },
   {
     quote:
-      "Finally a platform that takes compliance seriously. The GDPR tools and audit trails are exactly what we needed.",
+      "Finally a platform that takes compliance seriously. The permit and audit workflows give us real peace of mind.",
     author: "James T.",
     role: "Property Manager · London",
     rating: 5,
   },
   {
     quote:
-      "The channel manager is flawless. Zero double-bookings since we switched. Our guests love the automated check-in flow.",
+      "We consolidated six tools into one platform. Messaging, pricing, and channel sync now run with far fewer errors.",
     author: "Priya K.",
-    role: "Host, 3 properties · Austin",
+    role: "Operator, 22 properties · Austin",
     rating: 5,
   },
 ];
@@ -154,10 +208,20 @@ const stats = [
   { value: "40+", label: "Countries supported" },
 ];
 
+const integrations = [
+  "Airbnb",
+  "VRBO",
+  "Booking.com",
+  "Expedia",
+  "August",
+  "Yale",
+  "Schlage",
+  "RemoteLock",
+];
+
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-background text-foreground">
-      {/* ── Nav ── */}
       <header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2 font-bold text-lg">
@@ -175,10 +239,7 @@ export default function LandingPage() {
           </nav>
           <div className="flex items-center gap-2">
             <ThemeToggle />
-            <Link
-              href="/login"
-              className="text-sm px-4 py-2 rounded-md hover:bg-accent transition-colors"
-            >
+            <Link href="/login" className="text-sm px-4 py-2 rounded-md hover:bg-accent transition-colors">
               Sign in
             </Link>
             <Link
@@ -191,7 +252,6 @@ export default function LandingPage() {
         </div>
       </header>
 
-      {/* ── Hero ── */}
       <section className="relative overflow-hidden py-24 md:py-36 px-6">
         <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,hsl(var(--primary)/0.08),transparent)]" />
         <div className="max-w-4xl mx-auto text-center">
@@ -200,13 +260,14 @@ export default function LandingPage() {
             Now live · 12,000+ properties trust CompliCore
           </div>
           <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-6 leading-tight">
-            The smarter way to{" "}
+            Maximum Revenue.
+            <br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 to-cyan-500">
-              manage rentals
+              Zero Compliance Headaches.
             </span>
           </h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed">
-            CompliCore is the compliance-first rental platform built for hosts and property managers who want AI-powered automation, global channel sync, and privacy by design — all in one place.
+            CompliCore is the only rental platform that combines AI-powered dynamic pricing with built-in regulatory compliance so you can scale your portfolio safely.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
@@ -224,12 +285,30 @@ export default function LandingPage() {
             </Link>
           </div>
           <p className="mt-4 text-xs text-muted-foreground">
-            No credit card required · 14-day free trial · Cancel anytime
+            No credit card required · Flat-fee pricing · Cancel anytime
           </p>
         </div>
       </section>
 
-      {/* ── Stats ── */}
+      <section className="px-6 pb-10">
+        <div className="max-w-6xl mx-auto rounded-xl border border-border bg-card px-6 py-6">
+          <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground mb-4">
+            <Globe className="w-3.5 h-3.5" />
+            Trusted integrations across channels and smart access
+          </div>
+          <div className="flex flex-wrap justify-center gap-2 sm:gap-3">
+            {integrations.map((name) => (
+              <span
+                key={name}
+                className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium border border-border bg-background"
+              >
+                {name}
+              </span>
+            ))}
+          </div>
+        </div>
+      </section>
+
       <section className="border-y border-border bg-muted/30 py-12 px-6">
         <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
           {stats.map((s) => (
@@ -241,16 +320,15 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── Features ── */}
       <section id="features" className="py-24 px-6">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-border bg-muted text-xs text-muted-foreground mb-4">
               <Zap className="w-3 h-3" /> Platform features
             </div>
-            <h2 className="text-4xl font-bold mb-4">Everything you need to scale</h2>
+            <h2 className="text-4xl font-bold mb-4">Built for growth and operational peace of mind</h2>
             <p className="text-muted-foreground max-w-xl mx-auto">
-              From a single vacation rental to a 500-property portfolio, CompliCore grows with you.
+              From one listing to a multi-market portfolio, CompliCore keeps revenue optimized and compliance under control.
             </p>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -270,12 +348,11 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── How it works ── */}
       <section className="py-24 px-6 bg-muted/20 border-y border-border">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold mb-4">Up and running in minutes</h2>
-            <p className="text-muted-foreground">Three steps to a fully automated rental business.</p>
+            <p className="text-muted-foreground">Three steps to a fully automated rental operation.</p>
           </div>
           <div className="grid md:grid-cols-3 gap-8">
             {[
@@ -283,19 +360,19 @@ export default function LandingPage() {
                 step: "01",
                 icon: Home,
                 title: "Connect your listings",
-                desc: "Import from Airbnb, VRBO, or Booking.com in one click. Or create new listings with our guided wizard.",
+                desc: "Import from Airbnb, VRBO, or Booking.com in one click. Or create listings with the guided setup wizard.",
               },
               {
                 step: "02",
                 icon: Calendar,
                 title: "Automate operations",
-                desc: "Set pricing rules, cleaning schedules, smart lock codes, and guest messaging — all automated.",
+                desc: "Set pricing, cleaning schedules, smart lock codes, and guest messaging workflows without repetitive manual work.",
               },
               {
                 step: "03",
                 icon: TrendingUp,
-                title: "Watch revenue grow",
-                desc: "AI pricing and analytics surface opportunities. Track performance across all channels in real time.",
+                title: "Scale with confidence",
+                desc: "Track revenue and compliance signals in real time while AI identifies high-impact optimization opportunities.",
               },
             ].map((item) => (
               <div key={item.step} className="relative">
@@ -311,17 +388,16 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── Pricing ── */}
       <section id="pricing" className="py-24 px-6">
-        <div className="max-w-6xl mx-auto">
+        <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-border bg-muted text-xs text-muted-foreground mb-4">
-              <Award className="w-3 h-3" /> Simple pricing
+              <Award className="w-3 h-3" /> Predictable pricing
             </div>
-            <h2 className="text-4xl font-bold mb-4">Pay only for what you use</h2>
-            <p className="text-muted-foreground">No hidden fees. No long-term contracts. Cancel anytime.</p>
+            <h2 className="text-4xl font-bold mb-4">A clear pricing path from host to portfolio operator</h2>
+            <p className="text-muted-foreground">No hidden fees. No long-term contracts. No percentage of bookings.</p>
           </div>
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="grid md:grid-cols-2 xl:grid-cols-4 gap-6">
             {plans.map((plan) => (
               <div
                 key={plan.name}
@@ -333,14 +409,17 @@ export default function LandingPage() {
               >
                 {plan.highlight && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-emerald-500 text-white text-xs font-semibold">
-                    Most popular
+                    Most strategic value
                   </div>
                 )}
                 <div className="mb-6">
+                  <div className={`inline-flex text-[11px] px-2 py-1 rounded-full mb-3 ${plan.highlight ? "bg-white/15" : "bg-muted"}`}>
+                    {plan.badge}
+                  </div>
                   <h3 className="font-bold text-lg mb-1">{plan.name}</h3>
                   <div className="flex items-baseline gap-1 mb-2">
                     <span className="text-4xl font-bold">{plan.price}</span>
-                    <span className={`text-sm ${plan.highlight ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
+                    <span className={`text-sm ${plan.highlight ? "text-primary-foreground/75" : "text-muted-foreground"}`}>
                       {plan.unit}
                     </span>
                   </div>
@@ -373,17 +452,36 @@ export default function LandingPage() {
               </div>
             ))}
           </div>
+          <p className="text-sm text-muted-foreground text-center mt-8">
+            Managing 15 properties? Portfolio Pro starts at $399/month instead of $690/month at $46 per property.
+          </p>
         </div>
       </section>
 
-      {/* ── Testimonials ── */}
       <section className="py-24 px-6 bg-muted/20 border-y border-border">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-4xl font-bold mb-4">Pricing FAQ</h2>
+            <p className="text-muted-foreground">Clear answers before you commit.</p>
+          </div>
+          <div className="grid md:grid-cols-2 gap-4">
+            {pricingFaq.map((item) => (
+              <article key={item.question} className="p-5 rounded-xl border border-border bg-card">
+                <h3 className="font-semibold mb-2">{item.question}</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">{item.answer}</p>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="py-24 px-6 bg-muted/10 border-y border-border">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-border bg-muted text-xs text-muted-foreground mb-4">
               <Users className="w-3 h-3" /> Customer stories
             </div>
-            <h2 className="text-4xl font-bold mb-4">Loved by hosts worldwide</h2>
+            <h2 className="text-4xl font-bold mb-4">Trusted by operators worldwide</h2>
           </div>
           <div className="grid md:grid-cols-3 gap-6">
             {testimonials.map((t) => (
@@ -393,7 +491,7 @@ export default function LandingPage() {
                     <Star key={i} className="w-4 h-4 fill-amber-400 text-amber-400" />
                   ))}
                 </div>
-                <p className="text-sm leading-relaxed mb-4 text-muted-foreground">"{t.quote}"</p>
+                <p className="text-sm leading-relaxed mb-4 text-muted-foreground">&quot;{t.quote}&quot;</p>
                 <div>
                   <div className="font-semibold text-sm">{t.author}</div>
                   <div className="text-xs text-muted-foreground">{t.role}</div>
@@ -404,14 +502,13 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── CTA ── */}
       <section className="py-24 px-6">
         <div className="max-w-3xl mx-auto text-center">
           <h2 className="text-4xl md:text-5xl font-bold mb-6">
-            Ready to grow your rental business?
+            Ready to scale with confidence?
           </h2>
           <p className="text-muted-foreground text-lg mb-10">
-            Join 12,000+ properties already using CompliCore. Start your free 14-day trial today — no credit card required.
+            Join 12,000+ properties using CompliCore to improve revenue and stay compliant, without revenue-share pricing.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
@@ -431,13 +528,12 @@ export default function LandingPage() {
           <div className="mt-8 flex flex-wrap justify-center gap-6 text-sm text-muted-foreground">
             <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-emerald-500" /> 14-day free trial</span>
             <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-emerald-500" /> No credit card</span>
-            <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-emerald-500" /> Cancel anytime</span>
-            <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-emerald-500" /> GDPR compliant</span>
+            <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-emerald-500" /> Flat-fee pricing</span>
+            <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-emerald-500" /> Compliance-ready workflows</span>
           </div>
         </div>
       </section>
 
-      {/* ── Footer ── */}
       <footer className="border-t border-border py-12 px-6">
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-2 md:grid-cols-5 gap-8 mb-12">

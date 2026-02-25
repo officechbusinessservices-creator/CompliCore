@@ -5,22 +5,10 @@ import { signIn } from "next-auth/react";
 import { useState } from "react";
 import { Home, Eye, EyeOff, ArrowRight } from "lucide-react";
 
-const ROLES = [
-  { value: "host",        label: "Host — Host Club (1–10 properties)" },
-  { value: "host_ai",     label: "Host — Host Club + AI (AI pricing & screening)" },
-  { value: "enterprise",  label: "Enterprise Operator (10+ properties, full API)" },
-  { value: "guest",       label: "Guest" },
-  { value: "cleaner",     label: "Cleaner" },
-  { value: "maintenance", label: "Maintenance Technician" },
-  { value: "corporate",   label: "Corporate Manager" },
-  { value: "admin",       label: "Admin" },
-];
-
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState("host");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -31,25 +19,13 @@ export default function LoginPage() {
     const result = await signIn("credentials", {
       email,
       password,
-      role,
       redirect: false,
     });
     setLoading(false);
     if (result?.error) {
       setError("Invalid email or password. Please try again.");
     } else {
-      // Route to the correct portal based on role
-      const destinations: Record<string, string> = {
-        host:        "/dashboard",
-        host_ai:     "/dashboard",
-        enterprise:  "/dashboard",
-        guest:       "/portal/guest",
-        cleaner:     "/portal/cleaner",
-        maintenance: "/portal/maintenance",
-        corporate:   "/portal/corporate",
-        admin:       "/dashboard",
-      };
-      window.location.href = destinations[role] ?? "/dashboard";
+      window.location.href = "/dashboard";
     }
   }
 
@@ -81,23 +57,6 @@ export default function LoginPage() {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Role selector */}
-          <div className="space-y-1.5">
-            <label className="text-sm font-medium" htmlFor="role">
-              Sign in as
-            </label>
-            <select
-              id="role"
-              value={role}
-              onChange={(e) => setRole(e.target.value)}
-              className="w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-            >
-              {ROLES.map((r) => (
-                <option key={r.value} value={r.value}>{r.label}</option>
-              ))}
-            </select>
-          </div>
-
           <div className="space-y-1.5">
             <label className="text-sm font-medium" htmlFor="email">
               Email address

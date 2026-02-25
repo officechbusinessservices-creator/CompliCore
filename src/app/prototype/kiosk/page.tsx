@@ -41,7 +41,6 @@ const DEV_KIOSK_USER = {
   password: "KioskPass123!",
   firstName: "Kiosk",
   lastName: "Demo",
-  role: "host",
 };
 
 export default function KioskPage() {
@@ -72,7 +71,7 @@ export default function KioskPage() {
     (async () => {
       try {
         const base = process.env.NEXT_PUBLIC_API_BASE || "";
-        const res = await fetch(`${base}/api/bookings?confirmationCode=${encodeURIComponent(code)}`);
+        const res = await fetch(`${base}/v1/bookings?confirmationCode=${encodeURIComponent(code)}`);
         if (!res.ok) {
           setLookupError(true);
           return;
@@ -108,17 +107,16 @@ export default function KioskPage() {
       const loginPayload = {
         email: DEV_KIOSK_USER.email,
         password: DEV_KIOSK_USER.password,
-        role: DEV_KIOSK_USER.role,
       };
 
-      let res = await fetch(`${base}/api/auth/login`, {
+      let res = await fetch(`${base}/v1/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(loginPayload),
       });
 
       if (res.status === 401) {
-        const registerRes = await fetch(`${base}/api/auth/register`, {
+        const registerRes = await fetch(`${base}/v1/auth/register`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(DEV_KIOSK_USER),
@@ -127,7 +125,7 @@ export default function KioskPage() {
           throw new Error(`register failed (${registerRes.status})`);
         }
 
-        res = await fetch(`${base}/api/auth/login`, {
+        res = await fetch(`${base}/v1/auth/login`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(loginPayload),
@@ -175,7 +173,7 @@ export default function KioskPage() {
         wifi_password: "password",
       };
 
-      const res = await fetch(`${base}/api/bookings`, {
+      const res = await fetch(`${base}/v1/bookings`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

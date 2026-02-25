@@ -1,12 +1,20 @@
-export type PlanType = "host-club" | "enterprise" | "corporate-sme";
+export type PlanType =
+  | "host-club"
+  | "host-club-ai"
+  | "portfolio-pro"
+  | "enterprise"
+  | "corporate-sme";
 
 export const PRICING = {
   hostClubPerProperty: 18,
+  hostClubAiPerProperty: 46,
+  portfolioProFlat: 399,
+  portfolioProIncludedProperties: 15,
+  portfolioProAdditionalProperty: 25,
   enterpriseFlat: 888,
+  enterpriseRecommendedFromProperties: 25,
   corporateCommissionRate: 0.08,
-  aiPowerUp: 28,
   marketplaceAddOns: [
-    { id: "ai-power-up", name: "AI Power-Up", price: 28, cadence: "monthly" },
     { id: "dynamic-pricing", name: "Dynamic Pricing", price: 35, cadence: "monthly" },
     { id: "insurance", name: "Host Protection", price: 15, cadence: "monthly" },
     { id: "photography", name: "Photography", price: 199, cadence: "one-time" },
@@ -16,6 +24,21 @@ export const PRICING = {
 
 export function calculateHostClubMonthly(properties: number) {
   return properties * PRICING.hostClubPerProperty;
+}
+
+export function calculateHostClubAiMonthly(properties: number) {
+  return properties * PRICING.hostClubAiPerProperty;
+}
+
+export function calculatePortfolioProMonthly(properties: number) {
+  if (properties <= PRICING.portfolioProIncludedProperties) {
+    return PRICING.portfolioProFlat;
+  }
+  return (
+    PRICING.portfolioProFlat +
+    (properties - PRICING.portfolioProIncludedProperties) *
+      PRICING.portfolioProAdditionalProperty
+  );
 }
 
 export function calculateEnterpriseMonthly() {
