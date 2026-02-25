@@ -3,9 +3,10 @@
 import Link from "next/link";
 import { useState } from "react";
 import { Home, CheckCircle2, Eye, EyeOff, ArrowRight } from "lucide-react";
+import { SPLIT } from "@/lib/split-test";
 
 const perks = [
-  "14-day free trial, no credit card required",
+  SPLIT.isBeta ? "21-day free trial, no credit card required" : "14-day free trial, no credit card required",
   "AI-powered pricing from day one",
   "Channel sync with Airbnb, VRBO & Booking.com",
   "GDPR & CCPA compliant by default",
