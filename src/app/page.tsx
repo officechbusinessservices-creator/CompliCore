@@ -17,6 +17,7 @@ import {
   Award,
 } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
+import { SPLIT, getHeroCopy, getCtaCopy } from "@/lib/split-test";
 
 const features = [
   {
@@ -220,6 +221,9 @@ const integrations = [
 ];
 
 export default function LandingPage() {
+  const hero = getHeroCopy();
+  const cta = getCtaCopy();
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-md">
@@ -257,35 +261,35 @@ export default function LandingPage() {
         <div className="max-w-4xl mx-auto text-center">
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-border bg-muted text-xs text-muted-foreground mb-6">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-            Now live · 12,000+ properties trust CompliCore
+            {hero.badge}
           </div>
           <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-6 leading-tight">
-            Maximum Revenue.
+            {hero.headlineTop}
             <br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 to-cyan-500">
-              Zero Compliance Headaches.
+              {hero.headlineHighlight}
             </span>
           </h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed">
-            CompliCore is the only rental platform that combines AI-powered dynamic pricing with built-in regulatory compliance so you can scale your portfolio safely.
+            {hero.subheadline}
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               href="/signup"
               className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-lg bg-primary text-primary-foreground font-semibold hover:opacity-90 transition-opacity text-base"
             >
-              Start free trial
+              {hero.primaryCta}
               <ArrowRight className="w-4 h-4" />
             </Link>
             <Link
               href="/prototype/dashboard"
               className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-lg border border-border hover:bg-accent transition-colors text-base font-medium"
             >
-              View live demo
+              {hero.secondaryCta}
             </Link>
           </div>
           <p className="mt-4 text-xs text-muted-foreground">
-            No credit card required · Flat-fee pricing · Cancel anytime
+            {hero.trialLine}
           </p>
         </div>
       </section>
@@ -505,17 +509,17 @@ export default function LandingPage() {
       <section className="py-24 px-6">
         <div className="max-w-3xl mx-auto text-center">
           <h2 className="text-4xl md:text-5xl font-bold mb-6">
-            Ready to scale with confidence?
+            {cta.headline}
           </h2>
           <p className="text-muted-foreground text-lg mb-10">
-            Join 12,000+ properties using CompliCore to improve revenue and stay compliant, without revenue-share pricing.
+            {cta.subheadline}
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               href="/signup"
               className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-lg bg-primary text-primary-foreground font-semibold hover:opacity-90 transition-opacity text-base"
             >
-              Get started free
+              {cta.primaryCta}
               <ArrowRight className="w-4 h-4" />
             </Link>
             <Link
@@ -526,10 +530,9 @@ export default function LandingPage() {
             </Link>
           </div>
           <div className="mt-8 flex flex-wrap justify-center gap-6 text-sm text-muted-foreground">
-            <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-emerald-500" /> 14-day free trial</span>
-            <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-emerald-500" /> No credit card</span>
-            <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-emerald-500" /> Flat-fee pricing</span>
-            <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-emerald-500" /> Compliance-ready workflows</span>
+            {cta.bullets.map((b) => (
+              <span key={b} className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-emerald-500" /> {b}</span>
+            ))}
           </div>
         </div>
       </section>
@@ -576,6 +579,11 @@ export default function LandingPage() {
           </div>
           <div className="border-t border-border pt-6 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-muted-foreground">
             <div>© 2026 CompliCore. All rights reserved.</div>
+            {SPLIT.isBeta && (
+              <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-amber-500/15 text-amber-600 border border-amber-500/20">
+                β {SPLIT.branch}
+              </span>
+            )}
             <div className="flex gap-6">
               <Link href="/privacy" className="hover:text-foreground transition-colors">Privacy Policy</Link>
               <Link href="/terms" className="hover:text-foreground transition-colors">Terms of Service</Link>
