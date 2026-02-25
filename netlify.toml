@@ -1,7 +1,3 @@
 [build]
+  publish = ""
   command = "npm run build"
-  publish = "build"
-
-[dev]
-  command = "start"
-  publish = "dev"
