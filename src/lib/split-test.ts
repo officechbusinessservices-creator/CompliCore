@@ -32,24 +32,24 @@ export const SPLIT = {
 
 export const HERO_VARIANTS = {
   control: {
-    badge: "Now live · 12,000+ properties trust CompliCore",
-    headlineTop: "Maximum Revenue.",
-    headlineHighlight: "Zero Compliance Headaches.",
+    badge: "Built for growth-focused property managers",
+    headlineTop: "Fully Booked Calendars.",
+    headlineHighlight: "Zero Operational Friction.",
     subheadline:
-      "CompliCore is the only rental platform that combines AI-powered dynamic pricing with built-in regulatory compliance so you can scale your portfolio safely.",
-    primaryCta: "Start free trial",
-    secondaryCta: "View live demo",
-    trialLine: "No credit card required · Flat-fee pricing · Cancel anytime",
+      "Stop leaving money on the table. CompliCore automatically fills your vacancy gaps, slashes your admin time by 60%, and protects your portfolio from compliance fines - all for a predictable flat fee.",
+    primaryCta: "Start Your Free Revenue Audit",
+    secondaryCta: "See How Much You Can Save",
+    trialLine: "No credit card required · Setup takes 10 minutes · No percentage-based fees",
   },
   beta: {
-    badge: "Trusted by 12,000+ properties across 40 countries",
-    headlineTop: "Grow Faster.",
-    headlineHighlight: "Stay Compliant Automatically.",
+    badge: "Built for growth-focused property managers",
+    headlineTop: "Fully Booked Calendars.",
+    headlineHighlight: "Zero Operational Friction.",
     subheadline:
-      "The all-in-one rental OS that automates pricing, operations, and regulatory workflows — so you can add properties without adding headcount.",
-    primaryCta: "Try free for 21 days",
-    secondaryCta: "See it in action",
-    trialLine: "No credit card · 21-day trial · Flat monthly fee",
+      "Stop leaving money on the table. CompliCore automatically fills your vacancy gaps, slashes your admin time by 60%, and protects your portfolio from compliance fines - all for a predictable flat fee.",
+    primaryCta: "Start Your Free Revenue Audit",
+    secondaryCta: "See How Much You Can Save",
+    trialLine: "No credit card required · Setup takes 10 minutes · No percentage-based fees",
   },
 } as const;
 

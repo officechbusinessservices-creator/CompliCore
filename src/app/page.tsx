@@ -1,72 +1,79 @@
 import Link from "next/link";
 import {
-  Building2,
   Shield,
   Zap,
-  BarChart3,
   Globe,
-  Lock,
   Star,
   ArrowRight,
   CheckCircle2,
   Users,
   Home,
   Calendar,
-  MessageSquare,
   TrendingUp,
   Award,
+  Clock3,
+  CalendarDays,
+  LineChart,
+  Briefcase,
 } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 import { SPLIT, getHeroCopy, getCtaCopy } from "@/lib/split-test";
 
 const features = [
   {
-    icon: Shield,
-    title: "Compliance by Design",
+    icon: TrendingUp,
+    title: "Fill Every Gap. Maximize Every Dollar.",
     description:
-      "Automated permit tracking, local STR regulation alerts, tax workflows, and audit trails keep your portfolio protected from avoidable fines.",
-    color: "text-blue-500",
-    bg: "bg-blue-500/10",
-  },
-  {
-    icon: Zap,
-    title: "AI-Powered Revenue Optimization",
-    description:
-      "Dynamic pricing monitors market demand, seasonality, and competitor rates to maximize RevPAR without constant manual intervention.",
-    color: "text-amber-500",
-    bg: "bg-amber-500/10",
-  },
-  {
-    icon: Building2,
-    title: "Multi-Property Management",
-    description:
-      "Manage listings across Airbnb, VRBO, and Booking.com from one command center with synced calendars, rates, and availability.",
+      "Don't let mid-week vacancies eat into your profits. Our automated pricing engine reacts to market demand, lowering rates to fill empty dates and raising them in peak seasons so you recover lost revenue and maximize RevPAR automatically.",
     color: "text-emerald-500",
     bg: "bg-emerald-500/10",
   },
   {
-    icon: MessageSquare,
-    title: "Unified Guest Messaging",
+    icon: Zap,
+    title: "Put Your Operations on Autopilot.",
     description:
-      "Keep all guest communication in one inbox with AI-assisted replies, automated check-in instructions, and smart templates.",
-    color: "text-purple-500",
-    bg: "bg-purple-500/10",
+      "Get your time back. Eliminate 2 AM lockouts, missed cleaner schedules, and repetitive messaging with automated door codes, AI-assisted guest replies, and streamlined workflows that let you manage 25 properties with the effort of 5.",
+    color: "text-amber-500",
+    bg: "bg-amber-500/10",
   },
   {
-    icon: BarChart3,
-    title: "Advanced Portfolio Analytics",
+    icon: Shield,
+    title: "Bulletproof Your Business Margins.",
     description:
-      "Compare ADR, occupancy, and RevPAR across properties and channels with dashboards tailored for operators scaling beyond solo hosting.",
-    color: "text-rose-500",
-    bg: "bg-rose-500/10",
+      "Don't let local fines wipe out hard-earned revenue. Built-in compliance workflows track local STR regulations, automate permit renewals, and keep your portfolio protected so you can scale safely.",
+    color: "text-blue-500",
+    bg: "bg-blue-500/10",
+  },
+];
+
+const timelineToRoi = [
+  {
+    day: "Day 1",
+    icon: Clock3,
+    title: "Instant Relief.",
+    description:
+      "Connect your channels in one click. Calendars sync, smart locks connect, and guest messaging is instantly automated. You just bought back 10+ hours a week.",
   },
   {
-    icon: Lock,
-    title: "Smart Lock Automation",
+    day: "Day 14",
+    icon: CalendarDays,
+    title: "Revenue Leaks Plugged.",
     description:
-      "Generate unique booking access codes automatically and connect with August, Yale, Schlage, and other major lock providers.",
-    color: "text-cyan-500",
-    bg: "bg-cyan-500/10",
+      "Our pricing engine adjusts underpriced weekends and helps secure 2-3 mid-week bookings you would have otherwise lost.",
+  },
+  {
+    day: "Day 30",
+    icon: LineChart,
+    title: "Radical Efficiency.",
+    description:
+      "Cleaning crews are dispatched consistently, while answering-service and VA overhead drops as repetitive tasks stay automated.",
+  },
+  {
+    day: "Day 90",
+    icon: Briefcase,
+    title: "Portfolio Growth.",
+    description:
+      "You are seeing a 10-15% bump in overall revenue with the operational bandwidth to add properties without hiring more staff.",
   },
 ];
 
@@ -79,6 +86,7 @@ const plans = [
     highlight: false,
     badge: "Starter",
     features: [
+      "Zero commission. You keep every extra dollar we make you.",
       "Up to 10 properties",
       "Unlimited channel connections",
       "Smart lock automation",
@@ -97,6 +105,7 @@ const plans = [
     highlight: false,
     badge: "Growth",
     features: [
+      "Zero commission. You keep every extra dollar we make you.",
       "Everything in Host Club",
       "AI dynamic pricing engine",
       "Guest screening and risk scoring",
@@ -115,6 +124,7 @@ const plans = [
     highlight: true,
     badge: "Best for 10-25 properties",
     features: [
+      "Zero commission. You keep every extra dollar we make you.",
       "Everything in Host Club + AI",
       "Basic team access (up to 3 roles)",
       "Automated owner statements",
@@ -133,6 +143,7 @@ const plans = [
     highlight: false,
     badge: "Enterprise",
     features: [
+      "Zero commission. You keep every extra dollar we make you.",
       "Unlimited properties",
       "Full API access and custom integrations",
       "Advanced RBAC and org controls",
@@ -328,11 +339,11 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-border bg-muted text-xs text-muted-foreground mb-4">
-              <Zap className="w-3 h-3" /> Platform features
+              <Zap className="w-3 h-3" /> Business outcomes
             </div>
-            <h2 className="text-4xl font-bold mb-4">Built for growth and operational peace of mind</h2>
+            <h2 className="text-4xl font-bold mb-4">Stop managing software. Start managing your growth.</h2>
             <p className="text-muted-foreground max-w-xl mx-auto">
-              From one listing to a multi-market portfolio, CompliCore keeps revenue optimized and compliance under control.
+              Outcome-focused operations that increase revenue, reduce manual work, and protect margins at every stage of growth.
             </p>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -355,37 +366,18 @@ export default function LandingPage() {
       <section className="py-24 px-6 bg-muted/20 border-y border-border">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold mb-4">Up and running in minutes</h2>
-            <p className="text-muted-foreground">Three steps to a fully automated rental operation.</p>
+            <h2 className="text-4xl font-bold mb-4">Your Path to Profitable Scale</h2>
+            <p className="text-muted-foreground">See exactly what happens when you plug your properties into CompliCore.</p>
           </div>
-          <div className="grid md:grid-cols-3 gap-8">
-            {[
-              {
-                step: "01",
-                icon: Home,
-                title: "Connect your listings",
-                desc: "Import from Airbnb, VRBO, or Booking.com in one click. Or create listings with the guided setup wizard.",
-              },
-              {
-                step: "02",
-                icon: Calendar,
-                title: "Automate operations",
-                desc: "Set pricing, cleaning schedules, smart lock codes, and guest messaging workflows without repetitive manual work.",
-              },
-              {
-                step: "03",
-                icon: TrendingUp,
-                title: "Scale with confidence",
-                desc: "Track revenue and compliance signals in real time while AI identifies high-impact optimization opportunities.",
-              },
-            ].map((item) => (
-              <div key={item.step} className="relative">
-                <div className="text-6xl font-bold text-muted/30 mb-4 select-none">{item.step}</div>
+          <div className="grid md:grid-cols-2 xl:grid-cols-4 gap-8">
+            {timelineToRoi.map((item) => (
+              <div key={item.day} className="relative">
+                <div className="text-4xl font-bold text-muted/40 mb-4 select-none">{item.day}</div>
                 <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
                   <item.icon className="w-5 h-5 text-primary" />
                 </div>
                 <h3 className="font-semibold mb-2">{item.title}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">{item.desc}</p>
+                <p className="text-sm text-muted-foreground leading-relaxed">{item.description}</p>
               </div>
             ))}
           </div>
@@ -398,8 +390,8 @@ export default function LandingPage() {
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-border bg-muted text-xs text-muted-foreground mb-4">
               <Award className="w-3 h-3" /> Predictable pricing
             </div>
-            <h2 className="text-4xl font-bold mb-4">A clear pricing path from host to portfolio operator</h2>
-            <p className="text-muted-foreground">No hidden fees. No long-term contracts. No percentage of bookings.</p>
+            <h2 className="text-4xl font-bold mb-4">Predictable Costs for Unstoppable Growth</h2>
+            <p className="text-muted-foreground">We don&apos;t punish you for being successful. Keep 100% of your booking revenue with our flat-fee structure.</p>
           </div>
           <div className="grid md:grid-cols-2 xl:grid-cols-4 gap-6">
             {plans.map((plan) => (
