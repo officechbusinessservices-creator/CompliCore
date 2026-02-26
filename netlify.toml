@@ -15,8 +15,13 @@
   directory = "netlify/edge-functions"
 
 [[edge_functions]]
-  function = "perimeterx"
-  path = "/*"
+  pattern = "/(.*)"
+  excludedPattern = [
+    "/api/(.*)",
+    "/fapi/(.*)",
+    "(.*).(png|svg|map|woff2|ico|css)"
+  ]
+  function = "human-enforcer"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
