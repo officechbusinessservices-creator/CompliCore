@@ -33,23 +33,23 @@ export const SPLIT = {
 export const HERO_VARIANTS = {
   control: {
     badge: "Built for growth-focused property managers",
-    headlineTop: "Fully Booked Calendars.",
-    headlineHighlight: "Zero Operational Friction.",
+    headlineTop: "Fill Your Calendar. Lower Your Costs.",
+    headlineHighlight: "Put Your Properties on Autopilot.",
     subheadline:
-      "Stop leaving money on the table. CompliCore automatically fills your vacancy gaps, slashes your admin time by 60%, and protects your portfolio from compliance fines - all for a predictable flat fee.",
-    primaryCta: "Start Your Free Revenue Audit",
+      "Stop leaving money on the table with empty mid-week dates. CompliCore automatically fills your vacancy gaps, slashes your admin time by 60%, and maximizes your booking revenue—all without taking a percentage of your profits.",
+    primaryCta: "Get Your Free 14-Day Revenue Audit",
     secondaryCta: "See How Much You Can Save",
-    trialLine: "No credit card required · Setup takes 10 minutes · No percentage-based fees",
+    trialLine: "Setup takes 10 minutes · No credit card required · 100% Flat-fee pricing",
   },
   beta: {
     badge: "Built for growth-focused property managers",
-    headlineTop: "Fully Booked Calendars.",
-    headlineHighlight: "Zero Operational Friction.",
+    headlineTop: "Fill Your Calendar. Lower Your Costs.",
+    headlineHighlight: "Put Your Properties on Autopilot.",
     subheadline:
-      "Stop leaving money on the table. CompliCore automatically fills your vacancy gaps, slashes your admin time by 60%, and protects your portfolio from compliance fines - all for a predictable flat fee.",
-    primaryCta: "Start Your Free Revenue Audit",
+      "Stop leaving money on the table with empty mid-week dates. CompliCore automatically fills your vacancy gaps, slashes your admin time by 60%, and maximizes your booking revenue—all without taking a percentage of your profits.",
+    primaryCta: "Get Your Free 14-Day Revenue Audit",
     secondaryCta: "See How Much You Can Save",
-    trialLine: "No credit card required · Setup takes 10 minutes · No percentage-based fees",
+    trialLine: "Setup takes 10 minutes · No credit card required · 100% Flat-fee pricing",
   },
 } as const;
 
@@ -64,24 +64,24 @@ export function getHeroCopy() {
 
 export const CTA_VARIANTS = {
   control: {
-    headline: "Ready to scale with confidence?",
+    headline: "Ready to maximize your revenue and get your time back?",
     subheadline:
-      "Join 12,000+ properties using CompliCore to improve revenue and stay compliant, without revenue-share pricing.",
-    primaryCta: "Start free trial",
+      "Join 12,000+ properties using CompliCore to run perfectly optimized, fully compliant operations.",
+    primaryCta: "Start Your Free Revenue Audit Now",
     bullets: [
       "14-day free trial",
-      "No credit card",
-      "Flat-fee pricing",
-      "Compliance-ready workflows",
+      "No credit card required",
+      "100% flat-fee pricing",
+      "Setup in 10 minutes",
     ],
   },
   beta: {
-    headline: "Your next property shouldn't mean your next headache.",
+    headline: "Ready to maximize your revenue and get your time back?",
     subheadline:
-      "Join 12,000+ operators who scaled their portfolios with AI pricing and automatic compliance workflows.",
-    primaryCta: "Start 21-day free trial",
+      "Join 12,000+ operators who scaled their portfolios with AI pricing and zero revenue-share fees.",
+    primaryCta: "Start Your Free Revenue Audit Now",
     bullets: [
-      "21-day free trial",
+      "14-day free trial",
       "No credit card",
       "No revenue-share fees",
       "Cancel anytime",

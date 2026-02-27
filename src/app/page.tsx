@@ -22,27 +22,45 @@ import { SPLIT, getHeroCopy, getCtaCopy } from "@/lib/split-test";
 const features = [
   {
     icon: TrendingUp,
-    title: "Fill Every Gap. Maximize Every Dollar.",
+    title: "Recover Lost Revenue & Erase Vacancy Gaps",
     description:
-      "Don't let mid-week vacancies eat into your profits. Our automated pricing engine reacts to market demand, lowering rates to fill empty dates and raising them in peak seasons so you recover lost revenue and maximize RevPAR automatically.",
+      "Our dynamic pricing engine constantly reads the market. It automatically drops rates to fill empty mid-week gaps and raises rates during high demand so you squeeze every possible dollar out of your calendar—without lifting a finger.",
     color: "text-emerald-500",
     bg: "bg-emerald-500/10",
   },
   {
     icon: Zap,
-    title: "Put Your Operations on Autopilot.",
+    title: "Radical Operational Efficiency",
     description:
-      "Get your time back. Eliminate 2 AM lockouts, missed cleaner schedules, and repetitive messaging with automated door codes, AI-assisted guest replies, and streamlined workflows that let you manage 25 properties with the effort of 5.",
+      "Eliminate the busywork. We automate your smart locks, coordinate your cleaning schedules, and handle repetitive guest messages so you can manage 25 properties with the time and payroll of managing 5.",
     color: "text-amber-500",
     bg: "bg-amber-500/10",
   },
   {
     icon: Shield,
-    title: "Bulletproof Your Business Margins.",
+    title: "Keep 100% of Your Upside",
     description:
-      "Don't let local fines wipe out hard-earned revenue. Built-in compliance workflows track local STR regulations, automate permit renewals, and keep your portfolio protected so you can scale safely.",
+      "Most platforms take a 1–3% cut of your hard-earned bookings. We don't. You pay a predictable flat fee and every extra dollar we generate for you goes straight to your bottom line—never ours.",
     color: "text-blue-500",
     bg: "bg-blue-500/10",
+  },
+];
+
+const agitationPoints = [
+  {
+    emoji: "📉",
+    heading: "You're losing revenue to unbooked weekdays",
+    body: "Empty mid-week dates bleed your revenue daily while competitors fill their calendars with smarter pricing.",
+  },
+  {
+    emoji: "⏰",
+    heading: "You're wasting hours on 2 AM lockouts",
+    body: "Chasing cleaning crews, answering repetitive messages, and juggling access codes is eating time you can't get back.",
+  },
+  {
+    emoji: "💸",
+    heading: "You're paying commissions that punish success",
+    body: "A 1–3% booking cut might sound small—until you do the math on what it costs you across a growing portfolio.",
   },
 ];
 
@@ -51,29 +69,33 @@ const timelineToRoi = [
     day: "Day 1",
     icon: Clock3,
     title: "Instant Relief.",
+    result: "You immediately save 10+ hours a week.",
     description:
-      "Connect your channels in one click. Calendars sync, smart locks connect, and guest messaging is instantly automated. You just bought back 10+ hours a week.",
+      "Connect your channels in one click. Calendars sync, smart locks connect, and guest messaging is automated.",
   },
   {
     day: "Day 14",
     icon: CalendarDays,
     title: "Revenue Leaks Plugged.",
+    result: "The software has already paid for itself.",
     description:
-      "Our pricing engine adjusts underpriced weekends and helps secure 2-3 mid-week bookings you would have otherwise lost.",
+      "The pricing engine has adjusted your underpriced weekends and secured 2–3 mid-week bookings you would have otherwise lost.",
   },
   {
     day: "Day 30",
     icon: LineChart,
-    title: "Radical Efficiency.",
+    title: "Costs Cut.",
+    result: "Your overhead drops drastically.",
     description:
-      "Cleaning crews are dispatched consistently, while answering-service and VA overhead drops as repetitive tasks stay automated.",
+      "Cleaning crews are dispatched flawlessly. You eliminate the need for an expensive answering service or a virtual assistant.",
   },
   {
     day: "Day 90",
     icon: Briefcase,
-    title: "Portfolio Growth.",
+    title: "Profitable Scale.",
+    result: "Add properties without adding headcount.",
     description:
-      "You are seeing a 10-15% bump in overall revenue with the operational bandwidth to add properties without hiring more staff.",
+      "You see a 10–15% bump in overall revenue and finally have the operational bandwidth to acquire new properties without hiring more staff.",
   },
 ];
 
@@ -192,21 +214,21 @@ const pricingFaq = [
 const testimonials = [
   {
     quote:
-      "CompliCore cut our operations time by 60%. The AI pricing alone paid for itself in the first month.",
+      "CompliCore filled our mid-week gaps perfectly. We recovered $2,400 in lost revenue in the first month, and I no longer wake up to angry guest messages. Best switch we ever made.",
     author: "Sarah M.",
     role: "Host, 8 properties · Miami",
     rating: 5,
   },
   {
     quote:
-      "Finally a platform that takes compliance seriously. The permit and audit workflows give us real peace of mind.",
+      "Finally a platform that doesn't take a cut of our bookings. The flat-fee pricing means every dollar their AI makes us stays in our pocket. It's paid for itself many times over.",
     author: "James T.",
     role: "Property Manager · London",
     rating: 5,
   },
   {
     quote:
-      "We consolidated six tools into one platform. Messaging, pricing, and channel sync now run with far fewer errors.",
+      "We slashed our admin time by 60% in the first month. Automated messaging and cleaning coordination meant I went from managing 12 to 22 properties without adding headcount.",
     author: "Priya K.",
     role: "Operator, 22 properties · Austin",
     rating: 5,
@@ -335,15 +357,36 @@ export default function LandingPage() {
         </div>
       </section>
 
+      <section className="py-20 px-6">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-4xl font-bold mb-4">Managing properties shouldn&apos;t mean managing chaos.</h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto text-lg">
+              You are losing revenue to unbooked weekdays. You are wasting hours on 2&nbsp;AM guest lockouts and chasing cleaning crews. You are paying high software commissions that punish you for being successful.
+            </p>
+            <p className="mt-4 text-lg font-semibold">It&apos;s time to stop managing software and start maximizing your margins.</p>
+          </div>
+          <div className="grid md:grid-cols-3 gap-6">
+            {agitationPoints.map((point) => (
+              <div key={point.heading} className="p-5 rounded-xl border border-destructive/25 bg-destructive/5">
+                <div className="text-3xl mb-3">{point.emoji}</div>
+                <h3 className="font-semibold mb-2 text-sm">{point.heading}</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">{point.body}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       <section id="features" className="py-24 px-6">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-border bg-muted text-xs text-muted-foreground mb-4">
               <Zap className="w-3 h-3" /> Business outcomes
             </div>
-            <h2 className="text-4xl font-bold mb-4">Stop managing software. Start managing your growth.</h2>
+            <h2 className="text-4xl font-bold mb-4">Everything you need to scale, bundled into one flat fee.</h2>
             <p className="text-muted-foreground max-w-xl mx-auto">
-              Outcome-focused operations that increase revenue, reduce manual work, and protect margins at every stage of growth.
+              We translate what the platform does into a direct financial or operational benefit—because outcomes are the only thing that matter.
             </p>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -366,8 +409,8 @@ export default function LandingPage() {
       <section className="py-24 px-6 bg-muted/20 border-y border-border">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold mb-4">Your Path to Profitable Scale</h2>
-            <p className="text-muted-foreground">See exactly what happens when you plug your properties into CompliCore.</p>
+            <h2 className="text-4xl font-bold mb-4">Your Path to a Fully Booked, Frictionless Portfolio</h2>
+            <p className="text-muted-foreground">Here is exactly what happens when you plug your properties into CompliCore.</p>
           </div>
           <div className="grid md:grid-cols-2 xl:grid-cols-4 gap-8">
             {timelineToRoi.map((item) => (
@@ -376,8 +419,9 @@ export default function LandingPage() {
                 <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
                   <item.icon className="w-5 h-5 text-primary" />
                 </div>
-                <h3 className="font-semibold mb-2">{item.title}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">{item.description}</p>
+                <h3 className="font-semibold mb-1">{item.title}</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed mb-2">{item.description}</p>
+                <p className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">Result: {item.result}</p>
               </div>
             ))}
           </div>
@@ -477,7 +521,7 @@ export default function LandingPage() {
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-border bg-muted text-xs text-muted-foreground mb-4">
               <Users className="w-3 h-3" /> Customer stories
             </div>
-            <h2 className="text-4xl font-bold mb-4">Trusted by operators worldwide</h2>
+            <h2 className="text-4xl font-bold mb-4">Trusted by operators who demand results.</h2>
           </div>
           <div className="grid md:grid-cols-3 gap-6">
             {testimonials.map((t) => (
