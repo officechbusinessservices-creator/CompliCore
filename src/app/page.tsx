@@ -293,10 +293,11 @@ export default function LandingPage() {
               <ArrowRight className="w-4 h-4" />
             </Link>
             <Link
-              href="/prototype/dashboard"
+              href="/revenue-audit"
               className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-lg border border-border hover:bg-accent transition-colors text-base font-medium"
             >
-              {hero.secondaryCta}
+              <LineChart className="w-4 h-4 text-emerald-500" />
+              See My Revenue Leak
             </Link>
           </div>
           <p className="mt-4 text-xs text-muted-foreground">
@@ -381,6 +382,31 @@ export default function LandingPage() {
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* Revenue Leak Audit CTA — Phase 1 GTM anchor */}
+      <section className="py-16 px-6 bg-emerald-950/20 border-y border-emerald-900/30">
+        <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center justify-between gap-8">
+          <div>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-medium mb-3">
+              <LineChart className="w-3 h-3" /> Free in 60 seconds
+            </div>
+            <h2 className="text-2xl md:text-3xl font-bold mb-2">
+              How much revenue are your properties leaking?
+            </h2>
+            <p className="text-muted-foreground text-sm max-w-lg">
+              Most managers lose 12–18% of annual yield to unoptimized mid-week gaps.
+              Enter your portfolio stats and see your exact &quot;Ghost Vacancy&quot; cost — no sign-up required.
+            </p>
+          </div>
+          <Link
+            href="/revenue-audit"
+            className="shrink-0 inline-flex items-center gap-2 px-7 py-4 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold transition-colors text-base whitespace-nowrap"
+          >
+            Get My Free Audit
+            <ArrowRight className="w-4 h-4" />
+          </Link>
         </div>
       </section>
 
