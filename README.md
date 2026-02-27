@@ -390,6 +390,8 @@ The CI pipeline now includes coverage for backend tests and a placeholder OpenAP
 
 - `.github/workflows/ci.yml`
 
+> **Required repository secrets for CI:** The backend test steps require `DATABASE_URL` and `JWT_SECRET` to be configured as [GitHub Actions repository secrets](https://docs.github.com/en/actions/security-guides/encrypted-secrets) (`Settings → Secrets and variables → Actions`).
+
 ## Demo Login (NextAuth Credentials)
 
 This project includes a demo login using NextAuth Credentials. Add these to your `.env.local`:
