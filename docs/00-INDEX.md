@@ -28,6 +28,7 @@ This document suite provides a comprehensive, vendor-neutral architecture for a 
 | 9 | [Economic Expansion](./09-ECONOMIC-EXPANSION.md) | CCP-301 RWA bridge + SSI rollout plan |
 | 10 | [Agentic OS Doctrine](./10-AGENTIC-OS-DOCTRINE.md) | Strategic doctrine for sovereign agentic operating model |
 | 11 | [Agentic Mesh Architecture](./11-AGENTIC-MESH-ARCHITECTURE.md) | Runtime architecture, controls, rollout blueprint |
+| 12 | [Channel Distribution Roadmap](./12-CHANNEL-DISTRIBUTION-ROADMAP.md) | Channel-manager-first distribution strategy, phased delivery, reliability controls |
 
 ---
 
@@ -110,6 +111,7 @@ This document suite provides a comprehensive, vendor-neutral architecture for a 
 3. Check [Roadmap](./05-ROADMAP.md) for milestones
 4. Review [Economic Expansion](./09-ECONOMIC-EXPANSION.md) for post-activation growth protocol
 5. Review [Agentic OS Doctrine](./10-AGENTIC-OS-DOCTRINE.md) and [Agentic Mesh Architecture](./11-AGENTIC-MESH-ARCHITECTURE.md) for sovereign AI expansion
+6. Review [Channel Distribution Roadmap](./12-CHANNEL-DISTRIBUTION-ROADMAP.md) for OTA/channel manager execution strategy
 
 ---
 
