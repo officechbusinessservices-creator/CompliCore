@@ -10,7 +10,7 @@
     "prisma:migrate": "prisma migrate dev --name init",
     "prisma:studio": "prisma studio",
     "seed": "ts-node prisma/seed.ts",
-    "test": "ENABLE_DEMO_FALLBACK=true vitest --run --config vitest.config.ts"
+    "test": "ENABLE_DEMO_FALLBACK=true vitest --run --config vitest.config.mts"
   },
   "dependencies": {
     "@aws-sdk/client-kms": "^3.997.0",
