@@ -3,12 +3,14 @@
 import Link from "next/link";
 import { signIn } from "next-auth/react";
 import { useState } from "react";
-import { Home, Eye, EyeOff, ArrowRight } from "lucide-react";
+import { Home, Eye, EyeOff, ArrowRight, ChevronDown } from "lucide-react";
+import { APP_ROLES, ROLE_LABELS, rolePortalPath, type AppRole } from "@/lib/rbac";
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [role, setRole] = useState<AppRole>("host");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -19,13 +21,14 @@ export default function LoginPage() {
     const result = await signIn("credentials", {
       email,
       password,
+      role,
       redirect: false,
     });
     setLoading(false);
     if (result?.error) {
       setError("Invalid email or password. Please try again.");
     } else {
-      window.location.href = "/dashboard";
+      window.location.href = rolePortalPath(role);
     }
   }
 
@@ -57,6 +60,28 @@ export default function LoginPage() {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Role selector */}
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium" htmlFor="role">
+              I am a&hellip;
+            </label>
+            <div className="relative">
+              <select
+                id="role"
+                value={role}
+                onChange={(e) => setRole(e.target.value as AppRole)}
+                className="w-full appearance-none rounded-lg border border-border bg-background px-3 py-2.5 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              >
+                {APP_ROLES.filter((r) => r !== "admin").map((r) => (
+                  <option key={r} value={r}>
+                    {ROLE_LABELS[r]}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            </div>
+          </div>
+
           <div className="space-y-1.5">
             <label className="text-sm font-medium" htmlFor="email">
               Email address
@@ -119,7 +144,7 @@ export default function LoginPage() {
               </span>
             ) : (
               <>
-                Sign in
+                Sign in as {ROLE_LABELS[role]}
                 <ArrowRight className="w-4 h-4" />
               </>
             )}

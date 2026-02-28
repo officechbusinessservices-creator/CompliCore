@@ -26,6 +26,7 @@ import { createLifecycleEmailAutomation } from "./lib/lifecycle-email-automation
 import { appendSecurityAuditEvent } from "./lib/security-audit";
 import { isStepUpSatisfied } from "./lib/webauthn-stepup";
 import { initializeFieldEncryptionKey } from "./lib/encryption";
+import { seedDemoUsers } from "./lib/secure-user-model";
 
 const API_DEPRECATION_SUNSET = "Wed, 31 Dec 2026 23:59:59 GMT";
 
@@ -50,6 +51,11 @@ async function registerApiRoutes(fastify: FastifyInstance, prefix: "/api" | "/v1
 
 export async function buildServer() {
   await initializeFieldEncryptionKey();
+
+  if (env.ENABLE_DEMO_FALLBACK && env.NODE_ENV !== "production") {
+    const demoPassword = process.env.DEMO_PASSWORD || "demo-password";
+    await seedDemoUsers(demoPassword);
+  }
 
   const fastify = Fastify({
     logger: {

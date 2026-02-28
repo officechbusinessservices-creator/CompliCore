@@ -166,3 +166,42 @@ export function updateWebAuthnCredentialCounter(
   credential.counter = counter;
   return credential;
 }
+
+/**
+ * Demo role definitions used when ENABLE_DEMO_FALLBACK is true.
+ * Each entry maps a role to a fixed demo email / display name.
+ */
+const DEMO_ROLE_ACCOUNTS: Array<{
+  role: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+}> = [
+  { role: "host", email: "host@demo.complicore.local", firstName: "Demo", lastName: "Host" },
+  { role: "guest", email: "guest@demo.complicore.local", firstName: "Demo", lastName: "Guest" },
+  { role: "cleaner", email: "cleaner@demo.complicore.local", firstName: "Demo", lastName: "Cleaner" },
+  { role: "maintenance", email: "maintenance@demo.complicore.local", firstName: "Demo", lastName: "Maintenance" },
+  { role: "corporate", email: "corporate@demo.complicore.local", firstName: "Demo", lastName: "Corporate" },
+  { role: "admin", email: "admin@demo.complicore.local", firstName: "Demo", lastName: "Admin" },
+];
+
+/**
+ * Seed in-memory demo users, one per role.
+ * Should only be called when ENABLE_DEMO_FALLBACK is true (never in production).
+ * The shared demo password is taken from the DEMO_PASSWORD env variable; falls
+ * back to the literal string "demo-password" if unset.
+ */
+export async function seedDemoUsers(demoPassword = "demo-password"): Promise<void> {
+  const passwordHash = await hashPassword(demoPassword);
+  for (const account of DEMO_ROLE_ACCOUNTS) {
+    if (!findUserByEmail(account.email)) {
+      createUser({
+        email: account.email,
+        firstName: account.firstName,
+        lastName: account.lastName,
+        roles: [account.role],
+        passwordHash,
+      });
+    }
+  }
+}
