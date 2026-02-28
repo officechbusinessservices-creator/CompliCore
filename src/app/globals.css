@@ -160,6 +160,10 @@
   .gateway-dashboard-reveal {
     animation: gatewayReveal 0.8s ease-out;
   }
+
+  .animate-scan {
+    animation: scan 2.6s linear infinite;
+  }
 }
 
 @keyframes floatSlow {
@@ -260,5 +264,14 @@
   100% {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes scan {
+  0% {
+    top: 0%;
+  }
+  100% {
+    top: 100%;
   }
 }
