@@ -22,6 +22,7 @@ import moduleRoutes from "./routes/modules";
 import economicRoutes from "./routes/economic";
 import agenticMeshRoutes from "./routes/agentic-mesh";
 import lifecycleEmailRoutes from "./routes/lifecycle-email";
+import distributionRoutes from "./routes/distribution";
 import { createLifecycleEmailAutomation } from "./lib/lifecycle-email-automation";
 import { appendSecurityAuditEvent } from "./lib/security-audit";
 import { isStepUpSatisfied } from "./lib/webauthn-stepup";
@@ -46,6 +47,7 @@ async function registerApiRoutes(fastify: FastifyInstance, prefix: "/api" | "/v1
   await fastify.register(economicRoutes, { prefix });
   await fastify.register(agenticMeshRoutes, { prefix });
   await fastify.register(lifecycleEmailRoutes, { prefix });
+  await fastify.register(distributionRoutes, { prefix });
 }
 
 export async function buildServer() {

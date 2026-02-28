@@ -82,6 +82,8 @@ const envSchema = z.object({
   WEBAUTHN_CHALLENGE_TTL_SECONDS: z.coerce.number().int().positive().default(300),
   MFA_STEP_UP_TTL_SECONDS: z.coerce.number().int().positive().default(900),
   PMS_WEBHOOK_SECRET: z.string().default(""),
+  CHANNEX_API_KEY: z.string().optional().default(""),
+  CHANNEX_WEBHOOK_SECRET: z.string().optional().default(""),
   DATA_EXPORT_LIMIT_PER_MINUTE: z.coerce.number().int().positive().default(50),
   HONEYTOKEN_IDS: z.string().default(""),
   SIGNED_URL_TTL_SECONDS: z.coerce.number().int().positive().default(60),
