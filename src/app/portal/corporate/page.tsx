@@ -21,7 +21,7 @@ export default function CorporatePortalPage() {
       <header className="border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/50">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           <Link href="/landing/enterprise" className="font-semibold">Corporate Portal</Link>
-          <Link href="/prototype/dashboard" className="text-sm">Ops Dashboard</Link>
+          <Link href="/dashboard" className="text-sm">Ops Dashboard</Link>
         </div>
       </header>
 

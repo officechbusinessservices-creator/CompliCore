@@ -24,7 +24,7 @@ export default function HostPortalPage() {
       <header className="border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/50">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           <Link href="/landing/host" className="font-semibold">Host Portal</Link>
-          <Link href="/prototype/dashboard" className="text-sm">Dashboard</Link>
+          <Link href="/dashboard" className="text-sm">Dashboard</Link>
         </div>
       </header>
 

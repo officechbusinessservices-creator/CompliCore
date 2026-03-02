@@ -18,7 +18,7 @@ export default function MaintenancePortalPage() {
       <header className="border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/50">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           <Link href="/landing/host" className="font-semibold">Maintenance Portal</Link>
-          <Link href="/prototype/maintenance" className="text-sm">Work Orders</Link>
+          <Link href="/maintenance" className="text-sm">Work Orders</Link>
         </div>
       </header>
 

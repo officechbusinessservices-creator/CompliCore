@@ -95,7 +95,7 @@ export default function VirtualTourPage() {
         <header className="border-b border-zinc-800 bg-zinc-900/50 backdrop-blur-sm sticky top-0 z-50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <Link href="/prototype" className="p-2 -ml-2 rounded-lg hover:bg-zinc-800 transition-colors">
+              <Link href="/browse" className="p-2 -ml-2 rounded-lg hover:bg-zinc-800 transition-colors">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                 </svg>
