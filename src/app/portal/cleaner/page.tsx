@@ -18,7 +18,7 @@ export default function CleanerPortalPage() {
       <header className="border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/50">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           <Link href="/landing/host" className="font-semibold">Cleaner Portal</Link>
-          <Link href="/prototype/cleaning" className="text-sm">Cleaning Schedule</Link>
+          <Link href="/cleaning" className="text-sm">Cleaning Schedule</Link>
         </div>
       </header>
 

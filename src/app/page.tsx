@@ -315,7 +315,7 @@ export default function LandingPage() {
               <ArrowRight className="w-4 h-4" />
             </Link>
             <Link
-              href="/prototype/dashboard"
+              href="/dashboard"
               className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-lg border border-border hover:bg-accent transition-colors text-base font-medium"
             >
               {hero.secondaryCta}
@@ -592,7 +592,7 @@ export default function LandingPage() {
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li><Link href="#features" className="hover:text-foreground transition-colors">Features</Link></li>
                 <li><Link href="#pricing" className="hover:text-foreground transition-colors">Pricing</Link></li>
-                <li><Link href="/prototype/dashboard" className="hover:text-foreground transition-colors">Demo</Link></li>
+                <li><Link href="/dashboard" className="hover:text-foreground transition-colors">Demo</Link></li>
               </ul>
             </div>
             <div>
