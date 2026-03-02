@@ -27,7 +27,7 @@
     "argon2": "^0.44.0",
     "cloudinary": "^1.41.3",
     "dotenv": "^16.0.0",
-    "fastify": "^4.22.0",
+    "fastify": "^5.7.3",
     "fastify-plugin": "^4.5.1",
     "ioredis": "^5.9.2",
     "morgan": "^1.10.1",
