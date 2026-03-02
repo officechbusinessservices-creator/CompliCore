@@ -55,7 +55,8 @@ const reviews = [
 ];
 
 export default async function PropertyPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
+export default function PropertyPage({ params }: { params: { id: string } }) {
+  const { id } = params;
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* Nav */}
