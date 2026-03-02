@@ -50,12 +50,13 @@ model Message {
 }
 
 model Payment {
-  id         Int      @id @default(autoincrement())
-  booking_id Int?
-  amount     Float
-  currency   String
-  status     String   @default("pending")
-  created_at DateTime @default(now())
+  id                        Int      @id @default(autoincrement())
+  booking_id                Int?
+  amount                    Float
+  currency                  String
+  status                    String   @default("pending")
+  stripe_payment_intent_id  String?  @unique
+  created_at                DateTime @default(now())
 }
 
 model BillingPlan {
