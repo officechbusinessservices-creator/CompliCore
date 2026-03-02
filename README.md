@@ -1,5 +1,7 @@
 # CompliCore - Compliance-First Rental Platform
 
+[![CI](https://github.com/officechbusinessservices-creator/CompliCore/actions/workflows/ci.yml/badge.svg)](https://github.com/officechbusinessservices-creator/CompliCore/actions/workflows/ci.yml)
+
 CompliCore is a comprehensive, vendor-neutral architecture for short-term rental platforms. Built with privacy-by-design, ethical AI, and global compliance at its core.
 
 ## 🚀 Quick Start
