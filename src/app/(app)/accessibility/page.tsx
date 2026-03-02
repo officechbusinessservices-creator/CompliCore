@@ -92,7 +92,7 @@ export default function AccessibilityPage() {
         <div className="max-w-3xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Link
-              href="/prototype"
+              href="/browse"
               className="p-2 -ml-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500"
               aria-label="Go back to prototype"
             >

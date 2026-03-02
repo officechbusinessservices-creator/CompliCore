@@ -189,7 +189,7 @@ export default function HostLandingPage() {
               <ArrowRight className="w-4 h-4" />
             </Link>
             <Link
-              href="/prototype/dashboard"
+              href="/dashboard"
               className="inline-flex items-center justify-center px-8 py-4 rounded-lg border border-border hover:bg-accent transition-colors text-base font-medium"
             >
               See a Live Demo

@@ -30,7 +30,7 @@ export default function GuestLandingPage() {
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           <Link href="/" className="font-semibold text-lg">{LANDING_BRAND_COPY.name}</Link>
           <div className="flex items-center gap-3 text-sm">
-            <Link href="/prototype" className="hover:text-foreground text-muted-foreground transition-colors">Explore stays</Link>
+            <Link href="/browse" className="hover:text-foreground text-muted-foreground transition-colors">Explore stays</Link>
             <Link href="/landing/host" className="hover:text-foreground text-muted-foreground transition-colors">{LANDING_SHARED_COPY.hostsLinkLabel}</Link>
             <Link href="/portal/guest" className="px-3 py-1.5 bg-primary text-primary-foreground rounded-lg font-medium">{LANDING_SHARED_COPY.guestPortalLabel}</Link>
           </div>
@@ -49,7 +49,7 @@ export default function GuestLandingPage() {
             Book short-, mid-, or long-term stays with confidence. {LANDING_BRAND_COPY.name} combines trusted host verification, clear total pricing, and responsive support from search to checkout.
           </p>
           <div className="flex flex-wrap gap-3">
-            <Link href="/prototype" className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium">
+            <Link href="/browse" className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium">
               Search stays
               <ArrowRight className="w-4 h-4" />
             </Link>
@@ -109,7 +109,7 @@ export default function GuestLandingPage() {
             <p className="text-sm text-background/80 mb-4">
               Explore curated properties for business trips, weekend getaways, and longer stays.
             </p>
-            <Link href="/prototype" className="inline-flex px-4 py-2 bg-background text-foreground rounded-lg font-medium">
+            <Link href="/browse" className="inline-flex px-4 py-2 bg-background text-foreground rounded-lg font-medium">
               Explore stays
             </Link>
           </article>

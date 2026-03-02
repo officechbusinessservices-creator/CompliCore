@@ -22,7 +22,7 @@ export default function GuestPortalPage() {
       <header className="border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/50">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           <Link href="/landing/guest" className="font-semibold">Guest Portal</Link>
-          <Link href="/prototype" className="text-sm">Search stays</Link>
+          <Link href="/browse" className="text-sm">Search stays</Link>
         </div>
       </header>
 
