@@ -44,8 +44,10 @@ jobs:
         with:
           node-version: "20"
           cache: npm
-      - name: Install deps (root)
-        run: npm ci
+      - name: Clean install
+        run: |
+          npx rimraf node_modules package-lock.json .next
+          npm install
       - name: Build
         run: npm run build
 

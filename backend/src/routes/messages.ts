@@ -35,12 +35,12 @@ export default async function messagesRoutes(fastify: FastifyInstance) {
     try {
       const res = await query("SELECT id, booking_id, sender, body, created_at FROM messages ORDER BY created_at DESC LIMIT 50");
       const honeytokens = new Set(parseHoneytokens());
-      if (res.rows.some((row) => honeytokens.has(String(row.id)))) {
+      if (res.rows.some((row: Record<string, unknown>) => honeytokens.has(String(row.id)))) {
         request.log.warn({ honeytoken: true, route: "/messages" }, "honeytoken access detected");
       }
-      return res.rows.map((row) => ({
+      return res.rows.map((row: Record<string, unknown>) => ({
         ...row,
-        body: row.body ? decryptField(row.body) : row.body,
+        body: row.body ? decryptField(row.body as string) : row.body,
       }));
     } catch (err) {
       return [

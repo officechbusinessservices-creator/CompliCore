@@ -60,7 +60,7 @@ export async function streamQuery<T = any>(text: string, params: any[] = []) {
     client.release();
   });
 
-  stream.on("error", (err) => {
+  stream.on("error", (err: Error) => {
     client.release();
     stream.destroy(err);
   });
