@@ -5,7 +5,7 @@
   "scripts": {
     "test": "npm run lint && (cd backend && npm run test)",
     "dev": "next dev -H 0.0.0.0",
-    "build": "next build --webpack",
+    "build": "rimraf .next && next build --webpack",
     "analyze": "ANALYZE=true next build --webpack",
     "start": "next start",
     "lint": "npx tsc --noEmit && npx eslint .",
@@ -42,6 +42,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "1.9.4",
+    "rimraf": "^6.0.1",
     "@eslint/eslintrc": "^3.3.1",
     "@netlify/edge-functions": "^3.0.3",
     "@types/node": "^20.17.50",
