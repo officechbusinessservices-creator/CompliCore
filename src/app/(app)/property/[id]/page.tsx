@@ -54,8 +54,7 @@ const reviews = [
   { author: "Tom W.", rating: 4, date: "November 2025", text: "Great place, very clean and modern. The pool was a bonus. Parking was a bit tricky but manageable." },
 ];
 
-export default async function PropertyPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
+export default function PropertyPage() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* Nav */}
