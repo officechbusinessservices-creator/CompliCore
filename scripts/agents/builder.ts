@@ -16,7 +16,7 @@ import { execSync } from "child_process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
 import path from "path";
 
-const ROOT = path.resolve(import.meta.dirname, "../..");
+const ROOT = process.cwd();
 
 // ---------------------------------------------------------------------------
 // CLI argument parsing
