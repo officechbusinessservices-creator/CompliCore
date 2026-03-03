@@ -77,4 +77,24 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    main()Those are the steps for you to run in **your own terminal** on your machine — I can't execute them here because the Cowork sandbox blocks the socket connections that `tsx` needs.
+
+Here's a quick checklist for when you open your terminal:
+
+1. `cd` into your `CompliCore-antigravity` folder
+2. `npm install` — installs `tsx` and all other dependencies
+3. `bash scripts/run-all-agents.sh` — test run (you should see the agents fire one by one with timestamped logs)
+4. `bash scripts/setup-cron.sh` — registers the every-6-hours cron job
+5. `crontab -l` — confirms the job is registered
+
+Those are the steps for you to run in **your own terminal** on your machine — I can't execute them here because the Cowork sandbox blocks the socket connections that `tsx` needs.
+
+Here's a quick checklist for when you open your terminal:
+
+1. `cd` into your `CompliCore-antigravity` folder
+2. `npm install` — installs `tsx` and all other dependencies
+3. `bash scripts/run-all-agents.sh` — test run (you should see the agents fire one by one with timestamped logs)
+4. `bash scripts/setup-cron.sh` — registers the every-6-hours cron job
+5. `crontab -l` — confirms the job is registered
+
+Once `npm install` succeeds and `tsx` is available locally, the pipeline should run cleanly. Let me know if you hit any errors and I can help debug!Once `npm install` succeeds and `tsx` is available locally, the pipeline should run cleanly. Let me know if you hit any errors and I can help debug!
