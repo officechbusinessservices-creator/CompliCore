@@ -2,7 +2,7 @@
 
 ## 🚀 Start Everything
 ```bash
-cd /Users/eliaschouchani/Complicore/CompliCore
+cd <repo-root>   # e.g., cd /path/to/CompliCore
 docker-compose up -d
 ```
 
