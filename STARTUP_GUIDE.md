@@ -3,7 +3,7 @@
 ## Quick Start
 
 ```bash
-cd /Users/eliaschouchani/Complicore/CompliCore
+cd <repo-root>
 docker-compose up -d
 ```
 
