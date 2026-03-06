@@ -48,8 +48,30 @@ AUTOMATOR_START=1  # default --start phase for complicore_automator
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --dry-run)  DRY_RUN=true; shift ;;
-    --agent)    RUN_AGENT="$2"; shift 2 ;;
-    --start)    AUTOMATOR_START="$2"; shift 2 ;;
+    --agent)
+      if [[ $# -lt 2 ]]; then
+        echo -e "${RED}Error: --agent requires a numeric argument (1-3).${RESET}" >&2
+        exit 1
+      fi
+      if ! [[ "$2" =~ ^[0-9]+$ ]]; then
+        echo -e "${RED}Error: --agent value must be numeric, got '$2'.${RESET}" >&2
+        exit 1
+      fi
+      RUN_AGENT="$2"
+      shift 2
+      ;;
+    --start)
+      if [[ $# -lt 2 ]]; then
+        echo -e "${RED}Error: --start requires a numeric argument (phase number).${RESET}" >&2
+        exit 1
+      fi
+      if ! [[ "$2" =~ ^[0-9]+$ ]]; then
+        echo -e "${RED}Error: --start value must be numeric, got '$2'.${RESET}" >&2
+        exit 1
+      fi
+      AUTOMATOR_START="$2"
+      shift 2
+      ;;
     -h|--help)
       echo "Usage: bash scripts/run-all-agents.sh [OPTIONS]"
       echo ""
