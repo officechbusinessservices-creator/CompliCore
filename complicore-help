@@ -1,0 +1,190 @@
+#!/bin/bash
+
+cat << 'EOF'
+╔════════════════════════════════════════════════════════════════════════════╗
+║                    🎯 CompliCore AI Agents - Help System                   ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+📋 QUICK COMMANDS
+─────────────────────────────────────────────────────────────────────────────
+  ./complicore-menu.sh              Open interactive menu
+  docker-compose up -d              Start all services
+  docker-compose down               Stop all services
+  docker-compose logs -f            View all logs in real-time
+  docker-compose ps                 Check service status
+
+🚀 STARTUP & MONITORING
+─────────────────────────────────────────────────────────────────────────────
+  docker-compose up -d
+  docker-compose ps
+  docker-compose logs -f --tail=50
+
+  # View specific service
+  docker-compose logs -f api
+  docker-compose logs -f web
+  docker-compose logs -f prometheus
+  docker-compose logs -f grafana
+
+🌐 DASHBOARDS & ACCESS
+─────────────────────────────────────────────────────────────────────────────
+  Web App:        http://localhost:3000
+  API Server:     http://localhost:4000
+  Prometheus:     http://localhost:9090
+  Grafana:        http://localhost:3002 (admin/admin)
+  Dozzle Logs:    http://localhost:8081
+
+💾 DATABASE MANAGEMENT
+─────────────────────────────────────────────────────────────────────────────
+  # Backup database
+  docker-compose exec db pg_dump -U postgres rental_dev > backup.sql
+
+  # Restore database
+  docker-compose exec -T db psql -U postgres rental_dev < backup.sql
+
+  # Connect to PostgreSQL
+  docker-compose exec db psql -U postgres rental_dev
+
+  # List all tables
+  docker-compose exec db psql -U postgres rental_dev -c "\dt"
+
+📊 RESOURCE MONITORING
+─────────────────────────────────────────────────────────────────────────────
+  # Real-time stats
+  docker stats
+
+  # Check disk usage
+  docker system df
+
+  # Check specific container
+  docker stats complicore-api-1
+
+🔧 TROUBLESHOOTING
+─────────────────────────────────────────────────────────────────────────────
+  # View detailed logs (last 100 lines)
+  docker-compose logs --tail=100
+
+  # Check for errors
+  docker-compose logs | grep -i error
+
+  # Restart a service
+  docker-compose restart api
+  docker-compose restart web
+  docker-compose restart db
+
+  # Full restart
+  docker-compose down && docker-compose up -d
+
+  # Check service health
+  curl http://localhost:4000/metrics
+  curl http://localhost:9090/-/healthy
+
+🐛 DEBUGGING
+─────────────────────────────────────────────────────────────────────────────
+  # Inspect container
+  docker inspect complicore-api-1
+
+  # Get container IP
+  docker inspect complicore-api-1 --format='{{.NetworkSettings.IPAddress}}'
+
+  # Check logs with timestamps
+  docker-compose logs --timestamps -f
+
+  # Follow errors only
+  docker-compose logs -f | grep -i "error\|warn\|fail"
+
+📈 SCALING & PERFORMANCE
+─────────────────────────────────────────────────────────────────────────────
+  # Scale API instances (if applicable)
+  docker-compose up -d --scale api=3
+
+  # Monitor in real-time
+  docker stats --format "table {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}"
+
+🛑 STOPPING & CLEANUP
+─────────────────────────────────────────────────────────────────────────────
+  # Stop services (keep data)
+  docker-compose down
+
+  # Stop and remove all data
+  docker-compose down -v
+
+  # Remove unused resources
+  docker system prune
+
+  # Hard cleanup
+  docker-compose down -v && docker system prune -f
+
+📝 LOGS & EXPORT
+─────────────────────────────────────────────────────────────────────────────
+  # Save all logs to file
+  docker-compose logs > logs_$(date +%Y%m%d_%H%M%S).txt
+
+  # Export metrics
+  curl http://localhost:4000/metrics > metrics.txt
+  curl http://localhost:9090/api/v1/query?query=up > prometheus_data.json
+
+🔐 SECURITY & CONFIG
+─────────────────────────────────────────────────────────────────────────────
+  # View environment variables
+  docker inspect complicore-api-1 --format='{{json .Config.Env}}' | jq
+
+  # Check network
+  docker network inspect complicore_default
+
+  # List all containers
+  docker ps -a
+
+🎯 SERVICE DETAILS
+─────────────────────────────────────────────────────────────────────────────
+  Service        Port     Purpose
+  ─────────────────────────────────────────────────────────────────────────
+  api            4000     REST API server
+  web            3000     Next.js frontend
+  db             5433     PostgreSQL database
+  prometheus     9090     Metrics collection
+  grafana        3002     Dashboards & visualization
+  dozzle         8081     Log viewer
+
+📚 COMMON WORKFLOWS
+─────────────────────────────────────────────────────────────────────────────
+  1. START SYSTEM & MONITOR
+     $ docker-compose up -d && sleep 5 && docker-compose ps
+     $ docker-compose logs -f
+
+  2. VIEW METRICS
+     $ open http://localhost:9090
+     $ open http://localhost:3002
+
+  3. BACKUP & RESTORE
+     $ docker-compose exec db pg_dump -U postgres rental_dev > backup.sql
+     $ docker-compose exec -T db psql -U postgres rental_dev < backup.sql
+
+  4. TROUBLESHOOT
+     $ docker-compose logs --tail=100 | grep -i error
+     $ docker stats
+     $ curl http://localhost:4000/metrics
+
+💡 TIPS & TRICKS
+─────────────────────────────────────────────────────────────────────────────
+  • Keep one terminal with 'docker-compose logs -f' for live monitoring
+  • Use Dozzle (http://localhost:8081) for a web-based log viewer
+  • Check Grafana (http://localhost:3002) for visual metrics dashboard
+  • Run 'docker stats' in another terminal to monitor resource usage
+  • Use 'docker-compose ps' frequently to verify service health
+
+❓ GET MORE HELP
+─────────────────────────────────────────────────────────────────────────────
+  • Docker docs: https://docs.docker.com
+  • Docker Compose: https://docs.docker.com/compose/
+  • PostgreSQL: https://www.postgresql.org/docs/
+  • Prometheus: https://prometheus.io/docs/
+  • Grafana: https://grafana.com/docs/
+
+📞 SUPPORT COMMANDS
+─────────────────────────────────────────────────────────────────────────────
+  ./complicore-help           Show this help
+  ./complicore-menu.sh        Open interactive menu
+  docker-compose --help       Docker Compose help
+  docker --help               Docker help
+
+EOF
