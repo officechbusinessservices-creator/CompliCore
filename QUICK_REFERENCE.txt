@@ -2,25 +2,25 @@
 
 ## 🚀 Start Everything
 ```bash
-cd /Users/eliaschouchani/Complicore/CompliCore
-docker-compose up -d
+cd /path/to/CompliCore
+docker compose up -d
 ```
 
 ## ✅ Verify Running
 ```bash
-docker-compose ps
+docker compose ps
 ```
 
 ## 📊 Watch Logs (Open in separate terminal)
 ```bash
-docker-compose logs -f
+docker compose logs -f
 ```
 
 ## 🔍 View Specific Service
 ```bash
-docker-compose logs -f analysis-agent
-docker-compose logs -f template-agent
-docker-compose logs -f filtering-agent
+docker compose logs -f analysis-agent
+docker compose logs -f template-agent
+docker compose logs -f filtering-agent
 ```
 
 ## 🌐 Access Dashboards
@@ -35,31 +35,31 @@ docker stats
 
 ## 🔄 Restart Service
 ```bash
-docker-compose restart analysis-agent
-docker-compose restart template-agent
-docker-compose restart filtering-agent
+docker compose restart analysis-agent
+docker compose restart template-agent
+docker compose restart filtering-agent
 ```
 
 ## ⛔ Stop All
 ```bash
-docker-compose down
+docker compose down
 ```
 
 ## 💾 Backup Redis
 ```bash
-docker-compose exec redis redis-cli BGSAVE
+docker compose exec redis redis-cli BGSAVE
 ```
 
 ## 🔧 Scale Analysis Agent
 ```bash
-docker-compose up -d --scale analysis-agent=3
+docker compose up -d --scale analysis-agent=3
 ```
 
 ## 📋 Troubleshoot
 ```bash
-docker-compose logs --tail=50      # Last 50 lines
+docker compose logs --tail=50      # Last 50 lines
 docker system df                   # Disk usage
-docker-compose ps -a               # All containers
+docker compose ps -a               # All containers
 ```
 
 ---
