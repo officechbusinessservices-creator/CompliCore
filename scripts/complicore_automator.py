@@ -33,7 +33,7 @@ class ComplicoreAutomator:
 
     def _setup_env(self) -> None:
         print("Converting Jupyter notebooks to Python modules...")
-        subprocess.run(["python", "scripts/convert_notebooks.py"], check=False)
+        subprocess.run(["python3", "scripts/convert_notebooks.py"], check=False)
         print("Building docker images for RAG services...")
         subprocess.run(["docker", "compose", "build", "complicore-rag", "complicore-crag"], check=False)
         print("TODO: Build provider router (DeepSeek-thinking-ui vs fastest-rag-stack).")
