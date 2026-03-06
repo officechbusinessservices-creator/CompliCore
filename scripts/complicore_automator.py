@@ -77,4 +77,13 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    main()bash scripts/install-cron.sh
+    subprocess.run(["bash", "scripts/install-cron.sh"], check=True# Check if help system is installed
+ls -la complicore-help complicore-menu.sh
+
+# Test help functionality  
+./complicore-help
+
+# Verify services are running with new help
+docker-compose ps
+)

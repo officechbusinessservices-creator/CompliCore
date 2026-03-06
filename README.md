@@ -1,4 +1,5 @@
 # CompliCore - Compliance-First Rental Platform
+<img width="6250" height="6250" alt="2" src="https://github.com/user-attachments/assets/fafe9ec5-0a66-4c8d-9481-52ed9ccd1f29" />
 
 [![CI](https://github.com/officechbusinessservices-creator/CompliCore/actions/workflows/ci.yml/badge.svg)](https://github.com/officechbusinessservices-creator/CompliCore/actions/workflows/ci.yml)
 
