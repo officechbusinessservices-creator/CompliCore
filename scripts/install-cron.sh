@@ -12,11 +12,12 @@ CRON_MARKER="# complicore-agent-pipeline"
 
 # Cron expression: every 6 hours (00:00, 06:00, 12:00, 18:00)
 CRON_EXPR="0 */6 * * *"
-CRON_LINE="$CRON_EXPR $PIPELINE $CRON_MARKER"
+CRON_CMD="$PIPELINE --agent 1"
+CRON_LINE="$CRON_EXPR $CRON_CMD $CRON_MARKER"
 
 echo "Installing CompliCore agent pipeline cron job..."
 echo "  Schedule : every 6 hours (00:00 / 06:00 / 12:00 / 18:00)"
-echo "  Script   : $PIPELINE"
+echo "  Command  : $CRON_CMD"
 echo ""
 
 # Remove any existing ComplicCore cron entry, then add the new one
