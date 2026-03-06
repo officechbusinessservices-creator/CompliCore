@@ -1,0 +1,57 @@
+version: "1.0"
+
+# Antigravity Agent Safety Configuration
+# Defines operational boundaries for all automated agents in this repository.
+# Human reviewers must approve PRs before merging — agents NEVER self-merge.
+
+boundaries:
+
+  # Git branches the agent is permitted to create and push to
+  allowed_branch_prefixes:
+    - agent/
+    - claude/
+
+  # Files the agent must NEVER read, modify, or create
+  protected_files:
+    - .env
+    - .env.*
+    - backend/.env
+    - "**/*.pem"
+    - "**/*.key"
+    - "**/*secret*"
+    - "**/*credential*"
+    - "**/*password*"
+    - package-lock.json        # managed by npm, not agents
+    - backend/package-lock.json
+
+  # Directories the agent must NEVER touch
+  protected_dirs:
+    - .github/workflows/       # workflow changes must be human-authored
+    - bridge/                  # kubernetes manifests — infra team only
+    - monitoring/              # alerting/grafana config — ops team only
+    - contracts/               # solidity smart contracts — audited code
+    - deploy/                  # deployment configs — ops team only
+
+  # PR size limits to prevent runaway changes
+  max_files_per_pr: 20
+  max_lines_changed_per_pr: 500
+
+  # All agent PRs require human review before merge
+  require_human_review: true
+
+  # Triggers that cause the agent to open a draft PR and add a comment
+  # requesting human escalation instead of proceeding
+  escalate_if:
+    - touches_auth_code: true         # any change to auth.ts, jwt-rotation.ts, etc.
+    - touches_payment_code: true      # payments.ts, stripe integration code
+    - touches_encryption_code: true   # encryption.ts, KMS-related code
+    - touches_security_plugin: true   # security-fortress.ts
+    - test_coverage_drops: true       # if vitest coverage falls below current baseline
+    - modifies_prisma_schema: true    # schema.prisma changes require migration review
+    - changes_exceed_limit: true      # if limits above are approached (>80%)
+
+  # Agent identity used for git commits and PR authorship
+  agent_identity:
+    git_name: "Antigravity Agent"
+    git_email: "agent@complicore.ai"
+    pr_label: "agent-generated"

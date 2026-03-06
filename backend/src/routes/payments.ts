@@ -1,14 +1,29 @@
 import { FastifyInstance } from "fastify";
 import { PrismaClient } from "@prisma/client";
 import { z } from "zod";
+import Stripe from "stripe";
+import { env } from "../lib/env";
 import { formatZodError } from "../lib/validation";
 
 const prisma = new PrismaClient();
 
+// Lazy Stripe client — only initialised when STRIPE_SECRET_KEY is configured
+let _stripe: Stripe | null = null;
+function getStripe(): Stripe | null {
+  if (!env.STRIPE_SECRET_KEY) return null;
+  if (!_stripe) {
+    _stripe = new Stripe(env.STRIPE_SECRET_KEY, {
+      // biome-ignore lint/suspicious/noExplicitAny: version string tied to installed stripe package
+      apiVersion: "2026-02-25.clover" as any,
+    });
+  }
+  return _stripe;
+}
+
 const checkoutSchema = z.object({
   bookingId: z.string().min(1),
-  amount: z.number().positive().optional(),
-  currency: z.string().min(3).max(10).optional(),
+  amount: z.number().positive(),
+  currency: z.string().min(3).max(10).default("usd"),
   paymentMethodId: z.string().min(1).optional(),
 });
 
@@ -34,6 +49,270 @@ const defaultBillingPlans = [
 ];
 
 export default async function paymentsRoutes(fastify: FastifyInstance) {
+  // -------------------------------------------------------------------------
+  // POST /payments/checkout — create Stripe PaymentIntent + persist Payment
+  // -------------------------------------------------------------------------
+  fastify.post("/payments/checkout", async (request, reply) => {
+    const req = request as any;
+    const guard = (fastify as any).requireRole;
+    if (guard) {
+      const res = await guard(req, reply, ["guest", "host", "admin"]);
+      if (reply.sent) return;
+      if (res) return res;
+    }
+
+    const parsed = checkoutSchema.safeParse(request.body);
+    if (!parsed.success) {
+      return reply.status(400).send({
+        type: "urn:problem:validation",
+        title: "Request validation failed",
+        status: 400,
+        detail: "Invalid checkout payload",
+        errors: formatZodError(parsed.error),
+        instance: request.url,
+        traceId: request.id,
+      });
+    }
+
+    const { bookingId, amount, currency } = parsed.data;
+    const stripe = getStripe();
+
+    if (stripe) {
+      try {
+        const intent = await stripe.paymentIntents.create({
+          amount: Math.round(amount * 100), // convert to cents
+          currency: currency.toLowerCase(),
+          metadata: { bookingId },
+          automatic_payment_methods: { enabled: true },
+        });
+
+        let dbPaymentId: number | null = null;
+        try {
+          const numericBookingId = /^\d+$/.test(bookingId) ? parseInt(bookingId, 10) : null;
+          const payment = await prisma.payment.create({
+            data: {
+              booking_id: numericBookingId,
+              amount,
+              currency: currency.toLowerCase(),
+              status: "pending",
+              stripe_payment_intent_id: intent.id,
+            },
+          });
+          dbPaymentId = payment.id;
+        } catch (dbErr) {
+          fastify.log.warn({ err: dbErr }, "Failed to persist Payment record");
+        }
+
+        return reply.status(201).send({
+          success: true,
+          clientSecret: intent.client_secret,
+          paymentIntentId: intent.id,
+          paymentId: dbPaymentId,
+          booking: { id: bookingId, status: "payment_pending" },
+        });
+      } catch (stripeErr: any) {
+        fastify.log.error({ err: stripeErr.message }, "Stripe PaymentIntent creation failed");
+        return reply.status(502).send({
+          type: "urn:problem:payment-gateway",
+          title: "Payment gateway error",
+          status: 502,
+          detail: stripeErr.message,
+          instance: request.url,
+          traceId: request.id,
+        });
+      }
+    }
+
+    // Demo fallback — no Stripe key configured
+    return reply.status(201).send({
+      success: true,
+      clientSecret: `pi_demo_secret_${Math.random().toString(36).slice(2, 10)}`,
+      paymentIntentId: `pi_demo_${Math.random().toString(36).slice(2, 10)}`,
+      paymentId: null,
+      booking: { id: bookingId, status: "confirmed" },
+      payment: { id: "pay_demo", amount, currency, status: "succeeded" },
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // POST /payments/create — backward-compatible standalone PaymentIntent
+  // -------------------------------------------------------------------------
+  fastify.post("/payments/create", async (request, reply) => {
+    const req = request as any;
+    const guard = (fastify as any).requireRole;
+    if (guard) {
+      const res = await guard(req, reply, ["guest", "host", "admin"]);
+      if (reply.sent) return;
+      if (res) return res;
+    }
+
+    const parsed = createPaymentIntentSchema.safeParse(request.body);
+    if (!parsed.success) {
+      return reply.status(400).send({
+        type: "urn:problem:validation",
+        title: "Request validation failed",
+        status: 400,
+        detail: "Invalid payment intent payload",
+        errors: formatZodError(parsed.error),
+        instance: request.url,
+        traceId: request.id,
+      });
+    }
+
+    const { amount, currency } = parsed.data;
+    const stripe = getStripe();
+
+    if (stripe) {
+      try {
+        const intent = await stripe.paymentIntents.create({
+          amount: Math.round(amount * 100),
+          currency: currency.toLowerCase(),
+          automatic_payment_methods: { enabled: true },
+        });
+        return {
+          paymentIntentId: intent.id,
+          clientSecret: intent.client_secret,
+          amount,
+          currency,
+        };
+      } catch (stripeErr: any) {
+        fastify.log.error({ err: stripeErr.message }, "Stripe PaymentIntent creation failed");
+        return reply.status(502).send({
+          type: "urn:problem:payment-gateway",
+          title: "Payment gateway error",
+          status: 502,
+          detail: stripeErr.message,
+          instance: request.url,
+          traceId: request.id,
+        });
+      }
+    }
+
+    // Demo fallback
+    return {
+      paymentIntentId: `pi_${Math.random().toString(36).slice(2, 10)}`,
+      clientSecret: `pi_demo_secret_${Math.random().toString(36).slice(2, 10)}`,
+      amount,
+      currency,
+    };
+  });
+
+  // -------------------------------------------------------------------------
+  // POST /payments/webhook — Stripe webhook; needs raw body for sig verification
+  // Registered in a sub-scope that overrides the JSON content-type parser so
+  // the body arrives as a raw Buffer instead of a parsed object.
+  // -------------------------------------------------------------------------
+  fastify.register(async function webhookScope(scope) {
+    scope.addContentTypeParser(
+      "application/json",
+      { parseAs: "buffer" },
+      (_req: any, body: Buffer, done: (err: Error | null, body?: unknown) => void) => {
+        done(null, body);
+      },
+    );
+
+    scope.post("/payments/webhook", async (request: any, reply: any) => {
+      const stripe = getStripe();
+      if (!stripe || !env.STRIPE_WEBHOOK_SECRET) {
+        return reply.status(400).send({
+          type: "urn:problem:config",
+          title: "Payment gateway not configured",
+          status: 400,
+          detail: "STRIPE_SECRET_KEY and STRIPE_WEBHOOK_SECRET must be set to process webhooks",
+          instance: request.url,
+        });
+      }
+
+      const sig = request.headers["stripe-signature"] as string | undefined;
+      if (!sig) {
+        return reply.status(400).send({
+          type: "urn:problem:validation",
+          title: "Missing stripe-signature header",
+          status: 400,
+          instance: request.url,
+        });
+      }
+
+      const rawBody = request.body as Buffer;
+      let event: Stripe.Event;
+      try {
+        event = stripe.webhooks.constructEvent(rawBody, sig, env.STRIPE_WEBHOOK_SECRET);
+      } catch (err: any) {
+        scope.log.warn({ err: err.message }, "Stripe webhook signature verification failed");
+        return reply.status(400).send({
+          type: "urn:problem:webhook-signature",
+          title: "Webhook signature verification failed",
+          status: 400,
+          detail: err.message,
+          instance: request.url,
+        });
+      }
+
+      switch (event.type) {
+        case "payment_intent.succeeded": {
+          const pi = event.data.object as Stripe.PaymentIntent;
+          try {
+            await prisma.payment.updateMany({
+              where: { stripe_payment_intent_id: pi.id },
+              data: { status: "succeeded" },
+            });
+            if (pi.metadata?.bookingId) {
+              const numericId = parseInt(pi.metadata.bookingId, 10);
+              if (!isNaN(numericId)) {
+                await prisma.booking
+                  .update({ where: { id: numericId }, data: { status: "confirmed" } })
+                  .catch(() => {
+                    /* booking may not exist in demo mode */
+                  });
+              }
+            }
+          } catch (dbErr) {
+            scope.log.error({ err: dbErr, piId: pi.id }, "DB update failed after payment_intent.succeeded");
+          }
+          break;
+        }
+
+        case "payment_intent.payment_failed": {
+          const pi = event.data.object as Stripe.PaymentIntent;
+          try {
+            await prisma.payment.updateMany({
+              where: { stripe_payment_intent_id: pi.id },
+              data: { status: "failed" },
+            });
+          } catch (dbErr) {
+            scope.log.error({ err: dbErr, piId: pi.id }, "DB update failed after payment_intent.payment_failed");
+          }
+          break;
+        }
+
+        default:
+          scope.log.info({ type: event.type }, "Unhandled Stripe webhook event type");
+      }
+
+      return reply.send({ received: true });
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // GET /payments/methods — saved payment methods (stub; extend with Stripe
+  // Customer API once users have a stripe_customer_id)
+  // -------------------------------------------------------------------------
+  fastify.get("/payments/methods", async (request, reply) => {
+    const req = request as any;
+    const guard = (fastify as any).requireRole;
+    if (guard) {
+      const res = await guard(req, reply, ["guest", "host", "admin"]);
+      if (reply.sent) return;
+      if (res) return res;
+    }
+    return [
+      { id: "card_1", type: "card", last4: "4242", brand: "visa", expiryMonth: 12, expiryYear: 2030, isDefault: true },
+    ];
+  });
+
+  // -------------------------------------------------------------------------
+  // GET /payouts
+  // -------------------------------------------------------------------------
   fastify.get("/payouts", async (request, reply) => {
     const req = request as any;
     const guard = (fastify as any).requireRole;
@@ -54,80 +333,25 @@ export default async function paymentsRoutes(fastify: FastifyInstance) {
           status: "completed",
           method: "bank_transfer",
           bookings: [
-            { id: "b1", propertyName: "Modern Downtown Loft", guestName: "Alex J.", checkIn: "2026-01-20", checkOut: "2026-01-24", grossAmount: 856, platformFee: 85.6, netAmount: 770.4 },
+            {
+              id: "b1",
+              propertyName: "Modern Downtown Loft",
+              guestName: "Alex J.",
+              checkIn: "2026-01-20",
+              checkOut: "2026-01-24",
+              grossAmount: 856,
+              platformFee: 85.6,
+              netAmount: 770.4,
+            },
           ],
         },
       ];
     }
   });
-  fastify.get("/payments/methods", async (request, reply) => {
-    const req = request as any;
-    const guard = (fastify as any).requireRole;
-    if (guard) {
-      const res = await guard(req, reply, ["guest", "host", "admin"]);
-      if (reply.sent) return;
-      if (res) return res;
-    }
-    return [
-      { id: "card_1", type: "card", last4: "4242", brand: "visa", expiryMonth: 12, expiryYear: 2030, isDefault: true },
-    ];
-  });
 
-  fastify.post("/payments/checkout", async (request, reply) => {
-    // Idempotency-Key supported via global plugin
-    const req = request as any;
-    const guard = (fastify as any).requireRole;
-    if (guard) {
-      const res = await guard(req, reply, ["guest", "host", "admin"]);
-      if (reply.sent) return;
-      if (res) return res;
-    }
-    const parsed = checkoutSchema.safeParse(request.body);
-    if (!parsed.success) {
-      return reply.status(400).send({
-        type: "urn:problem:validation",
-        title: "Request validation failed",
-        status: 400,
-        detail: "Invalid checkout payload",
-        errors: formatZodError(parsed.error),
-        instance: request.url,
-        traceId: request.id,
-      });
-    }
-    const body = parsed.data;
-    return {
-      success: true,
-      booking: { id: body.bookingId, status: "confirmed" },
-      payment: { id: "pay_demo", amount: 250, currency: "USD", status: "succeeded" },
-    };
-  });
-
-  // backward-compatible demo endpoint
-  fastify.post("/payments/create", async (request, reply) => {
-    // Idempotency-Key supported via global plugin
-    const req = request as any;
-    const guard = (fastify as any).requireRole;
-    if (guard) {
-      const res = await guard(req, reply, ["guest", "host", "admin"]);
-      if (reply.sent) return;
-      if (res) return res;
-    }
-    const parsed = createPaymentIntentSchema.safeParse(request.body);
-    if (!parsed.success) {
-      return reply.status(400).send({
-        type: "urn:problem:validation",
-        title: "Request validation failed",
-        status: 400,
-        detail: "Invalid payment intent payload",
-        errors: formatZodError(parsed.error),
-        instance: request.url,
-        traceId: request.id,
-      });
-    }
-    const body = parsed.data;
-    return { paymentIntentId: `pi_${Math.random().toString(36).slice(2, 10)}`, amount: body.amount || 0, currency: body.currency || "usd" };
-  });
-
+  // -------------------------------------------------------------------------
+  // GET /billing/plans
+  // -------------------------------------------------------------------------
   fastify.get("/billing/plans", async () => {
     try {
       const dbPlans = await prisma.billingPlan.findMany({ orderBy: { id: "asc" } });
@@ -149,6 +373,9 @@ export default async function paymentsRoutes(fastify: FastifyInstance) {
     }
   });
 
+  // -------------------------------------------------------------------------
+  // POST /billing/subscribe
+  // -------------------------------------------------------------------------
   fastify.post("/billing/subscribe", async (request, reply) => {
     const req = request as any;
     const guard = (fastify as any).requireRole;
@@ -204,6 +431,9 @@ export default async function paymentsRoutes(fastify: FastifyInstance) {
     }
   });
 
+  // -------------------------------------------------------------------------
+  // POST /billing/cancel
+  // -------------------------------------------------------------------------
   fastify.post("/billing/cancel", async (request, reply) => {
     const req = request as any;
     const guard = (fastify as any).requireRole;
@@ -246,6 +476,9 @@ export default async function paymentsRoutes(fastify: FastifyInstance) {
     }
   });
 
+  // -------------------------------------------------------------------------
+  // GET /billing/subscriptions
+  // -------------------------------------------------------------------------
   fastify.get("/billing/subscriptions", async (request, reply) => {
     const req = request as any;
     const guard = (fastify as any).requireRole;

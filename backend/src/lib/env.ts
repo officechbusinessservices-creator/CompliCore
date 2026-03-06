@@ -83,6 +83,8 @@ const envSchema = z.object({
   MFA_STEP_UP_TTL_SECONDS: z.coerce.number().int().positive().default(900),
   PMS_WEBHOOK_SECRET: z.string().default(""),
   DATA_EXPORT_LIMIT_PER_MINUTE: z.coerce.number().int().positive().default(50),
+  STRIPE_SECRET_KEY: z.string().default(""),
+  STRIPE_WEBHOOK_SECRET: z.string().default(""),
   HONEYTOKEN_IDS: z.string().default(""),
   SIGNED_URL_TTL_SECONDS: z.coerce.number().int().positive().default(60),
   WS_ALLOWED_ORIGINS: z.string().default("http://localhost:3000"),
