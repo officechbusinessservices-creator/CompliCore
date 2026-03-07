@@ -57,6 +57,7 @@ export default async function analyticsRoutes(fastify: FastifyInstance) {
     const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1, 0, 0, 0, 0));
     const monthEnd = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 0, 23, 59, 59, 999));
     const todayIso = toIsoDate(now);
+    const todayDate = parseDateOnly(todayIso) || now;
     const daysInMonth = monthEnd.getUTCDate();
 
     const sixMonthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 5, 1, 0, 0, 0, 0));
@@ -224,7 +225,7 @@ export default async function analyticsRoutes(fastify: FastifyInstance) {
         status: booking.status,
         checkInDate: parseDateOnly(booking.check_in),
       }))
-      .filter((booking) => booking.checkInDate && booking.checkInDate.getTime() >= parseDateOnly(todayIso)!.getTime())
+      .filter((booking) => booking.checkInDate && booking.checkInDate.getTime() >= todayDate.getTime())
       .sort((a, b) => (a.checkInDate?.getTime() || 0) - (b.checkInDate?.getTime() || 0))
       .slice(0, 10)
       .map(({ checkInDate: _checkInDate, ...booking }) => booking);

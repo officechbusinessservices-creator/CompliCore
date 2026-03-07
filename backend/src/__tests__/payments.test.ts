@@ -142,6 +142,57 @@ describe("POST /v1/payments/create", () => {
   });
 });
 
+describe("POST /v1/payments/checkout-session", () => {
+  it("returns 401 without auth token", async () => {
+    const res = await server.inject({
+      method: "POST",
+      url: "/v1/payments/checkout-session",
+      payload: {
+        bookingId: "BK-101",
+        amount: 250,
+        currency: "usd",
+        successUrl: "https://example.com/success",
+        cancelUrl: "https://example.com/cancel",
+      },
+    });
+    expect(res.statusCode).toBe(401);
+  });
+
+  it("returns 400 on invalid payload", async () => {
+    const res = await server.inject({
+      method: "POST",
+      url: "/v1/payments/checkout-session",
+      headers: { Authorization: `Bearer ${token}` },
+      payload: {
+        bookingId: "BK-101",
+        amount: 250,
+        successUrl: "not-a-url",
+        cancelUrl: "https://example.com/cancel",
+      },
+    });
+    expect(res.statusCode).toBe(400);
+  });
+
+  it("returns demo checkout session when Stripe is not configured", async () => {
+    const res = await server.inject({
+      method: "POST",
+      url: "/v1/payments/checkout-session",
+      headers: { Authorization: `Bearer ${token}` },
+      payload: {
+        bookingId: "BK-101",
+        amount: 250,
+        currency: "usd",
+        successUrl: "https://example.com/success",
+        cancelUrl: "https://example.com/cancel",
+      },
+    });
+    expect(res.statusCode).toBe(201);
+    const body = JSON.parse(res.payload);
+    expect(body.success).toBe(true);
+    expect(typeof body.checkoutSessionId).toBe("string");
+    expect(typeof body.checkoutUrl).toBe("string");
+  });
+});
 describe("POST /v1/payments/webhook", () => {
   it("returns 400 when Stripe is not configured", async () => {
     const res = await server.inject({

@@ -141,12 +141,14 @@ type DashboardAnalyticsResponse = {
   upcomingPayouts?: Array<{ date?: string; amount?: number; status?: string }>;
 };
 
+type DashboardRecentBookingRow = NonNullable<DashboardAnalyticsResponse["recentBookings"]>[number];
+
 function toBookingStatus(status: string): BookingStatus {
   if (status === "confirmed" || status === "completed" || status === "cancelled") return status;
   return "pending";
 }
 
-function toRecentBooking(row: DashboardAnalyticsResponse["recentBookings"][number]): RecentBooking {
+function toRecentBooking(row: DashboardRecentBookingRow): RecentBooking {
   const id = String(row?.id ?? row?.confirmationCode ?? row?.confirmation_code ?? Math.random().toString(36).slice(2, 8));
   return {
     id,

@@ -159,6 +159,97 @@ describe("API - core endpoints", () => {
     }
   });
 
+  it("syncs Guesty reservation webhook payloads into bookings", async () => {
+    const reservationId = `gsty-${Date.now()}`;
+    const payload = {
+      event: "reservation.updated",
+      data: {
+        reservation: {
+          id: reservationId,
+          guest: { firstName: "Webhook", lastName: "Guesty" },
+          propertyName: "Guesty Synced Loft",
+          checkIn: "2026-03-10",
+          checkOut: "2026-03-12",
+          status: "confirmed",
+        },
+      },
+    };
+
+    const webhook = await server.inject({
+      method: "POST",
+      url: "/v1/pms/connectors/guesty/webhook",
+      payload,
+    });
+    expect(webhook.statusCode).toBe(200);
+    const webhookBody = JSON.parse(webhook.payload);
+    expect(webhookBody.sync.bookings.created + webhookBody.sync.bookings.updated).toBeGreaterThan(0);
+
+    const token = await createAuthToken();
+    const bookings = await server.inject({
+      method: "GET",
+      url: "/v1/bookings",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    expect(bookings.statusCode).toBe(200);
+    const bookingsBody = JSON.parse(bookings.payload);
+    expect(Array.isArray(bookingsBody)).toBe(true);
+    expect(bookingsBody.some((booking: any) => String(booking.confirmation_code).startsWith("GUESTY-"))).toBe(true);
+  });
+
+  it("syncs Hostaway listing webhook payloads into listings", async () => {
+    const listingName = `Hostaway Sync Suite ${Date.now()}`;
+    const payload = {
+      event: "listing.updated",
+      data: {
+        listing: {
+          id: `hostaway-${Date.now()}`,
+          name: listingName,
+          address: { full: "101 Sync Street, Miami, FL" },
+          nightlyRate: 275,
+          status: "active",
+        },
+      },
+    };
+
+    const webhook = await server.inject({
+      method: "POST",
+      url: "/v1/pms/connectors/hostaway/webhook",
+      payload,
+    });
+    expect(webhook.statusCode).toBe(200);
+    const webhookBody = JSON.parse(webhook.payload);
+    expect(webhookBody.sync.listings.created + webhookBody.sync.listings.updated).toBeGreaterThan(0);
+
+    const adminToken = server.jwt.sign({ userId: "admin-webhook", roles: ["admin"], typ: "access" });
+    const listings = await server.inject({
+      method: "GET",
+      url: "/v1/listings",
+      headers: { Authorization: `Bearer ${adminToken}` },
+    });
+    expect(listings.statusCode).toBe(200);
+    const listingsBody = JSON.parse(listings.payload);
+    expect(Array.isArray(listingsBody)).toBe(true);
+    expect(listingsBody.some((listing: any) => listing.title === listingName)).toBe(true);
+  });
+
+  it("returns aggregated dashboard analytics from the database", async () => {
+    const adminToken = server.jwt.sign({ userId: "admin-analytics", roles: ["admin"], typ: "access" });
+    const analytics = await server.inject({
+      method: "GET",
+      url: "/v1/analytics/dashboard",
+      headers: { Authorization: `Bearer ${adminToken}` },
+    });
+    expect(analytics.statusCode).toBe(200);
+    const body = JSON.parse(analytics.payload);
+    expect(body.metrics).toBeTruthy();
+    expect(typeof body.metrics.totalBookings).toBe("number");
+    expect(typeof body.metrics.totalRevenue).toBe("number");
+    expect(typeof body.metrics.pendingBookings).toBe("number");
+    expect(typeof body.metrics.upcomingCheckIns).toBe("number");
+    expect(Array.isArray(body.monthlyRevenue)).toBe(true);
+    expect(Array.isArray(body.bookingsBySource)).toBe(true);
+  });
+
   it("ignores client-supplied role on register and login", async () => {
     const email = `api-role-${Date.now()}-${Math.random().toString(16).slice(2)}@example.com`;
     const password = "TestPass123!";

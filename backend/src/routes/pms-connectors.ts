@@ -173,7 +173,8 @@ function normalizeListingInput(raw: any): NormalizedListingInput | null {
 
 function normalizeBookingInput(providerId: string, raw: any, event: string): NormalizedBookingInput | null {
   const externalId = pickFirstString(raw?.id, raw?._id, raw?.reservationId, raw?.reservation_id, raw?.bookingId, raw?.booking_id);
-  const guestName = normalizeGuestName(raw) || "Guest";
+  const extractedGuestName = normalizeGuestName(raw);
+  const guestName = extractedGuestName || "Guest";
   const property = pickFirstString(
     raw?.propertyName,
     raw?.property_name,
@@ -185,7 +186,7 @@ function normalizeBookingInput(providerId: string, raw: any, event: string): Nor
   const checkIn = toDateOnly(raw?.checkIn ?? raw?.check_in ?? raw?.arrivalDate ?? raw?.arrival_date ?? raw?.startDate ?? raw?.start_date);
   const checkOut = toDateOnly(raw?.checkOut ?? raw?.check_out ?? raw?.departureDate ?? raw?.departure_date ?? raw?.endDate ?? raw?.end_date);
 
-  if (!externalId && !property && !checkIn && !checkOut && !guestName) return null;
+  if (!externalId && !property && !checkIn && !checkOut && !extractedGuestName) return null;
 
   return {
     externalId,
