@@ -63,6 +63,7 @@ model Listing {
   address         String?
   price_per_night Int?
   status          String   @default("active")
+  photo_url       String?
   created_at      DateTime @default(now())
 
   @@index([host_id])

@@ -5,14 +5,17 @@ import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import {
   Home, MapPin, Star, MoreHorizontal, Eye, Edit, Trash2,
-  Plus, CheckCircle2, AlertCircle, Clock,
+  Plus, CheckCircle2, AlertCircle, Clock, Camera, Loader2,
 } from "lucide-react";
 import { apiFetch, ApiError } from "@/lib/api-client";
+
+const BASE = process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:4000";
 
 interface Listing {
   id: number;
   title: string;
   address: string | null;
+  photo_url?: string | null;
   price_per_night: number | null;
   status: string;
 }
@@ -43,9 +46,33 @@ export default function ListingsPage() {
       .finally(() => setLoading(false));
   }, [token]);
 
+  const [uploadingId, setUploadingId] = useState<number | null>(null);
+
   function showToast(msg: string) {
     setToast(msg);
     setTimeout(() => setToast(null), 3000);
+  }
+
+  async function uploadPhoto(id: number, file: File) {
+    setUploadingId(id);
+    try {
+      const form = new FormData();
+      form.append("photo", file);
+      const res = await fetch(`${BASE}/v1/listings/${id}/photo`, {
+        method: "POST",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        credentials: "include",
+        body: form,
+      });
+      if (!res.ok) throw new Error("Upload failed");
+      const data = await res.json();
+      setListings((prev) => prev.map((l) => l.id === id ? { ...l, photo_url: data.photo_url } : l));
+      showToast("Photo uploaded ✓");
+    } catch {
+      showToast("Failed to upload photo");
+    } finally {
+      setUploadingId(null);
+    }
   }
 
   async function toggleStatus(id: number, currentStatus: string) {
@@ -140,9 +167,36 @@ export default function ListingsPage() {
             const StatusIcon = sc.icon;
             return (
               <div key={l.id} className="rounded-xl border border-border bg-card overflow-hidden">
-                {/* Image placeholder */}
-                <div className="h-36 bg-muted flex items-center justify-center relative">
-                  <Home className="w-8 h-8 text-muted-foreground/30" />
+                {/* Photo */}
+                <div className="h-36 bg-muted flex items-center justify-center relative overflow-hidden">
+                  {l.photo_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={l.photo_url} alt={l.title} className="w-full h-full object-cover" />
+                  ) : (
+                    <Home className="w-8 h-8 text-muted-foreground/30" />
+                  )}
+                  {/* Upload photo button */}
+                  <label
+                    className="absolute bottom-2 right-2 w-7 h-7 rounded-lg bg-background/80 backdrop-blur-sm flex items-center justify-center hover:bg-background transition-colors cursor-pointer"
+                    title="Upload photo"
+                  >
+                    {uploadingId === l.id ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <Camera className="w-3.5 h-3.5" />
+                    )}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="sr-only"
+                      disabled={uploadingId === l.id}
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) uploadPhoto(l.id, file);
+                        e.target.value = "";
+                      }}
+                    />
+                  </label>
                   <div className="absolute top-3 left-3">
                     <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full ${sc.color}`}>
                       <StatusIcon className="w-3 h-3" />

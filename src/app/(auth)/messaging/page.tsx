@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
 import { Send, Search, Circle, Loader2, AlertCircle } from "lucide-react";
 import { apiFetch, ApiError } from "@/lib/api-client";
+import { useSocket } from "@/lib/use-socket";
 
 interface ApiMessage {
   id: number;
@@ -167,6 +168,17 @@ export default function MessagingPage() {
     if (!token) return;
     void loadMessages(true);
   }, [token, loadMessages]);
+
+  // Real-time: receive new messages via Socket.IO and refresh the thread
+  const handleSocketMessage = useCallback(
+    (data: { booking_id?: number | null; sender: string; body: string; sentAt: string }) => {
+      if (data.sender === "host") return; // already optimistically added
+      void loadMessages(false);
+    },
+    [loadMessages],
+  );
+
+  useSocket(!!token, handleSocketMessage);
 
   const filteredThreads = useMemo(
     () =>

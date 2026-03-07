@@ -1,7 +1,9 @@
 import { FastifyInstance } from "fastify";
-import { query } from "../db";
+import { z } from "zod";
 import { env } from "../lib/env";
 import { encryptField, decryptField } from "../lib/encryption";
+import { prisma } from "../lib/prisma";
+import { formatZodError } from "../lib/validation";
 
 const exportWindowMs = 60 * 1000;
 const exportTracker = new Map<string, { count: number; resetAt: number }>();
@@ -23,81 +25,167 @@ function checkExportLimit(request: any) {
 }
 
 function parseHoneytokens() {
-  return env.HONEYTOKEN_IDS.split(",").map((id) => id.trim()).filter(Boolean);
+  return env.HONEYTOKEN_IDS.split(",")
+    .map((id) => id.trim())
+    .filter(Boolean);
 }
 
+const createMessageSchema = z.object({
+  booking_id: z.number().int().positive().optional().nullable(),
+  sender: z.string().min(1).max(50),
+  body: z.string().min(1).max(4000),
+});
+
 export default async function messagesRoutes(fastify: FastifyInstance) {
+  // -------------------------------------------------------------------------
+  // GET /messages — list last 50 messages (most-recent first)
+  // -------------------------------------------------------------------------
   fastify.get("/messages", async (request, reply) => {
-    const req = request as any;
-    if (!checkExportLimit(req)) {
+    if (!checkExportLimit(request)) {
       return reply.status(429).send({ error: "export limit exceeded" });
     }
-    try {
-      const res = await query("SELECT id, booking_id, sender, body, created_at FROM messages ORDER BY created_at DESC LIMIT 50");
-      const honeytokens = new Set(parseHoneytokens());
-      if (res.rows.some((row: Record<string, unknown>) => honeytokens.has(String(row.id)))) {
-        request.log.warn({ honeytoken: true, route: "/messages" }, "honeytoken access detected");
-      }
-      return res.rows.map((row: Record<string, unknown>) => ({
-        ...row,
-        body: row.body ? decryptField(row.body as string) : row.body,
-      }));
-    } catch (err) {
-      return [
-        { id: 1, booking_id: 1, sender: "host", body: "Welcome! Let me know if you need anything.", created_at: new Date() },
-        { id: 2, booking_id: 1, sender: "guest", body: "Thanks! Where is the key?", created_at: new Date() },
-      ];
+
+    const messages = await prisma.message.findMany({
+      orderBy: { created_at: "desc" },
+      take: 50,
+    });
+
+    const honeytokens = new Set(parseHoneytokens());
+    if (messages.some((m) => honeytokens.has(String(m.id)))) {
+      request.log.warn({ honeytoken: true, route: "/messages" }, "honeytoken access detected");
     }
+
+    return messages.map((m) => ({
+      ...m,
+      body: m.body ? decryptField(m.body) : m.body,
+    }));
   });
 
+  // -------------------------------------------------------------------------
+  // POST /messages — create a new message
+  // -------------------------------------------------------------------------
   fastify.post("/messages", async (request, reply) => {
-    const body = request.body as any;
-    try {
-      const res = await query(
-        "INSERT INTO messages (booking_id, sender, body) VALUES ($1,$2,$3) RETURNING id, booking_id, sender, body, created_at",
-        [body.booking_id, body.sender, body.body ? encryptField(body.body) : body.body]
-      );
-      const row = res.rows[0];
-      return {
-        ...row,
-        body: row.body ? decryptField(row.body) : row.body,
-      };
-    } catch (err) {
-      // echo back for dev
-      return { id: Math.floor(Math.random() * 10000), booking_id: body.booking_id, sender: body.sender, body: body.body, created_at: new Date() };
+    const parsed = createMessageSchema.safeParse(request.body);
+    if (!parsed.success) {
+      return reply.status(400).send({
+        type: "urn:problem:validation",
+        title: "Request validation failed",
+        status: 400,
+        detail: "Invalid message payload",
+        errors: formatZodError(parsed.error),
+        instance: request.url,
+        traceId: request.id,
+      });
     }
-  });
 
-  // OpenAPI-compatible endpoints
-  fastify.get("/messages/threads", async () => {
-    return [
-      {
-        id: "demo-thread",
-        bookingId: "demo-booking",
-        participants: [],
-        lastMessage: { id: "demo-message", content: "Welcome!", sentAt: new Date().toISOString() },
-        unreadCount: 0,
+    const { booking_id, sender, body } = parsed.data;
+
+    const message = await prisma.message.create({
+      data: {
+        booking_id: booking_id ?? null,
+        sender,
+        body: body ? encryptField(body) : body,
       },
-    ];
-  });
+    });
 
-  fastify.get("/messages/threads/:threadId", async (request) => {
-    const { threadId } = request.params as any;
     return {
-      thread: { id: threadId },
-      messages: [
-        { id: "demo-message", content: "Welcome!", sentAt: new Date().toISOString() },
-      ],
+      ...message,
+      body: message.body ? decryptField(message.body) : message.body,
     };
   });
 
-  fastify.post("/messages/send", async (request) => {
-    const body = request.body as any;
+  // -------------------------------------------------------------------------
+  // GET /messages/threads — grouped by booking_id
+  // -------------------------------------------------------------------------
+  fastify.get("/messages/threads", async () => {
+    const messages = await prisma.message.findMany({
+      orderBy: { created_at: "desc" },
+      take: 200,
+    });
+
+    const threadMap = new Map<string, typeof messages[number]>();
+    for (const msg of messages) {
+      const key = msg.booking_id == null ? "unassigned" : String(msg.booking_id);
+      if (!threadMap.has(key)) {
+        threadMap.set(key, msg);
+      }
+    }
+
+    return Array.from(threadMap.entries()).map(([threadId, last]) => ({
+      id: threadId,
+      bookingId: last.booking_id,
+      lastMessage: {
+        id: String(last.id),
+        content: last.body ? decryptField(last.body) : last.body,
+        sentAt: last.created_at.toISOString(),
+      },
+      unreadCount: 0,
+    }));
+  });
+
+  // -------------------------------------------------------------------------
+  // GET /messages/threads/:threadId — messages in one thread
+  // -------------------------------------------------------------------------
+  fastify.get("/messages/threads/:threadId", async (request) => {
+    const { threadId } = request.params as any;
+    const bookingId = threadId === "unassigned" ? null : parseInt(threadId, 10);
+
+    const messages = await prisma.message.findMany({
+      where: bookingId != null && !isNaN(bookingId)
+        ? { booking_id: bookingId }
+        : { booking_id: null },
+      orderBy: { created_at: "asc" },
+    });
+
     return {
-      id: "demo-message",
-      senderId: "dev-user-id",
-      content: body.content,
-      sentAt: new Date().toISOString(),
+      thread: { id: threadId },
+      messages: messages.map((m) => ({
+        id: String(m.id),
+        content: m.body ? decryptField(m.body) : m.body,
+        sender: m.sender,
+        sentAt: m.created_at.toISOString(),
+      })),
+    };
+  });
+
+  // -------------------------------------------------------------------------
+  // POST /messages/send — send to a thread (alias for POST /messages)
+  // -------------------------------------------------------------------------
+  fastify.post("/messages/send", async (request, reply) => {
+    const body = request.body as any;
+    const parsed = createMessageSchema.safeParse({
+      booking_id: typeof body.booking_id === "number" ? body.booking_id : undefined,
+      sender: body.senderId || body.sender || "host",
+      body: body.content || body.body || "",
+    });
+
+    if (!parsed.success) {
+      return reply.status(400).send({
+        type: "urn:problem:validation",
+        title: "Request validation failed",
+        status: 400,
+        detail: "Invalid message payload",
+        errors: formatZodError(parsed.error),
+        instance: request.url,
+        traceId: request.id,
+      });
+    }
+
+    const { booking_id, sender, body: msgBody } = parsed.data;
+
+    const message = await prisma.message.create({
+      data: {
+        booking_id: booking_id ?? null,
+        sender,
+        body: msgBody ? encryptField(msgBody) : msgBody,
+      },
+    });
+
+    return {
+      id: String(message.id),
+      senderId: message.sender,
+      content: message.body ? decryptField(message.body) : message.body,
+      sentAt: message.created_at.toISOString(),
     };
   });
 }
