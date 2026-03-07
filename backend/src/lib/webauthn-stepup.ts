@@ -6,14 +6,17 @@ import {
   type AuthenticationResponseJSON,
   type RegistrationResponseJSON,
 } from "@simplewebauthn/server";
-import type { SecureUserRecord } from "./secure-user-model";
+import type { UserRecord } from "./prisma-user-repo";
 import {
   findWebAuthnCredential,
   listWebAuthnCredentials,
   updateWebAuthnCredentialCounter,
   upsertWebAuthnCredential,
-} from "./secure-user-model";
+} from "./prisma-user-repo";
 import { env } from "./env";
+
+// Re-export the type alias so any code that imported SecureUserRecord from here keeps working
+export type { UserRecord as SecureUserRecord } from "./prisma-user-repo";
 
 type ChallengePurpose = "registration" | "authentication";
 
@@ -57,8 +60,11 @@ function consumeChallenge(userId: string, purpose: ChallengePurpose) {
   return record.challenge;
 }
 
-function decodeStoredCredential(userId: string, credentialId: string): StoredCredential | null {
-  const stored = findWebAuthnCredential(userId, credentialId);
+async function decodeStoredCredential(
+  userId: string,
+  credentialId: string,
+): Promise<StoredCredential | null> {
+  const stored = await findWebAuthnCredential(userId, credentialId);
   if (!stored) return null;
 
   try {
@@ -78,8 +84,9 @@ export function isWebAuthnMfaEnabled() {
   return env.WEBAUTHN_MFA_ENABLED;
 }
 
-export function hasWebAuthnCredentials(userId: string) {
-  return listWebAuthnCredentials(userId).length > 0;
+export async function hasWebAuthnCredentials(userId: string) {
+  const creds = await listWebAuthnCredentials(userId);
+  return creds.length > 0;
 }
 
 export function isStepUpSatisfied(payload: Record<string, unknown> | null | undefined) {
@@ -90,8 +97,9 @@ export function isStepUpSatisfied(payload: Record<string, unknown> | null | unde
   return ageSeconds <= env.MFA_STEP_UP_TTL_SECONDS;
 }
 
-export async function createRegistrationOptionsForUser(user: SecureUserRecord) {
-  const excludeCredentials = listWebAuthnCredentials(user.id).map((credential) => ({
+export async function createRegistrationOptionsForUser(user: UserRecord) {
+  const existingCreds = await listWebAuthnCredentials(user.id);
+  const excludeCredentials = existingCreds.map((credential) => ({
     id: credential.id,
     transports: credential.transports as any,
   }));
@@ -114,7 +122,7 @@ export async function createRegistrationOptionsForUser(user: SecureUserRecord) {
   return options;
 }
 
-export async function verifyRegistrationForUser(user: SecureUserRecord, response: RegistrationResponseJSON) {
+export async function verifyRegistrationForUser(user: UserRecord, response: RegistrationResponseJSON) {
   const challenge = consumeChallenge(user.id, "registration");
   if (!challenge) {
     return { verified: false as const, reason: "registration challenge expired or missing" };
@@ -137,7 +145,7 @@ export async function verifyRegistrationForUser(user: SecureUserRecord, response
     ? [...response.response.transports]
     : [];
 
-  upsertWebAuthnCredential(user.id, {
+  await upsertWebAuthnCredential(user.id, {
     id: credential.id,
     publicKey: Buffer.from(credential.publicKey).toString("base64"),
     counter: credential.counter,
@@ -150,8 +158,8 @@ export async function verifyRegistrationForUser(user: SecureUserRecord, response
   };
 }
 
-export async function createAuthenticationOptionsForUser(user: SecureUserRecord) {
-  const credentials = listWebAuthnCredentials(user.id);
+export async function createAuthenticationOptionsForUser(user: UserRecord) {
+  const credentials = await listWebAuthnCredentials(user.id);
   if (credentials.length === 0) {
     return null;
   }
@@ -170,7 +178,7 @@ export async function createAuthenticationOptionsForUser(user: SecureUserRecord)
 }
 
 export async function verifyAuthenticationForUser(
-  user: SecureUserRecord,
+  user: UserRecord,
   response: AuthenticationResponseJSON,
 ) {
   const challenge = consumeChallenge(user.id, "authentication");
@@ -178,7 +186,7 @@ export async function verifyAuthenticationForUser(
     return { verified: false as const, reason: "authentication challenge expired or missing" };
   }
 
-  const credential = decodeStoredCredential(user.id, response.id);
+  const credential = await decodeStoredCredential(user.id, response.id);
   if (!credential) {
     return { verified: false as const, reason: "unknown authenticator credential" };
   }
@@ -196,7 +204,7 @@ export async function verifyAuthenticationForUser(
     return { verified: false as const, reason: "authentication response verification failed" };
   }
 
-  updateWebAuthnCredentialCounter(
+  await updateWebAuthnCredentialCounter(
     user.id,
     verification.authenticationInfo.credentialID,
     verification.authenticationInfo.newCounter,

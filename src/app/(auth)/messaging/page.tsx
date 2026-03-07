@@ -1,34 +1,39 @@
 "use client";
 
-import { useState } from "react";
-import { Send, Search, CheckCircle2, Circle } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSession } from "next-auth/react";
+import { Send, Search, Circle, Loader2, AlertCircle } from "lucide-react";
+import { apiFetch, ApiError } from "@/lib/api-client";
+import { useSocket } from "@/lib/use-socket";
 
-const threads = [
-  { id: "1", guest: "Alex Johnson", property: "Ocean View Suite", lastMsg: "What time is check-in?", time: "2m ago", unread: true, avatar: "AJ" },
-  { id: "2", guest: "Maria Garcia", property: "Downtown Loft", lastMsg: "Thanks for the quick reply!", time: "1h ago", unread: false, avatar: "MG" },
-  { id: "3", guest: "Tom Williams", property: "Mountain Cabin", lastMsg: "Is parking included?", time: "3h ago", unread: true, avatar: "TW" },
-  { id: "4", guest: "Priya Kumar", property: "Ocean View Suite", lastMsg: "Loved the stay, 5 stars!", time: "Yesterday", unread: false, avatar: "PK" },
-];
+interface ApiMessage {
+  id: number;
+  booking_id: number | null;
+  sender: string;
+  body: string;
+  created_at: string;
+}
 
-const initialMessages: Record<string, { from: "guest" | "host"; text: string; time: string }[]> = {
-  "1": [
-    { from: "guest", text: "Hi! Quick question — what time is check-in?", time: "10:02 AM" },
-    { from: "host", text: "Hi Alex! Check-in is from 3:00 PM. I'll send the smart lock code 1 hour before. Let me know if you need anything!", time: "10:05 AM" },
-    { from: "guest", text: "What time is check-in?", time: "10:08 AM" },
-  ],
-  "2": [
-    { from: "guest", text: "Is the parking spot included with the booking?", time: "9:00 AM" },
-    { from: "host", text: "Yes! One dedicated parking spot is included. It's in the underground garage, spot B-12.", time: "9:15 AM" },
-    { from: "guest", text: "Thanks for the quick reply!", time: "9:16 AM" },
-  ],
-  "3": [
-    { from: "guest", text: "Is parking included?", time: "7:30 AM" },
-  ],
-  "4": [
-    { from: "guest", text: "Loved the stay, 5 stars!", time: "Yesterday" },
-    { from: "host", text: "Thank you so much Priya! It was a pleasure hosting you. Hope to see you again! 🌊", time: "Yesterday" },
-  ],
-};
+interface BookingSummary {
+  id: number;
+  guest_name: string;
+  property: string | null;
+}
+
+interface Thread {
+  id: string;
+  bookingId: number | null;
+  guest: string;
+  property: string;
+  lastMsg: string;
+  time: string;
+  unread: boolean;
+  avatar: string;
+}
+
+type ChatMessage = { from: "guest" | "host"; text: string; time: string };
+
+const EMPTY_MESSAGES: Record<string, ChatMessage[]> = {};
 
 const quickReplies = [
   "Check-in is at 3:00 PM. I'll send the door code 1 hour before.",
@@ -37,25 +42,185 @@ const quickReplies = [
   "Thank you for staying! Hope to host you again soon.",
 ];
 
+function toInitials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "G";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return `${parts[0][0] || ""}${parts[1][0] || ""}`.toUpperCase();
+}
+
+function formatRelativeTime(isoLike: string): string {
+  const date = new Date(isoLike);
+  if (Number.isNaN(date.getTime())) return "";
+
+  const diffMs = Date.now() - date.getTime();
+  const diffMinutes = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+
+  if (diffMinutes < 1) return "Now";
+  if (diffMinutes < 60) return `${diffMinutes}m ago`;
+  if (diffHours < 24) return `${diffHours}h ago`;
+  if (diffDays < 7) return `${diffDays}d ago`;
+  return date.toLocaleDateString();
+}
+
+function formatClock(isoLike: string): string {
+  const date = new Date(isoLike);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+}
+
+function normalizeMessagingData(apiMessages: ApiMessage[], bookings: BookingSummary[]) {
+  const bookingById = new Map<number, BookingSummary>(bookings.map((b) => [b.id, b]));
+  const grouped = new Map<string, ApiMessage[]>();
+
+  for (const row of apiMessages) {
+    const key = row.booking_id == null ? "unassigned" : String(row.booking_id);
+    const list = grouped.get(key) || [];
+    list.push(row);
+    grouped.set(key, list);
+  }
+
+  const messagesByThread: Record<string, ChatMessage[]> = {};
+  const threadBuilders: Array<{ thread: Thread; lastAt: number }> = [];
+
+  for (const [threadId, rows] of grouped.entries()) {
+    const sortedRows = [...rows].sort(
+      (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
+    );
+    const last = sortedRows[sortedRows.length - 1];
+    if (!last) continue;
+
+    messagesByThread[threadId] = sortedRows.map((row) => ({
+      from: row.sender === "host" ? "host" : "guest",
+      text: row.body || "",
+      time: formatClock(row.created_at),
+    }));
+
+    const bookingId = threadId === "unassigned" ? null : Number(threadId);
+    const booking = bookingId != null ? bookingById.get(bookingId) : undefined;
+    const guest = booking?.guest_name || (bookingId != null ? `Guest ${bookingId}` : "Guest");
+    const property = booking?.property || (bookingId != null ? `Booking #${bookingId}` : "General");
+
+    threadBuilders.push({
+      thread: {
+        id: threadId,
+        bookingId,
+        guest,
+        property,
+        lastMsg: last.body || "",
+        time: formatRelativeTime(last.created_at),
+        unread: last.sender !== "host",
+        avatar: toInitials(guest),
+      },
+      lastAt: new Date(last.created_at).getTime(),
+    });
+  }
+
+  threadBuilders.sort((a, b) => b.lastAt - a.lastAt);
+  const threads = threadBuilders.map((item) => item.thread);
+  return { threads, messagesByThread };
+}
+
 export default function MessagingPage() {
-  const [selected, setSelected] = useState("1");
-  const [messages, setMessages] = useState(initialMessages);
+  const { data: session } = useSession();
+  const token = (session as { accessToken?: string } | null)?.accessToken;
+
+  const [threads, setThreads] = useState<Thread[]>([]);
+  const [selected, setSelected] = useState<string>("");
+  const [messages, setMessages] = useState<Record<string, ChatMessage[]>>(EMPTY_MESSAGES);
   const [input, setInput] = useState("");
   const [search, setSearch] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const filteredThreads = threads.filter((t) =>
-    t.guest.toLowerCase().includes(search.toLowerCase()) ||
-    t.property.toLowerCase().includes(search.toLowerCase())
+  const loadMessages = useCallback(
+    async (showLoading = true) => {
+      if (!token) return;
+      if (showLoading) setLoading(true);
+      setError(null);
+
+      try {
+        const [apiMessages, bookings] = await Promise.all([
+          apiFetch<ApiMessage[]>("/messages", { token }),
+          apiFetch<BookingSummary[]>("/bookings", { token }).catch(() => []),
+        ]);
+        const { threads: normalizedThreads, messagesByThread } = normalizeMessagingData(apiMessages, bookings);
+        setThreads(normalizedThreads);
+        setMessages(messagesByThread);
+        setSelected((prev) =>
+          prev && normalizedThreads.some((t) => t.id === prev) ? prev : normalizedThreads[0]?.id || "",
+        );
+      } catch (err) {
+        setThreads([]);
+        setMessages(EMPTY_MESSAGES);
+        setError(err instanceof ApiError ? err.message : "Failed to load messages");
+      } finally {
+        if (showLoading) setLoading(false);
+      }
+    },
+    [token],
   );
 
-  function send(text?: string) {
+  useEffect(() => {
+    if (!token) return;
+    void loadMessages(true);
+  }, [token, loadMessages]);
+
+  // Real-time: receive new messages via Socket.IO and refresh the thread
+  const handleSocketMessage = useCallback(
+    (data: { booking_id?: number | null; sender: string; body: string; sentAt: string }) => {
+      if (data.sender === "host") return; // already optimistically added
+      void loadMessages(false);
+    },
+    [loadMessages],
+  );
+
+  useSocket(!!token, handleSocketMessage);
+
+  const filteredThreads = useMemo(
+    () =>
+      threads.filter(
+        (t) =>
+          t.guest.toLowerCase().includes(search.toLowerCase()) ||
+          t.property.toLowerCase().includes(search.toLowerCase()),
+      ),
+    [threads, search],
+  );
+
+  const selectedThread = threads.find((t) => t.id === selected);
+  const selectedMessages = selected ? messages[selected] || [] : [];
+
+  async function send(text?: string) {
     const msg = text || input.trim();
     if (!msg) return;
-    setMessages((prev) => ({
-      ...prev,
-      [selected]: [...(prev[selected] || []), { from: "host", text: msg, time: "Just now" }],
-    }));
-    setInput("");
+
+    if (!selectedThread?.bookingId) {
+      setError("Cannot send message without a booking context");
+      return;
+    }
+
+    setSending(true);
+    setError(null);
+    try {
+      await apiFetch<ApiMessage>("/messages", {
+        method: "POST",
+        token,
+        body: JSON.stringify({
+          booking_id: selectedThread.bookingId,
+          sender: "host",
+          body: msg,
+        }),
+      });
+      setInput("");
+      await loadMessages(false);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Failed to send message");
+    } finally {
+      setSending(false);
+    }
   }
 
   return (
@@ -75,6 +240,15 @@ export default function MessagingPage() {
           </div>
         </div>
         <div className="flex-1 overflow-y-auto divide-y divide-border">
+          {loading && (
+            <div className="px-4 py-6 text-xs text-muted-foreground flex items-center gap-2">
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              Loading conversations...
+            </div>
+          )}
+          {!loading && filteredThreads.length === 0 && (
+            <div className="px-4 py-6 text-xs text-muted-foreground">No conversations found.</div>
+          )}
           {filteredThreads.map((t) => (
             <button
               key={t.id}
@@ -107,17 +281,27 @@ export default function MessagingPage() {
         {/* Header */}
         <div className="px-5 py-3.5 border-b border-border flex items-center gap-3">
           <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold text-primary">
-            {threads.find((t) => t.id === selected)?.avatar}
+            {selectedThread?.avatar || "?"}
           </div>
           <div>
-            <div className="font-semibold text-sm">{threads.find((t) => t.id === selected)?.guest}</div>
-            <div className="text-xs text-muted-foreground">{threads.find((t) => t.id === selected)?.property}</div>
+            <div className="font-semibold text-sm">{selectedThread?.guest || "Select a conversation"}</div>
+            <div className="text-xs text-muted-foreground">{selectedThread?.property || "No thread selected"}</div>
           </div>
         </div>
 
+        {error && (
+          <div className="mx-5 mt-3 px-3 py-2 rounded-lg border border-rose-500/30 bg-rose-500/10 text-rose-600 text-xs flex items-center gap-2">
+            <AlertCircle className="w-3.5 h-3.5" />
+            {error}
+          </div>
+        )}
+
         {/* Messages */}
         <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
-          {(messages[selected] || []).map((m, i) => (
+          {!loading && selectedMessages.length === 0 && (
+            <div className="text-xs text-muted-foreground">No messages in this thread yet.</div>
+          )}
+          {selectedMessages.map((m, i) => (
             <div key={i} className={`flex ${m.from === "host" ? "justify-end" : "justify-start"}`}>
               <div className={`max-w-xs px-3.5 py-2.5 rounded-2xl text-sm ${
                 m.from === "host"
@@ -137,7 +321,8 @@ export default function MessagingPage() {
             <button
               key={r}
               onClick={() => send(r)}
-              className="flex-shrink-0 text-xs px-3 py-1.5 rounded-full border border-border hover:bg-accent transition-colors text-muted-foreground hover:text-foreground"
+              disabled={sending || !selectedThread}
+              className="flex-shrink-0 text-xs px-3 py-1.5 rounded-full border border-border hover:bg-accent transition-colors text-muted-foreground hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {r.slice(0, 30)}…
             </button>
@@ -152,14 +337,15 @@ export default function MessagingPage() {
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && send()}
             placeholder="Type a message…"
-            className="flex-1 px-3 py-2.5 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+            disabled={sending || !selectedThread}
+            className="flex-1 px-3 py-2.5 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-60"
           />
           <button
             onClick={() => send()}
-            disabled={!input.trim()}
+            disabled={!input.trim() || sending || !selectedThread}
             className="w-9 h-9 rounded-lg bg-primary text-primary-foreground flex items-center justify-center hover:opacity-90 transition-opacity disabled:opacity-40"
           >
-            <Send className="w-4 h-4" />
+            {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
           </button>
         </div>
       </div>

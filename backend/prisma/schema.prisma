@@ -9,36 +9,64 @@ datasource db {
 }
 
 model User {
-  id    Int    @id @default(autoincrement())
-  name  String?
-  email String @unique
+  id                     Int                  @id @default(autoincrement())
+  email                  String               @unique
+  firstName              String               @default("")
+  lastName               String               @default("")
+  passwordHash           String               @default("")
+  roles                  String[]             @default(["guest"])
+  passwordResetTokenHash String?
+  passwordResetExpiresAt DateTime?
+  createdAt              DateTime             @default(now())
+  updatedAt              DateTime             @updatedAt
+  webauthnCredentials    WebAuthnCredential[]
+  subscriptions          Subscription[]
 
-  @@index([name])
+  @@index([email])
+}
+
+model WebAuthnCredential {
+  id         String   @id
+  userId     Int
+  publicKey  String
+  counter    Int      @default(0)
+  transports String[]
+  createdAt  DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model Booking {
-  id            Int     @id @default(autoincrement())
-  confirmation_code String @unique
-  listing_id    Int?
-  guest_name    String
-  property      String?
-  check_in      String?
-  check_out     String?
-  access_code   String?
-  wifi_name     String?
-  wifi_password String?
-  status        String  @default("pending")
-  created_at    DateTime @default(now())
+  id                Int      @id @default(autoincrement())
+  confirmation_code String   @unique
+  listing_id        Int?
+  user_id           Int?
+  guest_name        String
+  property          String?
+  check_in          String?
+  check_out         String?
+  access_code       String?
+  wifi_name         String?
+  wifi_password     String?
+  status            String   @default("pending")
+  created_at        DateTime @default(now())
 
   @@index([status, created_at])
+  @@index([user_id])
 }
 
 model Listing {
-  id             Int      @id @default(autoincrement())
-  title          String
-  address        String?
+  id              Int      @id @default(autoincrement())
+  host_id         Int?
+  title           String
+  address         String?
   price_per_night Int?
-  created_at     DateTime @default(now())
+  status          String   @default("active")
+  photo_url       String?
+  created_at      DateTime @default(now())
+
+  @@index([host_id])
 }
 
 model Message {
@@ -50,36 +78,37 @@ model Message {
 }
 
 model Payment {
-  id                        Int      @id @default(autoincrement())
-  booking_id                Int?
-  amount                    Float
-  currency                  String
-  status                    String   @default("pending")
-  stripe_payment_intent_id  String?  @unique
-  created_at                DateTime @default(now())
+  id                       Int      @id @default(autoincrement())
+  booking_id               Int?
+  amount                   Float
+  currency                 String
+  status                   String   @default("pending")
+  stripe_payment_intent_id String?  @unique
+  created_at               DateTime @default(now())
 }
 
 model BillingPlan {
-  id          Int      @id @default(autoincrement())
-  code        String   @unique
-  name        String
-  interval    String?
-  price_flat  Float?
+  id                 Int            @id @default(autoincrement())
+  code               String         @unique
+  name               String
+  interval           String?
+  price_flat         Float?
   price_per_property Float?
-  commission_rate   Float?
-  description String?
-  created_at  DateTime @default(now())
-  subscriptions Subscription[]
+  commission_rate    Float?
+  description        String?
+  created_at         DateTime       @default(now())
+  subscriptions      Subscription[]
 }
 
 model Subscription {
-  id          Int      @id @default(autoincrement())
+  id          Int         @id @default(autoincrement())
   user_id     Int?
   plan_id     Int
-  status      String   @default("active")
-  started_at  DateTime @default(now())
+  status      String      @default("active")
+  started_at  DateTime    @default(now())
   canceled_at DateTime?
   plan        BillingPlan @relation(fields: [plan_id], references: [id])
+  user        User?       @relation(fields: [user_id], references: [id])
 }
 
 model Payout {

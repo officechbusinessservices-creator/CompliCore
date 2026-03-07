@@ -8,6 +8,21 @@ import { PropertyCalendar } from "@/components/Calendar";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { WebSocketProvider, RealtimeNotificationBell } from "@/lib/websocket";
 
+type BookingStatus = "pending" | "confirmed" | "completed" | "cancelled";
+
+type RecentBooking = {
+  id: string;
+  confirmationCode: string;
+  guestName: string;
+  guestAvatar: string;
+  property: string;
+  checkIn: string;
+  checkOut: string;
+  guests: number;
+  total: number;
+  status: BookingStatus;
+};
+
 // Extended mock data for dashboard
 const dashboardData = {
   stats: {
@@ -29,7 +44,7 @@ const dashboardData = {
       checkOut: "2026-03-18",
       guests: 2,
       total: 749,
-      status: "confirmed" as const,
+      status: "confirmed" as BookingStatus,
     },
     {
       id: "book-2",
@@ -41,7 +56,7 @@ const dashboardData = {
       checkOut: "2026-04-14",
       guests: 6,
       total: 2120,
-      status: "pending" as const,
+      status: "pending" as BookingStatus,
     },
     {
       id: "book-3",
@@ -53,7 +68,7 @@ const dashboardData = {
       checkOut: "2026-02-23",
       guests: 2,
       total: 682,
-      status: "completed" as const,
+      status: "completed" as BookingStatus,
     },
     {
       id: "book-4",
@@ -65,9 +80,9 @@ const dashboardData = {
       checkOut: "2026-03-05",
       guests: 4,
       total: 1365,
-      status: "confirmed" as const,
+      status: "confirmed" as BookingStatus,
     },
-  ],
+  ] as RecentBooking[],
   monthlyRevenue: [
     { month: "Sep", revenue: 4200 },
     { month: "Oct", revenue: 5100 },
@@ -97,11 +112,71 @@ type AuthResponse = {
   user: AuthUser;
 };
 
+type DashboardAnalyticsResponse = {
+  metrics?: {
+    totalBookings?: number;
+    totalRevenue?: number;
+    occupancyRate?: number;
+    averageRating?: number;
+    pendingBookings?: number;
+    upcomingCheckIns?: number;
+  };
+  recentBookings?: Array<{
+    id?: string | number;
+    confirmationCode?: string;
+    confirmation_code?: string;
+    guestName?: string;
+    guest_name?: string;
+    property?: string | null;
+    checkIn?: string | null;
+    check_in?: string | null;
+    checkOut?: string | null;
+    check_out?: string | null;
+    guests?: number;
+    total?: number;
+    status?: string;
+  }>;
+  monthlyRevenue?: Array<{ month?: string; revenue?: number }>;
+  bookingsBySource?: Array<{ source?: string; count?: number; revenue?: number }>;
+  upcomingPayouts?: Array<{ date?: string; amount?: number; status?: string }>;
+};
+
+type DashboardRecentBookingRow = NonNullable<DashboardAnalyticsResponse["recentBookings"]>[number];
+
+function toBookingStatus(status: string): BookingStatus {
+  if (status === "confirmed" || status === "completed" || status === "cancelled") return status;
+  return "pending";
+}
+
+function toRecentBooking(row: DashboardRecentBookingRow): RecentBooking {
+  const id = String(row?.id ?? row?.confirmationCode ?? row?.confirmation_code ?? Math.random().toString(36).slice(2, 8));
+  return {
+    id,
+    confirmationCode: row?.confirmationCode || row?.confirmation_code || id.toUpperCase(),
+    guestName: row?.guestName || row?.guest_name || "Guest",
+    guestAvatar: `https://i.pravatar.cc/100?u=${encodeURIComponent(id)}`,
+    property: row?.property || "Imported Property",
+    checkIn: row?.checkIn || row?.check_in || new Date().toISOString().slice(0, 10),
+    checkOut: row?.checkOut || row?.check_out || new Date().toISOString().slice(0, 10),
+    guests: row?.guests || 1,
+    total: typeof row?.total === "number" ? row.total : 0,
+    status: toBookingStatus(row?.status || "pending"),
+  };
+}
+
 function DashboardContent() {
   const [selectedProperty, setSelectedProperty] = useState(properties[0]);
   const [activeTab, setActiveTab] = useState<"bookings" | "calendar" | "analytics">("bookings");
   const [metrics, setMetrics] = useState(dashboardData.stats);
-  const [recentBookings, setRecentBookings] = useState(dashboardData.recentBookings);
+  const [recentBookings, setRecentBookings] = useState<RecentBooking[]>(dashboardData.recentBookings);
+  const [monthlyRevenue, setMonthlyRevenue] = useState(dashboardData.monthlyRevenue);
+  const [bookingsBySource, setBookingsBySource] = useState<Array<{ source: string; count: number; revenue: number }>>([
+    { source: "direct", count: 45, revenue: 0 },
+    { source: "airbnb", count: 30, revenue: 0 },
+    { source: "vrbo", count: 15, revenue: 0 },
+    { source: "booking.com", count: 10, revenue: 0 },
+  ]);
+  const [upcomingPayouts, setUpcomingPayouts] = useState(dashboardData.upcomingPayouts);
   const [authUser, setAuthUser] = useState<AuthUser | null>(null);
   const [authError, setAuthError] = useState<string | null>(null);
   const [authLoading, setAuthLoading] = useState(false);
@@ -117,25 +192,52 @@ function DashboardContent() {
       .then((user) => setAuthUser(user))
       .catch(() => setAuthUser(null));
 
-    apiGet<any>("/analytics/dashboard")
+    apiGet<DashboardAnalyticsResponse>("/analytics/dashboard")
       .then((data) => {
         if (data?.metrics) {
           setMetrics({
-            totalBookings: data.metrics.totalBookings,
-            totalRevenue: data.metrics.totalRevenue,
-            occupancyRate: Math.round((data.metrics.occupancyRate || 0) * 100),
-            averageRating: data.metrics.averageRating,
-            pendingBookings: dashboardData.stats.pendingBookings,
-            upcomingCheckIns: dashboardData.stats.upcomingCheckIns,
+            totalBookings: data.metrics.totalBookings ?? 0,
+            totalRevenue: data.metrics.totalRevenue ?? 0,
+            occupancyRate: Math.round(((data.metrics.occupancyRate ?? 0) * 100)),
+            averageRating: data.metrics.averageRating ?? 0,
+            pendingBookings: data.metrics.pendingBookings ?? 0,
+            upcomingCheckIns: data.metrics.upcomingCheckIns ?? 0,
           });
         }
-      })
-      .catch(() => null);
 
-    apiGet<any>("/bookings")
-      .then((data) => {
-        if (Array.isArray(data)) {
-          setRecentBookings((prev) => prev);
+        if (Array.isArray(data?.recentBookings) && data.recentBookings.length > 0) {
+          setRecentBookings(data.recentBookings.map(toRecentBooking));
+        }
+
+        if (Array.isArray(data?.monthlyRevenue) && data.monthlyRevenue.length > 0) {
+          setMonthlyRevenue(
+            data.monthlyRevenue.map((entry) => ({
+              month: entry.month || "N/A",
+              revenue: typeof entry.revenue === "number" ? entry.revenue : 0,
+            })),
+          );
+        }
+
+        if (Array.isArray(data?.bookingsBySource) && data.bookingsBySource.length > 0) {
+          setBookingsBySource(
+            data.bookingsBySource.map((entry) => ({
+              source: entry.source || "direct",
+              count: typeof entry.count === "number" ? entry.count : 0,
+              revenue: typeof entry.revenue === "number" ? entry.revenue : 0,
+            })),
+          );
+        }
+
+        if (Array.isArray(data?.upcomingPayouts)) {
+          setUpcomingPayouts(
+            data.upcomingPayouts
+              .filter((entry) => !!entry?.date)
+              .map((entry) => ({
+                date: entry?.date || new Date().toISOString().slice(0, 10),
+                amount: typeof entry?.amount === "number" ? entry.amount : 0,
+                status: entry?.status || "scheduled",
+              })),
+          );
         }
       })
       .catch(() => null);
@@ -178,14 +280,14 @@ function DashboardContent() {
     setAuthUser(null);
   }
 
-  const statusColors = {
+  const statusColors: Record<BookingStatus, string> = {
     pending: "bg-amber-500/10 text-amber-400 border-amber-500/20",
     confirmed: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
     completed: "bg-zinc-500/10 text-zinc-400 border-zinc-500/20",
     cancelled: "bg-rose-500/10 text-rose-400 border-rose-500/20",
   };
 
-  const maxRevenue = Math.max(...dashboardData.monthlyRevenue.map((m) => m.revenue));
+  const maxRevenue = Math.max(...monthlyRevenue.map((m) => m.revenue), 1);
 
   const activeRole = authUser?.roles?.[0] || "guest";
   const isHostView = ["host", "admin", "enterprise"].includes(activeRole);
@@ -547,7 +649,10 @@ function DashboardContent() {
               <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-4">
                 <h3 className="font-semibold mb-4">Upcoming Payouts</h3>
                 <div className="space-y-3">
-                  {dashboardData.upcomingPayouts.map((payout) => (
+                  {upcomingPayouts.length === 0 && (
+                    <p className="text-sm text-zinc-500">No scheduled payouts.</p>
+                  )}
+                  {upcomingPayouts.map((payout) => (
                     <div key={payout.date} className="flex items-center justify-between">
                       <div>
                         <p className="font-medium text-emerald-600 dark:text-emerald-400">
@@ -951,7 +1056,7 @@ function DashboardContent() {
             <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-6">
               <h3 className="font-semibold mb-6">Monthly Revenue</h3>
               <div className="flex items-end gap-4 h-48">
-                {dashboardData.monthlyRevenue.map((month) => (
+                {monthlyRevenue.map((month) => (
                   <div key={month.month} className="flex-1 flex flex-col items-center">
                     <div
                       className="w-full bg-emerald-500 rounded-t-lg transition-all hover:bg-emerald-400"
@@ -968,25 +1073,29 @@ function DashboardContent() {
             <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-6">
               <h3 className="font-semibold mb-6">Booking Sources</h3>
               <div className="space-y-4">
-                {[
-                  { source: "Direct", percentage: 45, color: "bg-emerald-500" },
-                  { source: "Airbnb", percentage: 30, color: "bg-rose-500" },
-                  { source: "VRBO", percentage: 15, color: "bg-blue-500" },
-                  { source: "Booking.com", percentage: 10, color: "bg-amber-500" },
-                ].map((item) => (
+                {bookingsBySource.length === 0 && (
+                  <p className="text-sm text-zinc-500">No source data available.</p>
+                )}
+                {bookingsBySource.map((item, index) => {
+                  const totalSources = bookingsBySource.reduce((sum, source) => sum + source.count, 0);
+                  const percentage = totalSources > 0 ? Math.round((item.count / totalSources) * 100) : 0;
+                  const colors = ["bg-emerald-500", "bg-rose-500", "bg-blue-500", "bg-amber-500", "bg-violet-500"];
+                  const color = colors[index % colors.length];
+                  return (
                   <div key={item.source}>
                     <div className="flex justify-between text-sm mb-1">
                       <span>{item.source}</span>
-                      <span className="font-medium">{item.percentage}%</span>
+                      <span className="font-medium">{percentage}%</span>
                     </div>
                     <div className="h-2 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
                       <div
-                        className={`h-full ${item.color} rounded-full`}
-                        style={{ width: `${item.percentage}%` }}
+                        className={`h-full ${color} rounded-full`}
+                        style={{ width: `${percentage}%` }}
                       />
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
 
