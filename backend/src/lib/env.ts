@@ -16,9 +16,10 @@ const envSchema = z.object({
   RATE_LIMIT_MAX: z.coerce.number().int().positive().default(120),
   RATE_LIMIT_WINDOW: z.string().default("1 minute"),
   RATE_LIMIT_ALLOWLIST: z.string().optional(),
+  // Default to "true" in production so SSL is enforced unless explicitly disabled.
   DB_SSL: z
     .string()
-    .default("false")
+    .default(process.env.NODE_ENV === "production" ? "true" : "false")
     .transform((v) => v === "true"),
   DB_SSL_REJECT_UNAUTHORIZED: z
     .string()
@@ -33,9 +34,10 @@ const envSchema = z.object({
   REFRESH_TOKEN_COOKIE_NAME: z.string().default("cc_refresh"),
   COOKIE_DOMAIN: z.string().optional(),
   COOKIE_SAME_SITE: z.enum(["strict", "lax", "none"]).default("lax"),
+  // Default to "true" in production so auth cookies are only sent over HTTPS unless explicitly disabled.
   COOKIE_SECURE: z
     .string()
-    .default("false")
+    .default(process.env.NODE_ENV === "production" ? "true" : "false")
     .transform((v) => v === "true"),
   ACCESS_TOKEN_TTL_SECONDS: z.coerce.number().int().positive().default(3600),
   REFRESH_TOKEN_TTL_SECONDS: z.coerce.number().int().positive().default(604800),
