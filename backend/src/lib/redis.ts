@@ -1,4 +1,5 @@
 import Redis from "ioredis";
+import { env } from "./env";
 
 type RedisClient = Redis | null;
 
@@ -6,7 +7,7 @@ let client: RedisClient = null;
 
 export function getRedis(): RedisClient {
   if (client !== null) return client;
-  const url = process.env.REDIS_URL;
+  const url = env.REDIS_URL;
   if (!url) return null;
   client = new Redis(url, {
     maxRetriesPerRequest: 2,
