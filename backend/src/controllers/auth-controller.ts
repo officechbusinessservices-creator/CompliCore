@@ -12,7 +12,7 @@ import {
   updateUserPassword,
   userHasAnyRole,
   verifyPassword,
-} from "../lib/secure-user-model";
+} from "../lib/prisma-user-repo";
 import { Email } from "../utils/email";
 import { verifyTokenWithRotation } from "../lib/jwt-rotation";
 import { appendSecurityAuditEvent } from "../lib/security-audit";
@@ -211,7 +211,7 @@ function attachAuthCookies(reply: FastifyReply, auth: ReturnType<typeof buildAut
 }
 
 export function createAuthController(fastify: FastifyInstance) {
-  function resolveAuthenticatedUser(request: FastifyRequest) {
+  async function resolveAuthenticatedUser(request: FastifyRequest) {
     const accessToken = accessTokenFromRequest(request);
     if (!accessToken) return null;
 
@@ -223,7 +223,7 @@ export function createAuthController(fastify: FastifyInstance) {
     }
 
     if (payload?.typ !== "access" || !payload?.userId) return null;
-    const userRecord = findUserById(payload.userId);
+    const userRecord = await findUserById(payload.userId);
     if (!userRecord) return null;
 
     return { payload, userRecord };
@@ -249,8 +249,8 @@ export function createAuthController(fastify: FastifyInstance) {
     );
   }
 
-  function requirePrivilegedAuthUser(request: FastifyRequest, reply: FastifyReply) {
-    const auth = resolveAuthenticatedUser(request);
+  async function requirePrivilegedAuthUser(request: FastifyRequest, reply: FastifyReply) {
+    const auth = await resolveAuthenticatedUser(request);
     if (!auth) {
       reply.status(401).send({ error: "unauthorized" });
       return null;
@@ -267,12 +267,12 @@ export function createAuthController(fastify: FastifyInstance) {
   return {
     async signup(request: FastifyRequest, reply: FastifyReply, body: RegisterBody) {
       const email = body.email.toLowerCase();
-      if (findUserByEmail(email)) {
+      if (await findUserByEmail(email)) {
         return reply.status(409).send({ error: "user already exists" });
       }
 
       const passwordHash = await hashPassword(body.password);
-      const record = createUser({
+      const record = await createUser({
         email,
         firstName: body.firstName,
         lastName: body.lastName,
@@ -332,7 +332,7 @@ export function createAuthController(fastify: FastifyInstance) {
         return reply.status(429).send({ error: "account temporarily locked", retryAt });
       }
 
-      const record = findUserByEmail(email);
+      const record = await findUserByEmail(email);
 
       if (!record) {
         const next = registerFailedAttempt(key, nowMs);
@@ -381,7 +381,7 @@ export function createAuthController(fastify: FastifyInstance) {
 
       const user = authUserResponse(record);
       const stepUpRequired = stepUpRequiredForRecord(record);
-      const enrolled = hasWebAuthnCredentials(record.id);
+      const enrolled = await hasWebAuthnCredentials(record.id);
       const auth = buildAuthResponse(fastify, user, {
         stepUpRequired,
       });
@@ -470,7 +470,7 @@ export function createAuthController(fastify: FastifyInstance) {
         return reply.status(401).send({ error: "invalid refresh token" });
       }
 
-      const record = findUserById(decoded.userId);
+      const record = await findUserById(decoded.userId);
       if (!record) {
         return reply.status(401).send({ error: "invalid refresh token" });
       }
@@ -492,7 +492,7 @@ export function createAuthController(fastify: FastifyInstance) {
     },
 
     async me(request: FastifyRequest, reply: FastifyReply) {
-      const auth = resolveAuthenticatedUser(request);
+      const auth = await resolveAuthenticatedUser(request);
       if (!auth) {
         return reply.status(401).send({ error: "unauthorized" });
       }
@@ -508,14 +508,14 @@ export function createAuthController(fastify: FastifyInstance) {
         mfa: {
           required: payload.stepUpRequired === true,
           verified: isStepUpSatisfied(payload),
-          enrolled: hasWebAuthnCredentials(record.id),
+          enrolled: await hasWebAuthnCredentials(record.id),
         },
       });
     },
 
     async forgotPassword(request: FastifyRequest, reply: FastifyReply, body: ForgotPasswordBody) {
       const email = body.email.toLowerCase();
-      const user = findUserByEmail(email);
+      const user = await findUserByEmail(email);
 
       if (!user) {
         void appendSecurityAuditEvent({
@@ -528,7 +528,7 @@ export function createAuthController(fastify: FastifyInstance) {
         return reply.status(404).send({ message: "No user found with that email." });
       }
 
-      const reset = createPasswordResetToken(user.id);
+      const reset = await createPasswordResetToken(user.id);
       if (!reset) {
         return reply.status(500).send({ message: "Failed to create reset token" });
       }
@@ -561,7 +561,7 @@ export function createAuthController(fastify: FastifyInstance) {
           message: "Token sent to email!",
         });
       } catch (error) {
-        clearPasswordResetToken(user.id);
+        void clearPasswordResetToken(user.id);
         request.log.error({ email, err: error }, "failed to send password reset email");
         void appendSecurityAuditEvent({
           eventType: "auth_forgot_password_send_failed",
@@ -580,13 +580,13 @@ export function createAuthController(fastify: FastifyInstance) {
     },
 
     async resetPassword(request: FastifyRequest, reply: FastifyReply, token: string, body: ResetPasswordBody) {
-      const user = findUserByPasswordResetToken(token);
+      const user = await findUserByPasswordResetToken(token);
       if (!user) {
         return reply.status(400).send({ message: "Token is invalid or has expired." });
       }
 
       const passwordHash = await hashPassword(body.password);
-      const updated = updateUserPassword(user.id, passwordHash);
+      const updated = await updateUserPassword(user.id, passwordHash);
 
       if (!updated) {
         return reply.status(500).send({ message: "Unable to update password" });
@@ -615,7 +615,7 @@ export function createAuthController(fastify: FastifyInstance) {
     },
 
     async mfaStepUpStatus(request: FastifyRequest, reply: FastifyReply) {
-      const auth = resolveAuthenticatedUser(request);
+      const auth = await resolveAuthenticatedUser(request);
       if (!auth) return reply.status(401).send({ error: "unauthorized" });
 
       const roles = auth.userRecord.roles || [];
@@ -630,7 +630,7 @@ export function createAuthController(fastify: FastifyInstance) {
         enabled: isWebAuthnMfaEnabled(),
         required: requiresStepUp,
         verified: isStepUpSatisfied(auth.payload),
-        enrolled: hasWebAuthnCredentials(auth.userRecord.id),
+        enrolled: await hasWebAuthnCredentials(auth.userRecord.id),
         stepUpTtlSeconds: env.MFA_STEP_UP_TTL_SECONDS,
         stepUpRemainingSeconds: remainingSeconds,
       });
@@ -641,7 +641,7 @@ export function createAuthController(fastify: FastifyInstance) {
         return reply.status(404).send({ error: "webauthn mfa is disabled" });
       }
 
-      const auth = requirePrivilegedAuthUser(request, reply);
+      const auth = await requirePrivilegedAuthUser(request, reply);
       if (!auth) return;
 
       let options: any;
@@ -672,7 +672,7 @@ export function createAuthController(fastify: FastifyInstance) {
         return reply.status(404).send({ error: "webauthn mfa is disabled" });
       }
 
-      const auth = requirePrivilegedAuthUser(request, reply);
+      const auth = await requirePrivilegedAuthUser(request, reply);
       if (!auth) return;
 
       let verification: Awaited<ReturnType<typeof verifyRegistrationForUser>>;
@@ -716,7 +716,7 @@ export function createAuthController(fastify: FastifyInstance) {
         return reply.status(404).send({ error: "webauthn mfa is disabled" });
       }
 
-      const auth = requirePrivilegedAuthUser(request, reply);
+      const auth = await requirePrivilegedAuthUser(request, reply);
       if (!auth) return;
 
       let options: Awaited<ReturnType<typeof createAuthenticationOptionsForUser>>;
@@ -754,7 +754,7 @@ export function createAuthController(fastify: FastifyInstance) {
         return reply.status(404).send({ error: "webauthn mfa is disabled" });
       }
 
-      const auth = requirePrivilegedAuthUser(request, reply);
+      const auth = await requirePrivilegedAuthUser(request, reply);
       if (!auth) return;
 
       let verification: Awaited<ReturnType<typeof verifyAuthenticationForUser>>;
@@ -823,7 +823,7 @@ export function createAuthController(fastify: FastifyInstance) {
         return reply.status(401).send({ error: "unauthorized" });
       }
 
-      const record = findUserById(payload.userId);
+      const record = await findUserById(payload.userId);
       if (!record) {
         return reply.status(401).send({ error: "unauthorized" });
       }

@@ -1,15 +1,13 @@
 import { FastifyInstance } from "fastify";
-import { once } from "events";
 import { z } from "zod";
-import { query, streamQuery } from "../db";
-import { env } from "../lib/env";
 import { formatZodError } from "../lib/validation";
 import { decryptField, encryptField, isFieldEncryptionEnabled } from "../lib/encryption";
 import { appendSecurityAuditEvent } from "../lib/security-audit";
+import { prisma } from "../lib/prisma";
+import { env } from "../lib/env";
 
 const listSchema = z.object({
   confirmationCode: z.string().min(3).max(64).optional(),
-  stream: z.enum(["true", "false"]).optional(),
 });
 
 const createSchema = z.object({
@@ -29,53 +27,22 @@ const cancelSchema = z.object({
   reason: z.string().min(1).max(255).optional(),
 });
 
+const updateStatusSchema = z.object({
+  status: z.enum(["pending", "confirmed", "cancelled", "completed"]),
+});
+
 const standardBookingRoles = ["guest", "host", "admin"];
 const accessBookingRoles = ["host", "admin"];
-const demoFallbackEnabled = env.ENABLE_DEMO_FALLBACK && env.NODE_ENV !== "production";
 
-type DemoBooking = {
+function toPublicBooking(row: {
   id: number;
   confirmation_code: string;
   guest_name: string;
-  property: string;
-  check_in: string;
-  check_out: string;
-  access_code: string;
-  wifi_name: string;
-  wifi_password: string;
+  property: string | null;
+  check_in: string | null;
+  check_out: string | null;
   status: string;
-};
-
-function buildDemoBookings(): DemoBooking[] {
-  return [
-    {
-      id: 1,
-      confirmation_code: "HX4K9M2",
-      guest_name: "Alex Johnson",
-      property: "Modern Downtown Loft",
-      check_in: "3:00 PM",
-      check_out: "11:00 AM",
-      access_code: "4829",
-      wifi_name: "LoftGuest",
-      wifi_password: "Welcome2024",
-      status: "confirmed",
-    },
-    {
-      id: 2,
-      confirmation_code: "1234",
-      guest_name: "Test Guest",
-      property: "Cozy Studio",
-      check_in: "4:00 PM",
-      check_out: "10:00 AM",
-      access_code: "0000",
-      wifi_name: "StudioGuest",
-      wifi_password: "password",
-      status: "pending",
-    },
-  ];
-}
-
-function toPublicBooking(row: any) {
+}) {
   return {
     id: row.id,
     confirmation_code: row.confirmation_code,
@@ -87,44 +54,21 @@ function toPublicBooking(row: any) {
   };
 }
 
-function toAccessDetails(row: any) {
-  return {
-    id: row.id,
-    confirmation_code: row.confirmation_code,
-    access_code: revealCredential(row.access_code),
-    wifi_name: revealCredential(row.wifi_name),
-    wifi_password: revealCredential(row.wifi_password),
-  };
-}
-
 function protectCredential(value?: string | null) {
   if (!value) return value;
   if (!isFieldEncryptionEnabled()) return value;
-  try {
-    return encryptField(value);
-  } catch {
-    return value;
-  }
+  try { return encryptField(value); } catch { return value; }
 }
 
 function revealCredential(value?: string | null) {
   if (!value) return value;
   if (!isFieldEncryptionEnabled()) return value;
-  try {
-    return decryptField(value);
-  } catch {
-    return value;
-  }
-}
-
-function sendUnavailable(reply: any) {
-  return reply.status(503).send({ error: "service unavailable" });
+  try { return decryptField(value); } catch { return value; }
 }
 
 async function requireRoles(fastify: FastifyInstance, request: any, reply: any, roles: string[]) {
   const guard = (fastify as any).requireRole;
   if (!guard) return true;
-
   const result = await guard(request, reply, roles);
   if (reply.sent) return false;
   if (result) return false;
@@ -149,131 +93,63 @@ export default async function bookingsRoutes(fastify: FastifyInstance) {
       });
     }
 
-    const q = parse.data;
+    const { confirmationCode } = parse.data;
 
-    try {
-      if (q.confirmationCode) {
-        const res = await query(
-          "SELECT id, confirmation_code, guest_name, property, check_in, check_out, status FROM bookings WHERE confirmation_code = $1 LIMIT 1",
-          [q.confirmationCode],
-        );
-
-        if (res.rows.length === 0) return reply.status(404).send({ error: "not found" });
-        return toPublicBooking(res.rows[0]);
-      }
-
-      if (q.stream === "true") {
-        reply.header("Content-Type", "application/json; charset=utf-8");
-        const stream = await streamQuery(
-          "SELECT id, confirmation_code, guest_name, property, check_in, check_out, status FROM bookings ORDER BY id DESC",
-        );
-
-        reply.raw.write("[");
-        let first = true;
-
-        stream.on("data", (row: any) => {
-          if (!first) reply.raw.write(",");
-          reply.raw.write(JSON.stringify(toPublicBooking(row)));
-          first = false;
-        });
-
-        stream.on("end", () => {
-          reply.raw.write("]");
-          reply.raw.end();
-        });
-
-        stream.on("error", () => {
-          if (!reply.raw.writableEnded) {
-            reply.raw.write("]");
-            reply.raw.end();
-          }
-        });
-
-        await once(stream, "end");
-        return reply;
-      }
-
-      const res = await query(
-        "SELECT id, confirmation_code, guest_name, property, check_in, check_out, status FROM bookings ORDER BY id DESC LIMIT 50",
-      );
-      return res.rows.map(toPublicBooking);
-    } catch (err) {
-      if (!demoFallbackEnabled) {
-        request.log.error({ err }, "bookings query failed and demo fallback is disabled");
-        return sendUnavailable(reply);
-      }
-
-      const demo = buildDemoBookings();
-      if (q.confirmationCode) {
-        const found = demo.find((d) => d.confirmation_code === q.confirmationCode);
-        if (!found) return reply.status(404).send({ error: "not found" });
-        return toPublicBooking(found);
-      }
-      return demo.map(toPublicBooking);
+    if (confirmationCode) {
+      const booking = await prisma.booking.findUnique({
+        where: { confirmation_code: confirmationCode },
+      });
+      if (!booking) return reply.status(404).send({ error: "not found" });
+      return toPublicBooking(booking);
     }
+
+    const bookings = await prisma.booking.findMany({
+      orderBy: { id: "desc" },
+      take: 50,
+    });
+    return bookings.map(toPublicBooking);
   });
 
   fastify.get("/bookings/:bookingId", async (request, reply) => {
     const hasAccess = await requireRoles(fastify, request as any, reply, standardBookingRoles);
     if (!hasAccess) return;
 
-    const { bookingId } = request.params as any;
-    try {
-      const res = await query(
-        "SELECT id, confirmation_code, guest_name, property, check_in, check_out, status FROM bookings WHERE id = $1",
-        [bookingId],
-      );
-
-      if (res.rows.length === 0) return reply.status(404).send({ error: "not found" });
-      return toPublicBooking(res.rows[0]);
-    } catch (err) {
-      if (!demoFallbackEnabled) {
-        request.log.error({ err }, "booking lookup failed and demo fallback is disabled");
-        return sendUnavailable(reply);
-      }
-
-      const found = buildDemoBookings().find((d) => String(d.id) === String(bookingId));
-      if (!found) return reply.status(404).send({ error: "not found" });
-      return toPublicBooking(found);
-    }
+    const { bookingId } = request.params as { bookingId: string };
+    const booking = await prisma.booking.findUnique({
+      where: { id: parseInt(bookingId, 10) },
+    });
+    if (!booking) return reply.status(404).send({ error: "not found" });
+    return toPublicBooking(booking);
   });
 
   fastify.get("/bookings/:bookingId/access", async (request, reply) => {
     const hasAccess = await requireRoles(fastify, request as any, reply, accessBookingRoles);
     if (!hasAccess) return;
 
-    const { bookingId } = request.params as any;
+    const { bookingId } = request.params as { bookingId: string };
     const principal = (request as any).user || {};
-    try {
-      const res = await query(
-        "SELECT id, confirmation_code, access_code, wifi_name, wifi_password FROM bookings WHERE id = $1",
-        [bookingId],
-      );
+    const booking = await prisma.booking.findUnique({
+      where: { id: parseInt(bookingId, 10) },
+    });
+    if (!booking) return reply.status(404).send({ error: "not found" });
 
-      if (res.rows.length === 0) return reply.status(404).send({ error: "not found" });
-      void appendSecurityAuditEvent({
-        eventType: "booking_access_credentials_read",
-        severity: "warn",
-        actorUserId: principal.userId,
-        actorEmail: principal.email,
-        ip: (request as any).ip,
-        traceId: (request as any).id,
-        details: {
-          bookingId: String(bookingId),
-          roles: principal.roles || [],
-        },
-      });
-      return toAccessDetails(res.rows[0]);
-    } catch (err) {
-      if (!demoFallbackEnabled) {
-        request.log.error({ err }, "booking access lookup failed and demo fallback is disabled");
-        return sendUnavailable(reply);
-      }
+    void appendSecurityAuditEvent({
+      eventType: "booking_access_credentials_read",
+      severity: "warn",
+      actorUserId: principal.userId,
+      actorEmail: principal.email,
+      ip: (request as any).ip,
+      traceId: (request as any).id,
+      details: { bookingId: String(bookingId), roles: principal.roles || [] },
+    });
 
-      const found = buildDemoBookings().find((d) => String(d.id) === String(bookingId));
-      if (!found) return reply.status(404).send({ error: "not found" });
-      return toAccessDetails(found);
-    }
+    return {
+      id: booking.id,
+      confirmation_code: booking.confirmation_code,
+      access_code: revealCredential(booking.access_code),
+      wifi_name: revealCredential(booking.wifi_name),
+      wifi_password: revealCredential(booking.wifi_password),
+    };
   });
 
   fastify.post("/bookings", async (request, reply) => {
@@ -294,58 +170,64 @@ export default async function bookingsRoutes(fastify: FastifyInstance) {
     }
 
     const body = parsed.data;
-    try {
-      const res = await query(
-        `INSERT INTO bookings (confirmation_code, listing_id, guest_name, property, check_in, check_out, access_code, wifi_name, wifi_password, status)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
-         RETURNING id, confirmation_code, listing_id, guest_name, property, check_in, check_out, access_code, wifi_name, wifi_password, status`,
-        [
-          body.confirmation_code,
-          body.listing_id,
-          body.guest_name,
-          body.property,
-          body.check_in,
-          body.check_out,
-          protectCredential(body.access_code),
-          protectCredential(body.wifi_name),
-          protectCredential(body.wifi_password),
-          body.status || "pending",
-        ],
-      );
-      const created = res.rows[0];
-      return reply.status(201).send({
-        ...created,
-        access_code: revealCredential(created.access_code),
-        wifi_name: revealCredential(created.wifi_name),
-        wifi_password: revealCredential(created.wifi_password),
-      });
-    } catch (err) {
-      if (!demoFallbackEnabled) {
-        request.log.error({ err }, "booking create failed and demo fallback is disabled");
-        return sendUnavailable(reply);
-      }
+    const confirmationCode =
+      body.confirmation_code ||
+      Math.random().toString(36).slice(2, 9).toUpperCase();
 
-      return reply.status(201).send({
-        id: Math.floor(Math.random() * 100000),
-        confirmation_code: body.confirmation_code || "DEMO123",
+    const booking = await prisma.booking.create({
+      data: {
+        confirmation_code: confirmationCode,
         listing_id: body.listing_id,
         guest_name: body.guest_name,
         property: body.property,
         check_in: body.check_in,
         check_out: body.check_out,
-        access_code: body.access_code,
-        wifi_name: body.wifi_name,
-        wifi_password: body.wifi_password,
+        access_code: protectCredential(body.access_code) ?? undefined,
+        wifi_name: protectCredential(body.wifi_name) ?? undefined,
+        wifi_password: protectCredential(body.wifi_password) ?? undefined,
         status: body.status || "pending",
+      },
+    });
+
+    return reply.status(201).send({
+      ...booking,
+      access_code: revealCredential(booking.access_code),
+      wifi_name: revealCredential(booking.wifi_name),
+      wifi_password: revealCredential(booking.wifi_password),
+    });
+  });
+
+  fastify.patch("/bookings/:bookingId/status", async (request, reply) => {
+    const hasAccess = await requireRoles(fastify, request as any, reply, standardBookingRoles);
+    if (!hasAccess) return;
+
+    const { bookingId } = request.params as { bookingId: string };
+    const parsed = updateStatusSchema.safeParse(request.body);
+    if (!parsed.success) {
+      return reply.status(400).send({
+        type: "urn:problem:validation",
+        title: "Request validation failed",
+        status: 400,
+        detail: "Invalid status payload",
+        errors: formatZodError(parsed.error),
+        instance: request.url,
+        traceId: request.id,
       });
     }
+
+    const booking = await prisma.booking.update({
+      where: { id: parseInt(bookingId, 10) },
+      data: { status: parsed.data.status },
+    });
+
+    return toPublicBooking(booking);
   });
 
   fastify.post("/bookings/:bookingId/cancel", async (request, reply) => {
     const hasAccess = await requireRoles(fastify, request as any, reply, standardBookingRoles);
     if (!hasAccess) return;
 
-    const { bookingId } = request.params as any;
+    const { bookingId } = request.params as { bookingId: string };
     const parsed = cancelSchema.safeParse(request.body);
     if (!parsed.success) {
       return reply.status(400).send({
@@ -359,16 +241,17 @@ export default async function bookingsRoutes(fastify: FastifyInstance) {
       });
     }
 
-    const body = parsed.data;
+    const booking = await prisma.booking.update({
+      where: { id: parseInt(bookingId, 10) },
+      data: { status: "cancelled" },
+    });
+
     return {
-      booking: {
-        id: bookingId,
-        status: "cancelled",
-      },
+      booking: toPublicBooking(booking),
       refund: {
-        amount: 50,
+        amount: 0,
         currency: "USD",
-        policy: body.reason || "standard",
+        policy: parsed.data.reason || "standard",
       },
     };
   });
