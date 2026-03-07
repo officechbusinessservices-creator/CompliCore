@@ -10,6 +10,20 @@ on:
 jobs:
   lint-type-test:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: rental_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - uses: actions/checkout@v4
       - name: Use Node.js
@@ -28,11 +42,13 @@ jobs:
         working-directory: backend
         env:
           NODE_ENV: test
-          DATABASE_URL: "file:./ci.test.db"
+          DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/rental_test"
           JWT_SECRET: "0123456789abcdef0123456789abcdef"
         run: |
           npm ci
           npm run build --if-present
+          npx prisma generate
+          npx prisma db push --skip-generate
           npm run test
 
   frontend-build:
@@ -55,12 +71,26 @@ jobs:
   backend-validate:
     runs-on: ubuntu-latest
     needs: lint-type-test
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: rental_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     defaults:
       run:
         working-directory: backend
     env:
       NODE_ENV: test
-      DATABASE_URL: "file:./ci.test.db"
+      DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/rental_test"
       JWT_SECRET: "0123456789abcdef0123456789abcdef"
     steps:
       - uses: actions/checkout@v4
@@ -74,15 +104,31 @@ jobs:
         run: npm ci
       - name: Generate Prisma client
         run: npx prisma generate
+      - name: Push schema to test DB
+        run: npx prisma db push --skip-generate
       - name: Test (vitest) with coverage
         run: npm run test -- --coverage
 
   openapi-drift-check:
     runs-on: ubuntu-latest
     needs: lint-type-test
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: rental_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     env:
       NODE_ENV: test
-      DATABASE_URL: "file:./ci.test.db"
+      DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/rental_test"
       JWT_SECRET: "0123456789abcdef0123456789abcdef"
     steps:
       - uses: actions/checkout@v4
@@ -99,5 +145,9 @@ jobs:
         run: npm ci --prefix backend
       - name: Build backend
         run: npm run build --prefix backend
+      - name: Generate Prisma client
+        run: npx prisma generate --schema backend/prisma/schema.prisma
+      - name: Push schema to test DB
+        run: npx prisma db push --skip-generate --schema backend/prisma/schema.prisma
       - name: Smoke backend contract endpoints
         run: npm run openapi:smoke
