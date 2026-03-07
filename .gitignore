@@ -1,3 +1,6 @@
+# Add test coverage output
+coverage/
+.vitest/
 db.sqlite3
 db.sqlite3-journal
 dmypy.json
