@@ -1,37 +1,33 @@
 import { FastifyInstance } from "fastify";
+import { z } from "zod";
 import { runUserProfilePhotoUpload } from "../utils/upload";
-import { getOrDefault, getRedis } from "../lib/redis";
+import { getRedis } from "../lib/redis";
 import { verifyRequestWithRotation } from "../lib/jwt-rotation";
+import { prisma } from "../lib/prisma";
 
-type DevUserProfile = {
-  id: string;
+const updateProfileSchema = z.object({
+  firstName: z.string().min(1).max(100).optional(),
+  lastName: z.string().min(1).max(100).optional(),
+  displayName: z.string().min(1).max(200).optional(),
+});
+
+function userToProfile(user: {
+  id: number;
   email: string;
   firstName: string;
   lastName: string;
-  displayName: string;
   roles: string[];
-  photo?: string;
-  createdAt: string;
-};
-
-const devUsers = new Map<string, DevUserProfile>();
-
-function getOrCreateDevUser(userId: string): DevUserProfile {
-  const existing = devUsers.get(userId);
-  if (existing) return existing;
-
-  const created: DevUserProfile = {
-    id: userId,
-    email: "dev@local",
-    firstName: "Dev",
-    lastName: "User",
-    displayName: "Dev User",
-    roles: ["guest"],
-    createdAt: new Date().toISOString(),
+  createdAt: Date;
+}) {
+  return {
+    id: String(user.id),
+    email: user.email,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    displayName: `${user.firstName} ${user.lastName}`.trim() || user.email,
+    roles: user.roles,
+    createdAt: user.createdAt.toISOString(),
   };
-
-  devUsers.set(userId, created);
-  return created;
 }
 
 export default async function usersRoutes(fastify: FastifyInstance) {
@@ -39,10 +35,18 @@ export default async function usersRoutes(fastify: FastifyInstance) {
     try {
       const req = request as any;
       await verifyRequestWithRotation(req);
-      const userId = req.user?.userId || "dev-user-id";
 
-      return await getOrDefault(`user:profile:${userId}`, async () => getOrCreateDevUser(userId), 120);
-    } catch (err) {
+      const userId = req.user?.userId;
+      if (!userId) return reply.status(401).send({ error: "unauthorized" });
+
+      const id = parseInt(String(userId), 10);
+      if (Number.isNaN(id)) return reply.status(401).send({ error: "unauthorized" });
+
+      const user = await prisma.user.findUnique({ where: { id } });
+      if (!user) return reply.status(404).send({ error: "user not found" });
+
+      return userToProfile(user);
+    } catch {
       return reply.status(401).send({ error: "unauthorized" });
     }
   });
@@ -51,32 +55,35 @@ export default async function usersRoutes(fastify: FastifyInstance) {
     try {
       const req = request as any;
       await verifyRequestWithRotation(req);
-      const userId = req.user?.userId || "dev-user-id";
-      const existing = getOrCreateDevUser(userId);
 
-      let uploadedPhotoUrl: string | undefined;
+      const userId = req.user?.userId;
+      if (!userId) return reply.status(401).send({ error: "unauthorized" });
+
+      const id = parseInt(String(userId), 10);
+      if (Number.isNaN(id)) return reply.status(401).send({ error: "unauthorized" });
+
+      let photoUrl: string | undefined;
       const contentType = String(request.headers["content-type"] || "");
       if (contentType.includes("multipart/form-data")) {
         const file = await runUserProfilePhotoUpload(request, reply);
-        uploadedPhotoUrl = file?.path || file?.secure_url;
+        photoUrl = file?.path || file?.secure_url;
       }
 
       const body = (request.body || {}) as Record<string, unknown>;
-      const updated: DevUserProfile = {
-        ...existing,
-        firstName: (body.firstName as string) || existing.firstName,
-        lastName: (body.lastName as string) || existing.lastName,
-        displayName: (body.displayName as string) || existing.displayName,
-        photo: uploadedPhotoUrl || existing.photo,
-      };
+      const parsed = updateProfileSchema.safeParse(body);
 
-      devUsers.set(userId, updated);
-      const redis = getRedis();
-      if (redis) {
-        await redis.del(`user:profile:${userId}`);
+      const updateData: Record<string, string> = {};
+      if (parsed.success) {
+        if (parsed.data.firstName) updateData.firstName = parsed.data.firstName;
+        if (parsed.data.lastName) updateData.lastName = parsed.data.lastName;
       }
 
-      return updated;
+      const user = await prisma.user.update({ where: { id }, data: updateData });
+
+      const redis = getRedis();
+      if (redis) await redis.del(`user:profile:${userId}`);
+
+      return { ...userToProfile(user), photo: photoUrl };
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "unknown error";
       if (message.includes("Not an image") || message.includes("Cloudinary is not configured")) {
