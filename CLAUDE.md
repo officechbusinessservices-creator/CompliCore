@@ -1,5 +1,7 @@
 # CLAUDE.md — CompliCore AI Assistant Reference
 
+<a href="https://github.com/officechbusinessservices-creator/CompliCore/actions/workflows/ci.yml"><img src="https://github.com/officechbusinessservices-creator/CompliCore/actions/workflows/ci.yml/badge.svg"></a>
+
 ## Project Overview
 
 **CompliCore** is a compliance-first, vendor-neutral short-term rental platform built with privacy-by-design, ethical AI, and global regulatory compliance at its core. It serves multiple user roles: hosts, guests, cleaners, maintenance staff, and corporate travelers.
