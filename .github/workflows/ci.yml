@@ -146,8 +146,10 @@ jobs:
       - name: Build backend
         run: npm run build --prefix backend
       - name: Generate Prisma client
-        run: npx prisma generate --schema backend/prisma/schema.prisma
+        working-directory: backend
+        run: npx prisma generate
       - name: Push schema to test DB
-        run: npx prisma db push --skip-generate --schema backend/prisma/schema.prisma
+        working-directory: backend
+        run: npx prisma db push --skip-generate
       - name: Smoke backend contract endpoints
         run: npm run openapi:smoke
