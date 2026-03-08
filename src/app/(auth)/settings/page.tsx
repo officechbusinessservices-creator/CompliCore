@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { CheckCircle2, User, Bell, Shield, CreditCard, Globe, Loader2, AlertCircle } from "lucide-react";

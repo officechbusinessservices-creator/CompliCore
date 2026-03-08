@@ -3,7 +3,7 @@ import crypto from "crypto";
 import { buildServer } from "../server";
 import { Email } from "../utils/email";
 import { env } from "../lib/env";
-import { createUser, hashPassword } from "../lib/secure-user-model";
+import { prisma } from "../lib/prisma";
 
 let server: any;
 
@@ -320,58 +320,74 @@ describe("API - core endpoints", () => {
   it("requires step-up for host/admin sensitive access when step-up is pending", async () => {
     const email = `api-stepup-${Date.now()}-${Math.random().toString(16).slice(2)}@example.com`;
     const password = "StepUpPass123!";
-    const passwordHash = await hashPassword(password);
-    const host = createUser({
-      email,
-      firstName: "Step",
-      lastName: "Up",
-      roles: ["host"],
-      passwordHash,
-    });
 
-    const login = await server.inject({
+    // Register the user so they exist in the real DB (registers with "guest" role)
+    const register = await server.inject({
       method: "POST",
-      url: "/v1/auth/login",
-      payload: { email, password },
+      url: "/v1/auth/register",
+      payload: { email, password, firstName: "Step", lastName: "Up" },
     });
-    expect(login.statusCode).toBe(200);
-    const loginBody = JSON.parse(login.payload);
-    expect(loginBody.mfa?.required).toBe(true);
-    expect(loginBody.mfa?.enrolled).toBe(false);
+    expect(register.statusCode).toBe(201);
+    const registerBody = JSON.parse(register.payload);
+    const hostId = registerBody.user.id as string;
 
-    const status = await server.inject({
-      method: "GET",
-      url: "/v1/auth/mfa/step-up/status",
-      headers: { Authorization: `Bearer ${loginBody.accessToken}` },
-    });
-    expect(status.statusCode).toBe(200);
-    const statusBody = JSON.parse(status.payload);
-    expect(statusBody.required).toBe(true);
-    expect(statusBody.verified).toBe(false);
-
-    const denied = await server.inject({
-      method: "GET",
-      url: "/v1/bookings/1/access",
-      headers: { Authorization: `Bearer ${loginBody.accessToken}` },
-    });
-    expect(denied.statusCode).toBe(401);
-    const deniedBody = JSON.parse(denied.payload);
-    expect(deniedBody.code).toBe("step_up_required");
-
-    const freshStepUpToken = server.jwt.sign({
-      userId: host.id,
-      email: host.email,
-      roles: host.roles,
-      typ: "access",
-      stepUpRequired: true,
-      stepUpVerifiedAt: Math.floor(Date.now() / 1000),
+    // Promote to host role directly in the DB so login sees the real role
+    await prisma.user.update({
+      where: { id: parseInt(hostId, 10) },
+      data: { roles: ["host"] },
     });
 
-    const allowed = await server.inject({
-      method: "GET",
-      url: "/v1/bookings/1/access",
-      headers: { Authorization: `Bearer ${freshStepUpToken}` },
-    });
-    expect(allowed.statusCode).toBe(200);
+    // Force WebAuthn step-up on for this test regardless of local .env setting
+    const previousMfaEnabled = env.WEBAUTHN_MFA_ENABLED;
+    env.WEBAUTHN_MFA_ENABLED = true;
+
+    try {
+      const login = await server.inject({
+        method: "POST",
+        url: "/v1/auth/login",
+        payload: { email, password },
+      });
+      expect(login.statusCode).toBe(200);
+      const loginBody = JSON.parse(login.payload);
+      expect(loginBody.mfa?.required).toBe(true);
+      expect(loginBody.mfa?.enrolled).toBe(false);
+
+      const status = await server.inject({
+        method: "GET",
+        url: "/v1/auth/mfa/step-up/status",
+        headers: { Authorization: `Bearer ${loginBody.accessToken}` },
+      });
+      expect(status.statusCode).toBe(200);
+      const statusBody = JSON.parse(status.payload);
+      expect(statusBody.required).toBe(true);
+      expect(statusBody.verified).toBe(false);
+
+      const denied = await server.inject({
+        method: "GET",
+        url: "/v1/bookings/1/access",
+        headers: { Authorization: `Bearer ${loginBody.accessToken}` },
+      });
+      expect(denied.statusCode).toBe(401);
+      const deniedBody = JSON.parse(denied.payload);
+      expect(deniedBody.code).toBe("step_up_required");
+
+      const freshStepUpToken = server.jwt.sign({
+        userId: hostId,
+        email,
+        roles: ["host"],
+        typ: "access",
+        stepUpRequired: true,
+        stepUpVerifiedAt: Math.floor(Date.now() / 1000),
+      });
+
+      const allowed = await server.inject({
+        method: "GET",
+        url: "/v1/bookings/1/access",
+        headers: { Authorization: `Bearer ${freshStepUpToken}` },
+      });
+      expect(allowed.statusCode).toBe(200);
+    } finally {
+      env.WEBAUTHN_MFA_ENABLED = previousMfaEnabled;
+    }
   });
 });

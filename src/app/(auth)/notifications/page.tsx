@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 import { useState } from "react";
 import { Bell, CheckCircle2, AlertCircle, Info, Calendar, DollarSign, MessageSquare, Star, Trash2 } from "lucide-react";
 

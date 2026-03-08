@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { SessionProvider } from "next-auth/react";
 import { ThemeProvider } from "@/components/ThemeProvider";
 
 export default function ClientBody({
@@ -15,13 +16,15 @@ export default function ClientBody({
   }, []);
 
   return (
-    <ThemeProvider
-      attribute="class"
-      defaultTheme="dark"
-      enableSystem
-      disableTransitionOnChange
-    >
-      <div className="antialiased">{children}</div>
-    </ThemeProvider>
+    <SessionProvider>
+      <ThemeProvider
+        attribute="class"
+        defaultTheme="dark"
+        enableSystem
+        disableTransitionOnChange
+      >
+        <div className="antialiased">{children}</div>
+      </ThemeProvider>
+    </SessionProvider>
   );
 }
