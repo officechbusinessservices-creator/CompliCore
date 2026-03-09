@@ -91,9 +91,21 @@ Backend runs on [http://localhost:4000](http://localhost:4000)
 - **[User Guide](./USER_GUIDE.md)** - Complete user documentation
 - **[Deployment Guide](./DEPLOYMENT.md)** - Production deployment instructions
 - **[Security Guide](./SECURITY_GUIDE.md)** - Open Deep Research hardening notes
-- **[Architecture Docs](./docs/)** - Technical architecture documentation
+- **[Architecture Overview](./docs/architecture/overview.md)** - Directory structure, frontend/backend design, and integrations
+- **[API Endpoints](./docs/api/endpoints.md)** - All REST endpoints with method, auth, and request/response details
+- **[Security & Compliance Framework](./docs/security/compliance_framework.md)** - Auth, RBAC, rate limiting, encryption
+- **[Performance Optimization Guide](./docs/performance/optimization_guide.md)** - Prisma indexes, caching, Next.js optimizations
+- **[Testing Framework](./docs/testing/framework.md)** - Test runner setup, how to run tests, example patterns
 - **[API Reference](http://localhost:3000/api-docs)** - Interactive API documentation
 - **[Public APIs Catalog](./PUBLIC_APIS.md)** - Full public-apis.org reference list
+
+### Technical Reference
+
+- **[API Endpoints](./docs/api/endpoints.md)** - REST API routes, request/response shapes, auth requirements
+- **[Architecture Overview](./docs/architecture/overview.md)** - Frontend, backend, database, and integration architecture
+- **[Security & Compliance Framework](./docs/security/compliance_framework.md)** - Auth, RBAC, encryption, rate limiting, audit logging
+- **[Performance Optimization Guide](./docs/performance/optimization_guide.md)** - Prisma indexes, Next.js optimizations, caching patterns
+- **[Testing Framework](./docs/testing/framework.md)** - Vitest setup, test locations, running tests, coverage
 
 ## 🗺️ Project Structure
 
