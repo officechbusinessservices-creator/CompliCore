@@ -1,100 +1,147 @@
 # Performance Optimization Guide
 
-This document covers performance considerations based on what is actually present in the CompliCore codebase.
+This document describes performance features and configurations **present in the codebase**. Recommendations are grounded in the actual stack (Next.js frontend, Fastify + Prisma backend, PostgreSQL).
 
 ---
 
-## Database — Prisma Indexes
+## Database Indexes (Prisma Schema)
 
-The Prisma schema (`backend/prisma/schema.prisma`) defines the following indexes:
+`backend/prisma/schema.prisma` defines the following indexes:
 
-| Model | Index | Type | Purpose |
-|-------|-------|------|---------|
-| `User` | `email` | Unique + index | Fast lookup on login and registration |
-| `WebAuthnCredential` | `userId` | Index | Fast join to user when verifying a credential |
-| `Booking` | `(status, created_at)` | Composite index | Efficient filtering of bookings by status ordered by creation time |
-| `Booking` | `user_id` | Index | Fast lookup of all bookings for a user |
-| `Listing` | `host_id` | Index | Fast lookup of all listings for a host |
+| Model | Index | Type | Rationale |
+|-------|-------|------|-----------|
+| `User` | `email` | Single-column | Fast lookup during login and uniqueness checks |
+| `WebAuthnCredential` | `userId` | Single-column | Retrieve all credentials for a user during WebAuthn flows |
+| `Booking` | `(status, created_at)` | Composite | Filter bookings by status ordered by recency (e.g., active bookings dashboard) |
+| `Booking` | `user_id` | Single-column | Fetch all bookings for a specific user |
+| `Listing` | `host_id` | Single-column | Fetch all listings owned by a host |
 
-These indexes cover the most common read patterns (auth, booking lists, listing management). Columns without indexes (`Message.booking_id`, `Payment.booking_id`, `Subscription.user_id`) are candidates for future indexing if query volumes grow.
+The `Payment` model has a unique constraint on `stripe_payment_intent_id`, which doubles as an index and prevents duplicate payment records.
 
 ### Recommendations
 
-- Add `@@index([booking_id])` to `Message` and `Payment` if message threading or payment lookup becomes a hot path.
-- Use `select` in Prisma queries to fetch only required columns, especially for wide models like `Booking`.
-- Paginate list queries using `take` / `skip` or cursor-based pagination to avoid full-table scans.
+- **`Message` table:** `booking_id` is queried on every thread fetch. Add `@@index([booking_id])` if the messages table grows large.
+- **`Subscription` table:** `user_id` is queried to find active subscriptions. Add `@@index([user_id])` if the table scales.
+- **`Payout` table:** `host_id` is likely the primary filter. Add `@@index([host_id])` for host payout history queries.
+
+Run `npx prisma migrate dev --name add_missing_indexes` after adding indexes to the schema.
 
 ---
 
-## Redis Caching
+## Database Connection Pool
 
-`backend/src/lib/redis.ts` provides a `getOrDefault` helper that wraps any async call with Redis-backed caching:
+Configured via environment variables validated in `backend/src/lib/env.ts`:
 
-```ts
-// Returns cached value if available, otherwise calls fallback and caches result
-const data = await getOrDefault(
-  "cache:key",
-  () => prisma.listing.findMany(),
-  300 // TTL in seconds
-);
-```
+| Variable | Default | Notes |
+|----------|---------|-------|
+| `DB_POOL_MAX` | `20` | Maximum concurrent database connections |
+| `DB_IDLE_TIMEOUT_MS` | `30000` | Close idle connections after 30 s |
+| `DB_CONNECT_TIMEOUT_MS` | `5000` | Fail fast on connection errors |
+| `DB_SLOW_QUERY_THRESHOLD_MS` | `100` | Queries exceeding this threshold are logged as slow |
 
-- The Redis client is **optional**: if `REDIS_URL` is not set, the helper falls back to calling the underlying function directly with no caching.
-- Default TTL is 300 seconds (5 minutes).
-- Used in analytics and AI endpoints to reduce repeated database or external API calls.
+Tune `DB_POOL_MAX` to match the number of available PostgreSQL connections (typically `max_connections - reserved`).
 
 ---
 
 ## Next.js Optimizations
 
-### Image Optimization
-
-Configured in `next.config.js`:
-
-- **Formats:** AVIF and WebP are generated automatically by the Next.js image service.
-- **Device sizes:** `[640, 750, 828, 1080, 1200, 1920, 2048, 3840]`
-- **Image sizes:** `[16, 32, 48, 64, 96, 128, 256, 384]`
-- **Remote patterns:** Unsplash (`source.unsplash.com`, `images.unsplash.com`) and Same Assets CDN are whitelisted.
-- **Development:** `unoptimized: true` is set in development to speed up local iteration; optimization is active in production.
-
-Use the `next/image` component (`<Image>`) instead of `<img>` for all property photos and user avatars to take advantage of automatic resizing and format selection.
-
-### Compression
-
-`compress: true` is enabled in `next.config.js`, which activates gzip compression for all Next.js-served responses.
-
-### Bundle Analysis
-
-Run `ANALYZE=true npm run build` to open an interactive bundle analyser (powered by `@next/bundle-analyzer`). Use this to identify large dependencies in the client bundle.
+Configured in `next.config.js`.
 
 ### React Strict Mode
 
-`reactStrictMode: true` is enabled, which surfaces rendering issues during development that could affect performance in production.
+```js
+reactStrictMode: true
+```
 
-### Server Components
+Enables double-rendering in development to surface side-effect bugs early. No production overhead.
 
-The App Router (`src/app/`) supports React Server Components by default. Pages that do not require client-side interactivity should avoid the `"use client"` directive to keep them server-rendered, reducing JavaScript bundle size.
+### Gzip Compression
+
+```js
+compress: true
+```
+
+Next.js compresses HTTP responses with gzip. Offload to a CDN or reverse proxy (Cloudflare, nginx) in high-traffic production environments for better throughput.
+
+### Image Optimization
+
+Next.js `<Image>` component is configured with:
+
+- **Formats:** AVIF (preferred), WebP fallback.
+- **Device sizes:** 640, 750, 828, 1080, 1200, 1920, 2048, 3840 px.
+- **Image sizes:** 16, 32, 48, 64, 96, 128, 256, 384 px.
+- **Remote patterns:** `source.unsplash.com`, `images.unsplash.com`, `ext.same-assets.com`, `ugc.same-assets.com`.
+
+Using `<Image>` (rather than `<img>`) ensures lazy loading, automatic format negotiation, and correctly sized `srcset` attributes.
+
+### Bundle Analysis
+
+Set `ANALYZE=true` before building to generate a visual bundle size report:
+
+```bash
+ANALYZE=true npm run build
+```
+
+This uses `@next/bundle-analyzer`. Use the output to identify large dependencies that can be replaced with lighter alternatives or code-split.
+
+### Removed `X-Powered-By` Header
+
+```js
+poweredByHeader: false
+```
+
+Reduces response size slightly and avoids advertising the framework version.
 
 ---
 
-## API-level Considerations
+## Caching
 
-### Rate Limiting
+### Idempotency Cache (Backend)
 
-`@fastify/rate-limit` is applied globally. High-frequency automated clients (internal services, monitoring) should be added to `RATE_LIMIT_ALLOWLIST` to avoid throttling.
+`backend/src/plugins/idempotency.ts` caches POST responses keyed by `Idempotency-Key`. Redis is used when `REDIS_URL` is configured; an in-memory map is the fallback. This primarily prevents duplicate writes but also eliminates redundant processing for retried requests.
 
-### Idempotency
+### Static Asset Caching (Next.js)
 
-The `idempotency` plugin caches responses for non-idempotent operations (payments, bookings). This prevents duplicated work from retried requests.
+Next.js automatically sets long-lived `Cache-Control: public, max-age=31536000, immutable` headers for hashed static assets in `/_next/static/`. No configuration is required.
 
-### Socket.IO Scaling
+### No Application-Level Cache Configured
 
-When running multiple backend instances, set `REDIS_URL` to enable the Socket.IO Redis adapter so that real-time events are broadcast across all nodes.
+There is currently no explicit Redis or in-memory cache for API responses (listings, analytics, etc.). If response latency becomes a bottleneck, consider caching frequently read, rarely updated data (e.g., listing details, billing plans) using Redis with a short TTL.
 
 ---
 
-## Build & Deployment
+## Prometheus Metrics
 
-- The frontend build script (`npm run build`) passes the `--webpack` flag explicitly: `next build --webpack`. The project therefore uses Webpack rather than Turbopack.
-- Keep `NODE_ENV=production` in deployed environments to enable all Next.js production optimizations (minification, dead code elimination, etc.).
-- The backend build (`cd backend && npm run build`) runs `prisma generate` before `tsc`. Both steps are required for a valid production artifact.
+`backend/src/plugins/observability.ts` exposes a `/metrics` endpoint that Prometheus can scrape. Two metrics are tracked out of the box:
+
+| Metric | Type | Description |
+|--------|------|-------------|
+| `http_requests_total` | Counter | Total HTTP requests, labelled by method, route, and status |
+| `http_request_duration_seconds` | Histogram | Request duration distribution |
+
+Use these metrics in Grafana (dashboards are provisioned from `monitoring/grafana/`) to identify slow routes and high-error-rate endpoints before optimizing.
+
+---
+
+## Realtime (Socket.IO)
+
+By default Socket.IO runs in a single-instance mode. For horizontal scaling, set:
+
+```
+REDIS_URL=redis://...
+WS_ENABLE_REDIS_ADAPTER=true
+```
+
+This switches Socket.IO to the Redis pub/sub adapter (`@socket.io/redis-adapter`) so messages are fan-out across all backend instances.
+
+---
+
+## Lifecycle Email Background Worker
+
+`backend/src/lib/lifecycle-email-automation.ts` runs a background ticker. The interval is configurable:
+
+```
+LIFECYCLE_EMAIL_TICK_MS=60000  # default: 1 minute
+```
+
+In high-volume deployments consider increasing this interval or moving the worker to a dedicated process to avoid competing with request handling.

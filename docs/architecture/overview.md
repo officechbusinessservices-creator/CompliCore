@@ -1,182 +1,183 @@
 # Architecture Overview
 
-CompliCore is a monorepo containing two independently deployable applications that communicate over HTTP.
+CompliCore is a monorepo containing two independently deployable applications: a **Next.js frontend** and a **Fastify/Node.js backend**. They communicate over HTTP; the frontend uses `NEXT_PUBLIC_API_BASE` to locate the backend.
 
 ---
 
-## High-level Structure
+## Repository Layout
 
 ```
 CompliCore/
-├── src/            # Next.js 16+ frontend (App Router)
-├── backend/        # Fastify + TypeScript REST API
-├── prisma/         # (inside backend/) PostgreSQL schema and migrations
-├── contracts/      # Ethereum smart contract (DvP settlement)
-├── specs/          # OpenAPI 3.1 specification
-├── bridge/         # Kubernetes manifests
-├── monitoring/     # Prometheus / Grafana / Alertmanager configs
-├── scripts/        # Operational scripts
-└── docs/           # Technical documentation (this directory)
+├── src/                    # Next.js 16+ frontend (App Router)
+├── backend/                # Fastify 4 + TypeScript REST API
+│   ├── src/
+│   │   ├── routes/         # One file per domain (auth, bookings, listings, …)
+│   │   ├── plugins/        # Fastify plugins (security, logging, metrics, …)
+│   │   ├── lib/            # Business logic utilities
+│   │   ├── controllers/    # Route controllers
+│   │   ├── realtime/       # Socket.IO server
+│   │   └── utils/          # Email and file-upload helpers
+│   ├── prisma/             # Prisma schema + seed script
+│   └── src/__tests__/      # Vitest integration tests
+├── specs/openapi.yaml      # OpenAPI 3.1 specification
+├── docs/                   # Technical documentation (this directory)
+├── contracts/              # Solidity smart contract
+├── monitoring/             # Prometheus + Grafana + Alertmanager configs
+├── bridge/                 # Kubernetes manifests
+├── scripts/                # Operational scripts (backup, restore, release)
+└── docker-compose.yml      # Full local stack
 ```
 
 ---
 
-## Frontend — Next.js (App Router)
+## Frontend
 
-**Root:** `src/`
+**Framework:** Next.js 16+ with the App Router (`src/app/`).
 
-The frontend uses the Next.js App Router with route groups to separate concerns:
+**Technology:**
 
-| Route group | Mount path | Purpose |
-|-------------|-----------|---------|
-| `(auth)` | `/dashboard`, `/listings`, `/bookings`, `/pricing`, `/messaging`, `/channels`, `/revenue`, `/notifications`, `/ops`, `/settings` | Authenticated host console |
-| `(portal)` | `/portal/host`, `/portal/guest`, `/portal/cleaner`, `/portal/maintenance`, `/portal/corporate` | Role-specific portals |
-| `(prototype)` | `/prototype/*` | Feature prototype screens (50+ demo screens, not production) |
-| `(public)` | `/about`, `/privacy`, `/terms`, etc. | Public pages |
-| `landing/` | `/landing/host`, `/landing/guest`, `/landing/enterprise` | Marketing pages |
-| `guest/` | `/guest/*` | Guest-facing booking and review flows |
-| `api/auth/[...nextauth]/` | `/api/auth/*` | NextAuth.js handler only |
+| Concern | Library |
+|---------|---------|
+| Language | TypeScript 5+ |
+| Styling | Tailwind CSS 3 + shadcn/ui |
+| Auth | NextAuth.js v4 (Credentials provider) |
+| Animation | Framer Motion |
+| Formatter | Biome |
+| Linter | ESLint (eslint-config-next) |
 
-**Key UI directories:**
+### App Router Structure
 
-- `src/components/ui/` — shadcn/ui base components (`button.tsx`, `card.tsx`, etc.)
-- `src/components/` — feature-level React components
-- `src/lib/` — frontend utilities
-- `src/styles/` — global CSS
-- `src/test/` — Vitest + React Testing Library test files
+```
+src/app/
+├── (auth)/         # Authenticated host-console routes
+│   ├── dashboard/
+│   ├── listings/
+│   ├── bookings/
+│   ├── pricing/
+│   ├── messaging/
+│   ├── channels/
+│   ├── revenue/
+│   ├── notifications/
+│   ├── ops/
+│   └── settings/
+├── (portal)/       # Role-specific portals (host, guest, cleaner, maintenance, corporate)
+├── (prototype)/    # Feature prototypes (demo/development screens)
+├── (public)/       # Public pages (about, privacy, terms, cookies)
+├── landing/        # Marketing landing pages (host, guest, enterprise)
+├── guest/          # Guest-facing booking and review flows
+├── api/            # Next.js API routes (NextAuth.js only)
+└── api-docs/       # Interactive API documentation viewer
+```
 
-**Next.js features in use:**
+**Path alias:** `@/*` resolves to `./src/*`.
 
-- `reactStrictMode: true`
-- `compress: true` (gzip at the Next.js layer)
-- Image optimisation: AVIF/WebP formats, custom device sizes; `unoptimized: true` in development only
-- Bundle analyser via `ANALYZE=true next build`
-- Security headers for every route (see `next.config.js`)
+### Frontend–Backend Communication
 
----
+The frontend calls the backend REST API using `fetch` with `credentials: "include"` so that `HttpOnly` cookies are sent on every request. The base URL is configured via `NEXT_PUBLIC_API_BASE` (e.g., `http://localhost:4000`).
 
-## Backend — Fastify + TypeScript
-
-**Root:** `backend/src/`
-
-### Entry points
-
-| File | Responsibility |
-|------|---------------|
-| `index.ts` | Process entry; graceful shutdown handling |
-| `server.ts` | Fastify instance factory; plugin and route registration |
-
-### Plugins (`backend/src/plugins/`)
-
-| Plugin | Purpose |
-|--------|---------|
-| `security-fortress.ts` | CORS (`@fastify/cors`), Helmet (`@fastify/helmet`), global rate-limiting (`@fastify/rate-limit`), cookie support (`@fastify/cookie`) |
-| `observability.ts` | Prometheus `/metrics` endpoint via `prom-client` |
-| `idempotency.ts` | Idempotent request handling (prevents duplicate payments/bookings) |
-| `error-handler.ts` | Global error handler; emits RFC 9457 Problem Details responses |
-| `logging.ts` | Structured JSON logging (Pino); sensitive fields redacted |
-| `request-context.ts` | Per-request context storage |
-
-### Route registration
-
-Routes are registered under **both** `/v1` (current) and `/api` (deprecated) prefixes. The `/api` prefix adds `Deprecation: true` and `Sunset` response headers.
-
-### Route files (`backend/src/routes/`)
-
-| File | Domain |
-|------|--------|
-| `auth.ts` | Registration, login, logout, token refresh, WebAuthn MFA step-up, password reset |
-| `users.ts` | User profile read/update |
-| `bookings.ts` | Booking CRUD, status changes, access-credential retrieval |
-| `listings.ts` | Listing CRUD, photo upload |
-| `properties.ts` | Property CRUD, availability, pricing, quotes |
-| `payments.ts` | Stripe PaymentIntent creation, billing plans |
-| `messages.ts` | Guest–host messaging threads |
-| `reviews.ts` | Review submission and retrieval |
-| `analytics.ts` | Dashboard metrics |
-| `ai.ts` | AI pricing suggestions, listing optimisation, orchestration |
-| `pms.ts` | PMS provider connection, sync, import |
-| `pms-connectors.ts` | Direct PMS connectors (Guesty, Hostaway, Beds24) with HMAC-validated webhooks |
-| `modules.ts` | Optional platform modules (channels, cleaning, pricing, tax, loyalty, etc.) |
-| `lifecycle-email.ts` | Lifecycle email sequence management (admin only) |
-| `agentic-mesh.ts` | Experimental agentic AI orchestration endpoints |
-| `economic.ts` | Experimental economic simulation endpoints |
-
-### Library utilities (`backend/src/lib/`)
-
-| File | Purpose |
-|------|---------|
-| `env.ts` | Zod-validated environment variables; server refuses to start on invalid config |
-| `encryption.ts` | AES-256-GCM field encryption with optional AWS KMS key-wrapping |
-| `jwt-rotation.ts` | JWT signing with support for `JWT_PREVIOUS_SECRET` key rotation |
-| `secure-user-model.ts` | In-memory user store for demo/development mode; argon2id password hashing |
-| `validation.ts` | Zod error formatting helpers |
-| `security-audit.ts` | JSONL security event log; optional SIEM export |
-| `webauthn-stepup.ts` | WebAuthn MFA step-up challenge/verification logic |
-| `signed-url.ts` | Time-limited signed URL generation |
-| `metrics.ts` | Prometheus counter and histogram definitions |
-| `redis.ts` | ioredis client with a `getOrDefault` cache helper (optional; falls back gracefully when `REDIS_URL` is not set) |
-| `complicore-orchestrator.ts` | Multi-service AI orchestration |
-| `lifecycle-email-automation.ts` | Background lifecycle email scheduler |
-| `lifecycle-email-sequences.ts` | Email sequence definitions |
-
-### Realtime
-
-`backend/src/realtime/socket.ts` — Socket.IO server with an optional Redis adapter for horizontal scaling.
+NextAuth.js (`src/app/api/auth/[...nextauth]/`) handles session state on the frontend. The actual user authentication is delegated to the Fastify backend via the Credentials provider.
 
 ---
 
-## Database — PostgreSQL via Prisma
+## Backend
 
-**Schema:** `backend/prisma/schema.prisma`
+**Framework:** Fastify 4 (TypeScript 5+).
 
-Key models:
+**Technology:**
 
-| Model | Purpose |
-|-------|---------|
-| `User` | Accounts; holds `roles[]`, password hash, reset token |
-| `WebAuthnCredential` | WebAuthn public keys linked to a `User` |
-| `Booking` | Rental bookings; holds confirmation code, access code (encrypted), WiFi credentials |
-| `Listing` | Property listings managed by hosts |
-| `Message` | Guest–host messages linked to a booking |
-| `Payment` | Stripe payment records |
-| `BillingPlan` | Platform subscription tiers |
-| `Subscription` | User ↔ plan subscriptions |
-| `Payout` | Host payout records |
+| Concern | Library |
+|---------|---------|
+| ORM | Prisma 6 |
+| Database | PostgreSQL 16+ |
+| Cache / PubSub | Redis (ioredis, optional) |
+| Auth tokens | @fastify/jwt |
+| Password hashing | argon2id |
+| MFA | @simplewebauthn/server |
+| Input validation | Zod |
+| Realtime | Socket.IO |
+| Metrics | prom-client (Prometheus) |
+| Email | Nodemailer / SendGrid |
+| File storage | Cloudinary |
+
+### Entry Points
+
+- `backend/src/index.ts` — Starts the HTTP server; handles graceful shutdown signals.
+- `backend/src/server.ts` — Fastify server factory; registers all plugins and route prefixes.
+
+All route files are registered under **both** `/v1` and `/api` prefixes. The `/api` prefix is deprecated and carries response headers `Deprecation: true` and `Sunset: Wed, 31 Dec 2026 23:59:59 GMT`.
+
+### Plugins (Registered in Order)
+
+| Plugin | File | Purpose |
+|--------|------|---------|
+| request-context | `plugins/request-context.ts` | Generates/propagates `X-Request-Id` |
+| logging | `plugins/logging.ts` | Structured per-request logging (method, url, status, duration) |
+| security-fortress | `plugins/security-fortress.ts` | Helmet headers, CORS, rate limiting, cookie config |
+| observability | `plugins/observability.ts` | Prometheus metrics endpoint (`/metrics`) |
+| idempotency | `plugins/idempotency.ts` | `Idempotency-Key` deduplication for POST requests |
+| error-handler | `plugins/error-handler.ts` | RFC 7807 Problem Details error format |
+
+### Authentication Decorators
+
+Fastify decorators added by the JWT/auth setup:
+
+- `fastify.authenticate` — Verifies the `cc_access` JWT (cookie or `Authorization: Bearer` header).
+- `fastify.requireRole(roles)` — Calls `authenticate`, then checks the user's `roles` array, and enforces WebAuthn step-up for `host` / `admin` roles.
+- `fastify.requireStepUp` — Verifies that a WebAuthn step-up was completed within the configured TTL.
+
+### Database Layer
+
+Prisma ORM connects to PostgreSQL. The schema lives at `backend/prisma/schema.prisma`. Migrations are managed with `prisma migrate dev`. The Prisma client is instantiated as a singleton in `backend/src/lib/prisma.ts`.
+
+In development, `ENABLE_DEMO_FALLBACK=true` allows the server to operate without a live database using an in-memory user store (`backend/src/lib/secure-user-model.ts`). This mode is explicitly blocked in production by the Zod env validator.
 
 ---
 
-## Frontend ↔ Backend Communication
+## Database Schema
 
-- The frontend reads `NEXT_PUBLIC_API_BASE` (e.g. `http://localhost:4000`) and calls the backend REST API directly from the browser.
-- Authentication uses HttpOnly cookies (`cc_access`, `cc_refresh`) set by the backend. All authenticated fetch calls use `credentials: "include"`.
-- NextAuth.js (`src/app/api/auth/[...nextauth]/`) handles the frontend session layer; it validates credentials against the backend `/v1/auth/login` endpoint.
-- Real-time updates use Socket.IO from the backend.
+Defined in `backend/prisma/schema.prisma`. Provider: `postgresql`.
 
----
-
-## Third-party Integrations
-
-| Category | Services |
-|----------|---------|
-| **PMS** | Guesty, Hostaway, Lodgify, Hostfully, Beds24 |
-| **OTA channels** | Airbnb, VRBO, Booking.com (via channel module) |
-| **Payments** | Stripe (PaymentIntent API) |
-| **Image storage** | Cloudinary |
-| **Email delivery** | Nodemailer / SendGrid |
-| **Cache / PubSub** | Redis (ioredis) — optional |
-| **Observability** | Prometheus + Grafana + Alertmanager |
-| **Blockchain** | Ethereum smart contract (`contracts/ComplicoreInstantSettlement.sol`) — experimental |
+| Model | Purpose | Notable indexes |
+|-------|---------|-----------------|
+| `User` | Platform users (host, guest, admin) | `email` |
+| `WebAuthnCredential` | WebAuthn credentials per user | `userId` |
+| `Booking` | Guest booking records | `(status, created_at)`, `user_id` |
+| `Listing` | Property listings | `host_id` |
+| `Message` | Booking thread messages | — |
+| `Payment` | Payment records | `stripe_payment_intent_id` (unique) |
+| `BillingPlan` | Subscription plan definitions | `code` (unique) |
+| `Subscription` | User ↔ plan relationships | — |
+| `Payout` | Host payout records | — |
 
 ---
 
-## Deployment Topology
+## Realtime Layer
 
-| Component | Target |
-|-----------|--------|
-| Frontend | Netlify / Vercel |
-| Backend | Render / Docker / Kubernetes (bridge manifests) |
-| Database | Render PostgreSQL / AWS RDS |
-| CDN | Cloudflare / CloudFront |
+Socket.IO (`backend/src/realtime/socket.ts`) provides WebSocket support for real-time messaging and notifications. An optional Redis adapter (`REDIS_URL` + `WS_ENABLE_REDIS_ADAPTER=true`) enables horizontal scaling across multiple backend instances.
 
-See `DEPLOYMENT.md` and `bridge/` for full deployment details.
+---
+
+## Third-Party Integrations
+
+| Category | Providers / Libraries |
+|----------|-----------------------|
+| PMS | Guesty, Hostaway, Beds24 (webhook + REST connectors) |
+| OTA channels | Airbnb, VRBO, Booking.com (prototype; channel routes in `modules.ts`) |
+| Payments | Stripe (checkout sessions, webhooks) |
+| File storage | Cloudinary (listing photos) |
+| Email | Nodemailer (SMTP) or SendGrid |
+| Cache | Redis (idempotency store, optional WS adapter) |
+| Metrics | Prometheus (scraped from `/metrics`) |
+| Key management | AWS KMS (optional; wraps the AES-256-GCM field encryption key) |
+
+---
+
+## Deployment Targets
+
+| Target | Notes |
+|--------|-------|
+| Netlify | Frontend (`npm run build`, publish `.next`) |
+| Render | Backend (`cd backend && npm run build && npm run start`) |
+| Docker Compose | `docker compose up -d` runs frontend, backend, PostgreSQL, Redis, and monitoring |
+| Kubernetes | Manifests in `bridge/base/` (namespace, deployments, services, network policies) |
+| Blue-green | `docker-compose.blue.yml` / `docker-compose.green.yml` |

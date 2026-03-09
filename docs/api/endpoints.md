@@ -1,199 +1,189 @@
 # API Endpoints
 
-All routes are registered under **two prefixes**:
+All routes are registered under two prefixes:
 
-- `/v1/...` — current, preferred
-- `/api/...` — deprecated; responses include `Deprecation: true` and `Sunset: Wed, 31 Dec 2026 23:59:59 GMT` headers
+- `/v1/...` — canonical (preferred)
+- `/api/...` — deprecated (carries `Deprecation: true` and `Sunset: Wed, 31 Dec 2026 23:59:59 GMT` headers)
 
-Use `/v1` for all new integrations.
+Always use the `/v1` prefix in new code.
+
+> **Note:** This list covers the routes found in `backend/src/routes/`. It is non-exhaustive — module-overview and economic/agentic-mesh routes are summarised separately at the end.
 
 ---
 
-## Authentication (`/auth`)
+## Authentication — `/v1/auth`
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| `POST` | `/auth/register` | No | Register a new user. Rate-limited (20/min). |
-| `POST` | `/auth/login` | No | Authenticate and receive access + refresh tokens as HttpOnly cookies. Rate-limited (12/min). |
-| `POST` | `/auth/refresh` | No | Exchange a valid refresh-token cookie for a new access token. |
-| `POST` | `/auth/logout` | No | Clear auth cookies. |
-| `GET`  | `/auth/me` | Yes | Return the authenticated user's profile. |
-| `POST` | `/auth/forgot-password` | No | Send a password-reset email. Rate-limited (8/min). |
-| `POST` | `/auth/reset-password/:token` | No | Reset password using a one-time token. |
-| `GET`  | `/auth/mfa/step-up/status` | Yes | Check whether the current session has satisfied WebAuthn step-up. |
-| `POST` | `/auth/mfa/webauthn/register/options` | Yes | Begin WebAuthn credential registration (returns `PublicKeyCredentialCreationOptions`). Rate-limited (20/min). |
-| `POST` | `/auth/mfa/webauthn/register/verify` | Yes | Complete WebAuthn credential registration. Rate-limited (20/min). |
-| `POST` | `/auth/mfa/webauthn/auth/options` | Yes | Begin WebAuthn assertion (returns `PublicKeyCredentialRequestOptions`). Rate-limited (30/min). |
-| `POST` | `/auth/mfa/webauthn/auth/verify` | Yes | Complete WebAuthn assertion and satisfy step-up. Rate-limited (30/min). |
-| `GET`  | `/auth/admin/ping` | Yes (`admin`) | Admin liveness check. |
-
-**Request / Response Notes**
-
-- `POST /auth/register` body: `{ email, password, firstName?, lastName? }`
-- `POST /auth/login` body: `{ email, password }`; sets `cc_access` and `cc_refresh` HttpOnly cookies; also returns `{ accessToken }` in body.
-- All protected routes must include the `cc_access` cookie or an `Authorization: Bearer <token>` header.
+| `POST` | `/v1/auth/register` | No | Register a new user. Body: `{ email, password, firstName, lastName }`. Returns `{ accessToken, user }` and sets `cc_access` / `cc_refresh` cookies. |
+| `POST` | `/v1/auth/login` | No | Authenticate with email + password. Body: `{ email, password }`. Returns `{ accessToken, user }` and sets cookies. |
+| `POST` | `/v1/auth/refresh` | No (cookie) | Exchange a valid `cc_refresh` cookie for a new access token. |
+| `POST` | `/v1/auth/logout` | Yes | Clear `cc_access` and `cc_refresh` cookies. |
+| `GET`  | `/v1/auth/me` | Yes | Return the currently authenticated user's profile. |
+| `GET`  | `/v1/auth/mfa/step-up/status` | Yes | Check whether step-up MFA has been satisfied for the current session. |
+| `POST` | `/v1/auth/webauthn/register-start` | Yes | Begin WebAuthn credential registration (returns challenge options). |
+| `POST` | `/v1/auth/webauthn/register-verify` | Yes | Verify and store a new WebAuthn credential. |
+| `POST` | `/v1/auth/webauthn/authenticate-start` | Yes | Begin WebAuthn authentication (returns challenge options). |
+| `POST` | `/v1/auth/webauthn/authenticate-verify` | Yes | Verify WebAuthn assertion and satisfy step-up requirement. |
+| `POST` | `/v1/auth/forgot-password` | No | Send a password-reset email. Body: `{ email }`. |
+| `GET`  | `/v1/auth/reset-password/:token` | No | Validate a password-reset token. |
+| `POST` | `/v1/auth/reset-password/:token` | No | Apply a new password. Body: `{ password }`. |
 
 ---
 
-## Users (`/users`)
+## Users — `/v1/users`
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| `GET`   | `/users/me`   | Yes | Return the authenticated user's profile. |
-| `PATCH` | `/users/me`   | Yes | Update profile (name, optional photo upload via `multipart/form-data`). |
+| `GET`  | `/v1/users/me` | Yes | Return the authenticated user's full profile. |
+| `PATCH` | `/v1/users/me` | Yes | Update the authenticated user's profile. Body fields are optional (e.g., `firstName`, `lastName`). |
 
 ---
 
-## Bookings (`/bookings`)
+## Listings — `/v1/listings`
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| `GET`   | `/bookings`                      | Yes (`guest`/`host`/`admin`) | List bookings. Hosts see all bookings; guests see their own. |
-| `POST`  | `/bookings`                      | No  | Create a new booking. Body: `{ guest_name, listing_id, check_in, check_out, property? }`. |
-| `GET`   | `/bookings/:bookingId`           | Yes | Retrieve a single booking by ID. |
-| `PATCH` | `/bookings/:bookingId/status`    | Yes | Update booking status (`pending`/`confirmed`/`cancelled`). |
-| `POST`  | `/bookings/:bookingId/cancel`    | Yes | Cancel a booking. |
-| `GET`   | `/bookings/:bookingId/access`    | Yes (`host`/`admin`) | Retrieve access credentials (access code, WiFi name/password) for a booking. |
+| `GET`  | `/v1/listings` | No | List all listings. |
+| `GET`  | `/v1/listings/:listingId` | No | Get a single listing by ID. |
+| `POST` | `/v1/listings` | Yes (host) | Create a new listing. Body: `{ title, address, price_per_night, ... }`. |
+| `PATCH` | `/v1/listings/:listingId` | Yes (host) | Update an existing listing. |
+| `DELETE` | `/v1/listings/:listingId` | Yes (host) | Delete a listing. |
+| `POST` | `/v1/listings/:listingId/photo` | Yes (host) | Upload a listing photo (multipart). |
 
 ---
 
-## Listings (`/listings`)
+## Properties — `/v1/properties`
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| `GET`    | `/listings`                  | Yes (`host`/`admin`) | List the authenticated host's listings. |
-| `POST`   | `/listings`                  | Yes (`host`/`admin`) | Create a new listing. Body: `{ title, address?, price_per_night? }`. |
-| `GET`    | `/listings/:listingId`       | Yes | Retrieve a single listing. |
-| `PATCH`  | `/listings/:listingId`       | Yes | Update listing fields. |
-| `DELETE` | `/listings/:listingId`       | Yes | Delete a listing. |
-| `POST`   | `/listings/:listingId/photo` | Yes (`host`/`admin`) | Upload a listing photo (`multipart/form-data`). Stored via Cloudinary. |
+| `GET`  | `/v1/properties` | Yes | List properties owned by the authenticated host. |
+| `POST` | `/v1/properties` | Yes (host) | Create a property. |
+| `GET`  | `/v1/properties/:propertyId` | Yes | Get a single property. |
+| `PATCH` | `/v1/properties/:propertyId` | Yes (host) | Update a property. |
+| `DELETE` | `/v1/properties/:propertyId` | Yes (host) | Delete a property. |
+| `GET`  | `/v1/properties/:propertyId/availability` | Yes | Get availability calendar for a property. |
+| `PATCH` | `/v1/properties/:propertyId/availability` | Yes (host) | Update availability blocks for a property. |
+| `GET`  | `/v1/properties/:propertyId/pricing` | Yes | Get pricing configuration for a property. |
+| `POST` | `/v1/properties/:propertyId/quote` | No | Generate a price quote. Body: `{ check_in, check_out, guests }`. |
 
 ---
 
-## Properties (`/properties`)
+## Bookings — `/v1/bookings`
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| `GET`    | `/properties`                            | No  | List properties (falls back to demo data when demo mode is enabled). |
-| `POST`   | `/properties`                            | Yes (`host`/`admin`) | Create a property. |
-| `GET`    | `/properties/:propertyId`                | No  | Retrieve a single property. |
-| `PATCH`  | `/properties/:propertyId`                | Yes | Update a property. |
-| `DELETE` | `/properties/:propertyId`                | Yes | Delete a property. |
-| `GET`    | `/properties/:propertyId/availability`   | No  | Retrieve availability calendar. |
-| `PATCH`  | `/properties/:propertyId/availability`   | Yes | Update availability. |
-| `GET`    | `/properties/:propertyId/pricing`        | No  | Retrieve pricing rules. |
-| `POST`   | `/properties/:propertyId/quote`          | No  | Generate a price quote for given dates. |
+| `GET`  | `/v1/bookings` | Yes | List bookings for the authenticated user. |
+| `GET`  | `/v1/bookings/:bookingId` | Yes | Get a single booking. |
+| `GET`  | `/v1/bookings/:bookingId/access` | Yes | Retrieve access credentials (access code, WiFi) for a booking. |
+| `POST` | `/v1/bookings` | Yes | Create a booking. Body: `{ confirmation_code, listing_id, guest_name, property, check_in, check_out }`. |
+| `PATCH` | `/v1/bookings/:bookingId/status` | Yes | Update booking status. Body: `{ status }`. |
+| `POST` | `/v1/bookings/:bookingId/cancel` | Yes | Cancel a booking. |
 
 ---
 
-## Payments (`/payments`)
+## Messages — `/v1/messages`
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| `POST` | `/payments/checkout` | Yes | Create a Stripe `PaymentIntent`. Body: `{ bookingId, amount, currency }`. Returns `{ clientSecret }`. |
-
-> **Note:** Additional billing-plan and subscription endpoints exist in `payments.ts`; this list covers the primary checkout flow. The full file is ~23 KB.
+| `GET`  | `/v1/messages` | Yes | List messages for the authenticated user. |
+| `POST` | `/v1/messages` | Yes | Post a message. Body: `{ booking_id, body }`. |
+| `GET`  | `/v1/messages/threads` | Yes | List message threads. |
+| `GET`  | `/v1/messages/threads/:threadId` | Yes | Get all messages in a thread. |
+| `POST` | `/v1/messages/send` | Yes | Send a message in a thread. Body: `{ threadId, body }`. |
 
 ---
 
-## Messages (`/messages`)
+## Reviews — `/v1/reviews`
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| `GET`  | `/messages`                       | Yes | List the most recent 50 messages. Rate-limited (50/min for export). |
-| `POST` | `/messages`                       | Yes | Create a message. Body: `{ booking_id, body }`. |
-| `GET`  | `/messages/threads`               | Yes | List message threads, grouped by booking. |
-| `GET`  | `/messages/threads/:threadId`     | Yes | Retrieve all messages in a thread. |
-| `POST` | `/messages/send`                  | Yes | Alias for creating a message in a thread. |
+| `POST` | `/v1/reviews` | Yes | Submit a review. Body: `{ booking_id, rating, comment }`. |
+| `GET`  | `/v1/properties/:propertyId/reviews` | No | List reviews for a property. |
 
 ---
 
-## Reviews (`/reviews`)
+## Payments & Billing — `/v1/payments`, `/v1/billing`, `/v1/payouts`
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| `POST` | `/reviews`                              | Yes (`guest`/`host`/`admin`) | Submit a review. Body: `{ booking_id, rating, body }`. |
-| `GET`  | `/properties/:propertyId/reviews`      | Yes (`host`/`admin`) | Retrieve reviews for a property. |
+| `POST` | `/v1/payments/checkout` | Yes | Create a checkout session. Body: `{ booking_id, amount, currency }`. |
+| `POST` | `/v1/payments/create` | Yes | Create a payment record. |
+| `POST` | `/v1/payments/checkout-session` | Yes | Create a Stripe checkout session. |
+| `GET`  | `/v1/payments/methods` | Yes | List saved payment methods for the authenticated user. |
+| `GET`  | `/v1/payouts` | Yes (host) | List payouts for the authenticated host. |
+| `GET`  | `/v1/billing/plans` | No | List available billing plans. |
+| `POST` | `/v1/billing/subscribe` | Yes | Subscribe to a billing plan. Body: `{ planCode }`. |
+| `POST` | `/v1/billing/cancel` | Yes | Cancel the current subscription. |
+| `GET`  | `/v1/billing/subscriptions` | Yes | Get the authenticated user's active subscription. |
 
 ---
 
-## Analytics (`/analytics`)
+## Analytics — `/v1/analytics`
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| `GET` | `/analytics/dashboard` | Yes (`host`/`admin`/`enterprise`/`corporate`) | Return aggregated occupancy, revenue, and booking metrics. |
+| `GET`  | `/v1/analytics/dashboard` | Yes (host) | Return dashboard KPIs: occupancy rate, revenue, booking counts, and trend data. |
 
 ---
 
-## AI (`/ai`)
+## AI — `/v1/ai`
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| `GET`  | `/ai/pricing/suggestions`  | Yes | Return AI-generated dynamic pricing suggestions for a listing. Query param: `listingId`. |
-| `POST` | `/ai/listing/optimize`     | Yes | Optimize listing copy via AI. Body: `{ listingId }`. |
-| `POST` | `/ai/orchestrate`          | Yes | Route a request to a configured AI back-end (RAG, OCR, audio, finance, reasoning, etc.). Body: `{ type, payload }`. |
+| `GET`  | `/v1/ai/pricing/suggestions` | Yes | Get AI-generated pricing suggestions. Query params: `listingId`, `date`. |
+| `POST` | `/v1/ai/listing/optimize` | Yes | Optimise a listing's title and description. Body: `{ listingId }`. |
+| `POST` | `/v1/ai/orchestrate` | Yes | Invoke the CompliCore multi-service AI orchestrator. Body: `{ task, context }`. |
 
 ---
 
-## PMS Integration (`/pms`)
+## PMS (Property Management System) — `/v1/pms`
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| `GET`  | `/pms/providers`                        | Yes | List supported PMS providers (Guesty, Hostaway, Lodgify, Hostfully, Beds24). |
-| `POST` | `/pms/connect`                          | Yes | Connect to a PMS provider. Body: `{ provider, apiKey }`. |
-| `POST` | `/pms/sync`                             | Yes | Trigger a full sync with the connected PMS. |
-| `GET`  | `/pms/status`                           | Yes | Return the current PMS connection and sync status. |
-| `GET`  | `/pms/history`                          | Yes | Return sync history log entries. |
-| `POST` | `/pms/import`                           | Yes | Import listings/bookings from the connected PMS. |
-| `GET`  | `/pms/connectors`                       | Yes | List available direct connectors (Guesty, Hostaway, Beds24). |
-| `POST` | `/pms/connectors/:providerId/connect`   | Yes | Authenticate with a specific PMS connector. |
-| `POST` | `/pms/connectors/:providerId/webhook`   | No  | Inbound PMS webhook (HMAC-signature validated via `PMS_WEBHOOK_SECRET`). |
-| `POST` | `/pms/connectors/:providerId/sync`      | Yes | Trigger a manual sync for a specific connector. |
+| `GET`  | `/v1/pms/providers` | Yes (host) | List supported PMS providers (Guesty, Hostaway, Beds24). |
+| `POST` | `/v1/pms/connect` | Yes (host) | Connect a PMS provider. Body: `{ provider, credentials }`. |
+| `POST` | `/v1/pms/sync` | Yes (host) | Trigger a manual sync from the connected PMS. |
+| `GET`  | `/v1/pms/status` | Yes (host) | Get the current sync status. |
+| `GET`  | `/v1/pms/history` | Yes (host) | Get sync history. |
+| `POST` | `/v1/pms/import` | Yes (host) | Import listings/bookings from the connected PMS. |
+
+PMS webhook ingestion (HMAC-verified) is handled by `backend/src/routes/pms-connectors.ts` and supports Guesty, Hostaway, and Beds24.
 
 ---
 
-## Modules & Add-ons (`/modules`, `/channels`, etc.)
+## Lifecycle Email — `/v1/lifecycle`
 
-These endpoints return structured data for optional platform modules. All require authentication.
-
-| Method | Path | Description |
-|--------|------|-------------|
-| `GET` | `/modules/overview`     | Module enablement status |
-| `GET` | `/channels`             | Connected OTA channels |
-| `GET` | `/cleaning/tasks`       | Cleaning task queue |
-| `GET` | `/maintenance/tasks`    | Maintenance task queue |
-| `GET` | `/pricing/seasonal`     | Seasonal pricing rules |
-| `GET` | `/taxes/reports`        | Tax report data |
-| `GET` | `/loyalty`              | Guest loyalty programme status |
-| `GET` | `/sustainability`       | Sustainability / carbon metrics |
-| `GET` | `/tickets`              | Support tickets |
-| `GET` | `/insurance/policies`   | Insurance policy records |
-| `GET` | `/forecasting`          | Revenue forecast data |
-| `GET` | `/benchmarks`           | Industry benchmark comparisons |
-| `GET` | `/occupancy`            | Occupancy metrics |
-| `GET` | `/calendar-sync`        | Calendar sync status |
-| `GET` | `/map/properties`       | Property map data |
-| `GET` | `/compare`              | Property comparison |
-| `GET` | `/wishlist`             | Guest wishlists |
-| `GET` | `/bundles`              | Property bundle definitions |
-| `GET` | `/marketplace`          | Marketplace add-on catalogue |
-| `GET` | `/integrations`         | Available OTA, pricing, IoT, and ops integrations |
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| `GET`  | `/v1/lifecycle/emails/sequences` | Yes (admin) | List configured email sequences. |
+| `GET`  | `/v1/lifecycle/emails/enrollments` | Yes (admin) | List user enrollments in email sequences. |
+| `POST` | `/v1/lifecycle/emails/preview` | Yes (admin) | Preview a rendered email template. Body: `{ sequenceId, stepIndex }`. |
+| `POST` | `/v1/lifecycle/emails/send-test` | Yes (admin) | Send a test email. Body: `{ sequenceId, stepIndex, to }`. |
+| `POST` | `/v1/lifecycle/emails/enroll` | Yes (admin) | Enroll a user in an email sequence. Body: `{ userId, sequenceId }`. |
 
 ---
 
-## Lifecycle Emails (`/lifecycle`)
+## Modules Overview — `/v1/modules`, `/v1/channels`, and others
 
-All lifecycle-email endpoints require the `admin` role.
+`backend/src/routes/modules.ts` exposes read-only module overview endpoints used by the prototype UI. These return static or mock data for features that are partially implemented or in development:
 
-| Method | Path | Description |
-|--------|------|-------------|
-| `GET`  | `/lifecycle/emails/sequences`  | List configured email sequences (`trial_welcome`, `trial_win_back`). |
-| `GET`  | `/lifecycle/emails/enrollments`| List current subscriber enrolments. |
-| `POST` | `/lifecycle/emails/preview`    | Preview a single step in a sequence. Body: `{ sequenceId, stepIndex }`. |
-| `POST` | `/lifecycle/emails/send-test`  | Send a test email for a given step. Body: `{ sequenceId, stepIndex, to }`. |
-| `POST` | `/lifecycle/emails/enroll`     | Enrol a user in a trial sequence. Body: `{ userId, sequenceId }`. |
-| `POST` | `/lifecycle/emails/run`        | Manually trigger the scheduler tick (for debugging). |
+`GET /v1/modules/overview`, `GET /v1/channels`, `GET /v1/cleaning/tasks`, `GET /v1/maintenance/tasks`, `GET /v1/pricing/seasonal`, `GET /v1/taxes/reports`, `GET /v1/loyalty`, `GET /v1/sustainability`, `GET /v1/tickets`, `GET /v1/insurance/policies`, `GET /v1/forecasting`, `GET /v1/benchmarks`, `GET /v1/occupancy`, `GET /v1/calendar-sync`, `GET /v1/map/properties`, `GET /v1/compare`, `GET /v1/wishlist`, `GET /v1/bundles`, `GET /v1/marketplace`, `GET /v1/integrations`.
 
 ---
 
-> **Note:** This list covers the primary REST endpoints discovered in `backend/src/routes/`. The `economic.ts` and `agentic-mesh.ts` route files contain additional experimental/internal endpoints that are not documented here.
+## Error Responses
+
+All errors follow RFC 9457 Problem Details:
+
+```json
+{
+  "type": "urn:problem:validation",
+  "title": "Request validation failed",
+  "status": 400,
+  "detail": "email: Invalid email address",
+  "errors": [...]
+}
+```
+
+Common status codes: `400` validation, `401` unauthenticated, `403` forbidden / insufficient role, `404` not found, `409` conflict, `429` rate limited, `500` server error.

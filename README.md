@@ -99,6 +99,14 @@ Backend runs on [http://localhost:4000](http://localhost:4000)
 - **[API Reference](http://localhost:3000/api-docs)** - Interactive API documentation
 - **[Public APIs Catalog](./PUBLIC_APIS.md)** - Full public-apis.org reference list
 
+### Technical Reference
+
+- **[API Endpoints](./docs/api/endpoints.md)** - REST API routes, request/response shapes, auth requirements
+- **[Architecture Overview](./docs/architecture/overview.md)** - Frontend, backend, database, and integration architecture
+- **[Security & Compliance Framework](./docs/security/compliance_framework.md)** - Auth, RBAC, encryption, rate limiting, audit logging
+- **[Performance Optimization Guide](./docs/performance/optimization_guide.md)** - Prisma indexes, Next.js optimizations, caching patterns
+- **[Testing Framework](./docs/testing/framework.md)** - Vitest setup, test locations, running tests, coverage
+
 ## 🗺️ Project Structure
 
 ```
