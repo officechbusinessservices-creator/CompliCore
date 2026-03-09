@@ -145,6 +145,41 @@ When neither variable is set the fields are stored unencrypted (development only
 `backend/src/plugins/idempotency.ts`
 
 POST requests that include an `Idempotency-Key` header are deduplicated. Responses are cached in Redis (with in-memory fallback) for a configurable TTL. This prevents duplicate payments and bookings caused by retried requests.
+| `Permissions-Policy` | `camera=(), microphone=(), geolocation=()` |
+| `Content-Security-Policy` | `default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; …` |
+| `Cross-Origin-Opener-Policy` | `same-origin` |
+| `Cross-Origin-Resource-Policy` | `same-origin` |
+| `X-DNS-Prefetch-Control` | `on` |
+
+---
+
+## Input Validation
+
+All request bodies are validated with **Zod** schemas at the route boundary before any business logic executes. Validation errors are returned as RFC 9457 Problem Details:
+
+```json
+{
+  "type": "urn:problem:validation",
+  "title": "Request validation failed",
+  "status": 400,
+  "errors": [...]
+}
+```
+
+**Implementation:** `backend/src/lib/validation.ts`, individual route files.
+
+---
+
+## Field-level Encryption
+
+Sensitive database fields (e.g. `Booking.access_code`, WiFi credentials) are encrypted at rest using **AES-256-GCM**. An optional AWS KMS integration is available for key-wrapping.
+
+| Environment variable | Purpose |
+|----------------------|---------|
+| `FIELD_ENCRYPTION_KEY` | Base64-encoded 256-bit AES key |
+| `KMS_REGION` | AWS region for KMS (required when using KMS-backed key) |
+
+**Implementation:** `backend/src/lib/encryption.ts`.
 
 ---
 
@@ -211,3 +246,53 @@ The following rules are enforced at startup by the Zod schema in `backend/src/li
 - `PMS_WEBHOOK_SECRET` — required in production.
 
 The server will not start if any required variable is absent or fails validation.
+Security events are written to a JSONL file and optionally forwarded to a SIEM:
+
+| Event type | Logged when |
+|------------|-------------|
+| Login failure | Bad credentials or account locked |
+| RBAC denial | `requireRole` or `requireStepUp` rejects a request |
+| Step-up events | MFA challenge issued or verified |
+| Impossible travel | Login from a geographically inconsistent IP |
+
+| Environment variable | Purpose |
+|----------------------|---------|
+| `SECURITY_AUDIT_LOG_PATH` | File path for JSONL audit log |
+| `SECURITY_SIEM_EXPORT_URL` | HTTP endpoint for SIEM forwarding |
+
+**Implementation:** `backend/src/lib/security-audit.ts`.
+
+---
+
+## PMS Webhook Signature Validation
+
+Inbound PMS webhook payloads are verified using **HMAC-SHA256** before processing. The shared secret is set via `PMS_WEBHOOK_SECRET` (required in production; validated at startup).
+
+**Implementation:** `backend/src/routes/pms-connectors.ts`.
+
+---
+
+## Idempotency
+
+The `idempotency` plugin (`backend/src/plugins/idempotency.ts`) tracks request keys to prevent duplicate payment or booking operations.
+
+---
+
+## Environment Variable Validation
+
+All environment variables are validated with **Zod** at server startup (`backend/src/lib/env.ts`). The server refuses to start if required variables are absent or fail type/format checks.
+
+Key required variables:
+
+| Variable | Constraint |
+|----------|-----------|
+| `DATABASE_URL` | Must be a valid connection string |
+| `JWT_SECRET` | Minimum 32 characters |
+| `PMS_WEBHOOK_SECRET` | Required in production |
+| `ENABLE_DEMO_FALLBACK` | Must be `false` in production |
+
+---
+
+## Demo / Development Mode
+
+When `ENABLE_DEMO_FALLBACK=true`, the backend uses an in-memory user store instead of the Prisma/PostgreSQL user model. **This mode is forbidden in production** and is enforced by the Zod env validator.
