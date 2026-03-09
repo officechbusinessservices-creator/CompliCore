@@ -1,0 +1,756 @@
+# Instincts generated from https://github.com/officechbusinessservices-creator/CompliCore
+# Generated: 2026-03-09T02:03:21.900Z
+# Version: 2.0
+
+---
+id: CompliCore-commit-length
+trigger: "when writing a commit message"
+confidence: 0.6
+domain: git
+source: repo-analysis
+source_repo: https://github.com/officechbusinessservices-creator/CompliCore
+---
+
+# CompliCore Commit Length
+
+## Action
+
+Write moderate-length commit messages (~50 characters)
+
+## Evidence
+
+- Average commit message length: 63 chars
+- Based on 200 commits
+
+---
+id: CompliCore-naming-files
+trigger: "when creating a new file"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: https://github.com/officechbusinessservices-creator/CompliCore
+---
+
+# CompliCore Naming Files
+
+## Action
+
+Use camelCase naming convention
+
+## Evidence
+
+- Analyzed file naming patterns in repository
+- Dominant pattern: camelCase
+
+---
+id: CompliCore-import-relative
+trigger: "when importing modules"
+confidence: 0.75
+domain: code-style
+source: repo-analysis
+source_repo: https://github.com/officechbusinessservices-creator/CompliCore
+---
+
+# CompliCore Import Relative
+
+## Action
+
+Use relative imports for project files
+
+## Evidence
+
+- Import analysis shows relative import pattern
+- Example: import { x } from '../lib/x'
+
+---
+id: CompliCore-export-style
+trigger: "when exporting from a module"
+confidence: 0.7
+domain: code-style
+source: repo-analysis
+source_repo: https://github.com/officechbusinessservices-creator/CompliCore
+---
+
+# CompliCore Export Style
+
+## Action
+
+Prefer named exports
+
+## Evidence
+
+- Export pattern analysis
+- Dominant style: named
+
+---
+id: CompliCore-arch-type-based
+trigger: "when adding new code"
+confidence: 0.8
+domain: architecture
+source: repo-analysis
+source_repo: https://github.com/officechbusinessservices-creator/CompliCore
+---
+
+# CompliCore Arch Type Based
+
+## Action
+
+Place code in the appropriate type folder (components/, services/, utils/, etc.)
+
+## Evidence
+
+- Type-based module organization detected
+- Folders: app, components, lib, styles, test
+
+---
+id: CompliCore-test-colocate
+trigger: "when writing tests"
+confidence: 0.85
+domain: testing
+source: repo-analysis
+source_repo: https://github.com/officechbusinessservices-creator/CompliCore
+---
+
+# CompliCore Test Colocate
+
+## Action
+
+Place test file next to the source file (e.g., Button.test.tsx next to Button.tsx)
+
+## Evidence
+
+- Colocated test pattern detected
+- Tests live alongside source files
+
+---
+id: CompliCore-test-framework
+trigger: "when writing tests"
+confidence: 0.9
+domain: testing
+source: repo-analysis
+source_repo: https://github.com/officechbusinessservices-creator/CompliCore
+---
+
+# CompliCore Test Framework
+
+## Action
+
+Use vitest as the test framework
+
+## Evidence
+
+- Test framework detected: vitest
+- File pattern: *.test.ts
+
+---
+id: CompliCore-test-naming
+trigger: "when creating a test file"
+confidence: 0.85
+domain: testing
+source: repo-analysis
+source_repo: https://github.com/officechbusinessservices-creator/CompliCore
+---
+
+# CompliCore Test Naming
+
+## Action
+
+Name test files using the pattern: *.test.ts
+
+## Evidence
+
+- File pattern: *.test.ts
+- Consistent across test files
+
+---
+id: CompliCore-test-types
+trigger: "when planning tests for a feature"
+confidence: 0.7
+domain: testing
+source: repo-analysis
+source_repo: https://github.com/officechbusinessservices-creator/CompliCore
+---
+
+# CompliCore Test Types
+
+## Action
+
+Write unit, integration tests to match project standards
+
+## Evidence
+
+- Test types detected: unit, integration
+- Coverage config: yes
+
+---
+id: CompliCore-workflow-database-migration
+trigger: "when modifying the database schema or adding tables"
+confidence: 0.7
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/officechbusinessservices-creator/CompliCore
+---
+
+# CompliCore Workflow Database Migration
+
+## Action
+
+Follow the database-migration workflow:
+1. Create migration file
+2. Update schema definitions
+3. Generate/update types
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~4x per month
+- Files: **/schema.*, migrations/*
+
+---
+id: CompliCore-workflow-feature-development
+trigger: "when implementing a new feature"
+confidence: 0.9
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/officechbusinessservices-creator/CompliCore
+---
+
+# CompliCore Workflow Feature Development
+
+## Action
+
+Follow the feature-development workflow:
+1. Add feature implementation
+2. Add tests for feature
+3. Update documentation
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~11x per month
+- Files: backend/src/controllers/*, backend/src/lib/*, backend/src/routes/*
+
+---
+id: CompliCore-workflow-merge-pull-request-workflow
+trigger: "when doing merge pull request workflow"
+confidence: 0.9
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/officechbusinessservices-creator/CompliCore
+---
+
+# CompliCore Workflow Merge Pull Request Workflow
+
+## Action
+
+Follow the merge-pull-request-workflow workflow:
+1. Create pull request
+2. Review changes
+3. Merge to target branch
+4. Update branch references
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~15x per month
+- Files: (varies based on feature), pull request metadata
+
+---
+id: CompliCore-workflow-fix-build-deployment-issues
+trigger: "when doing fix build deployment issues"
+confidence: 0.75
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/officechbusinessservices-creator/CompliCore
+---
+
+# CompliCore Workflow Fix Build Deployment Issues
+
+## Action
+
+Follow the fix-build-deployment-issues workflow:
+1. Identify build/deployment issue
+2. Update CI configuration
+3. Fix environment/dependency issues
+4. Validate pipeline runs
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~5x per month
+- Files: .github/workflows/ci.yml, package.json, package-lock.json
+
+---
+id: CompliCore-workflow-database-schema-migration
+trigger: "when doing database schema migration"
+confidence: 0.65
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/officechbusinessservices-creator/CompliCore
+---
+
+# CompliCore Workflow Database Schema Migration
+
+## Action
+
+Follow the database-schema-migration workflow:
+1. Update Prisma schema
+2. Generate migration files
+3. Apply database migrations
+4. Update related API endpoints
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~3x per month
+- Files: backend/prisma/schema.prisma, backend/prisma/migrations/*/migration.sql, backend/src/lib/prisma.ts
+
+---
+id: CompliCore-workflow-auth-dashboard-feature-development
+trigger: "when doing auth dashboard feature development"
+confidence: 0.7
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/officechbusinessservices-creator/CompliCore
+---
+
+# CompliCore Workflow Auth Dashboard Feature Development
+
+## Action
+
+Follow the auth-dashboard-feature-development workflow:
+1. Create/update auth page components
+2. Integrate with backend APIs
+3. Add authentication checks
+4. Update routing
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~4x per month
+- Files: src/app/(auth)/*/page.tsx, backend/src/routes/*.ts, src/lib/api-client.ts
+
+---
+id: CompliCore-workflow-backend-api-testing
+trigger: "when doing backend api testing"
+confidence: 0.65
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/officechbusinessservices-creator/CompliCore
+---
+
+# CompliCore Workflow Backend Api Testing
+
+## Action
+
+Follow the backend-api-testing workflow:
+1. Write API integration tests
+2. Add test data setup
+3. Test authentication flows
+4. Validate API contracts
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~3x per month
+- Files: backend/src/__tests__/api.test.ts, backend/src/__tests__/payments.test.ts, backend/src/routes/*.ts
+
+---
+id: CompliCore-workflow-documentation-updates
+trigger: "when doing documentation updates"
+confidence: 0.7
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/officechbusinessservices-creator/CompliCore
+---
+
+# CompliCore Workflow Documentation Updates
+
+## Action
+
+Follow the documentation-updates workflow:
+1. Update relevant documentation files
+2. Add technical specifications
+3. Update setup guides
+4. Document API changes
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~4x per month
+- Files: README.md, CLAUDE.md, docs/*/
+
+---
+id: complicore-camelcase-files
+trigger: "When creating new TypeScript files"
+confidence: 0.85
+domain: code-style
+source: repo-analysis
+source_repo: officechbusinessservices-creator/CompliCore
+---
+
+# Complicore Camelcase Files
+
+## Action
+
+Use camelCase naming convention for file names
+
+## Evidence
+
+- Consistent camelCase pattern in src structure
+- Files like auth-controller.ts, api-client.ts follow kebab-case variant
+
+---
+id: complicore-pascalcase-classes
+trigger: "When defining new classes or React components"
+confidence: 0.9
+domain: code-style
+source: repo-analysis
+source_repo: officechbusinessservices-creator/CompliCore
+---
+
+# Complicore Pascalcase Classes
+
+## Action
+
+Use PascalCase naming convention
+
+## Evidence
+
+- Standard TypeScript convention
+- React component structure in src/app
+
+---
+id: complicore-screaming-snake-constants
+trigger: "When defining module-level constants"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: officechbusinessservices-creator/CompliCore
+---
+
+# Complicore Screaming Snake Constants
+
+## Action
+
+Use SCREAMING_SNAKE_CASE naming convention
+
+## Evidence
+
+- TypeScript naming conventions detected
+- Config file patterns suggest constant usage
+
+---
+id: complicore-relative-imports
+trigger: "When importing modules within the project"
+confidence: 0.75
+domain: code-style
+source: repo-analysis
+source_repo: officechbusinessservices-creator/CompliCore
+---
+
+# Complicore Relative Imports
+
+## Action
+
+Use relative import paths
+
+## Evidence
+
+- Project structure suggests relative imports
+- Common pattern in TypeScript projects
+
+---
+id: complicore-named-exports
+trigger: "When exporting functions or classes from modules"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: officechbusinessservices-creator/CompliCore
+---
+
+# Complicore Named Exports
+
+## Action
+
+Use named exports instead of default exports
+
+## Evidence
+
+- TypeScript best practices
+- API structure suggests named exports
+
+---
+id: complicore-vitest-testing
+trigger: "When writing unit or integration tests"
+confidence: 0.95
+domain: testing
+source: repo-analysis
+source_repo: officechbusinessservices-creator/CompliCore
+---
+
+# Complicore Vitest Testing
+
+## Action
+
+Use Vitest framework with *.test.ts file pattern
+
+## Evidence
+
+- vitest.config.ts present
+- Test files in backend/src/__tests__/
+- Coverage config enabled
+
+---
+id: complicore-test-colocated
+trigger: "When adding tests for new features"
+confidence: 0.9
+domain: testing
+source: repo-analysis
+source_repo: officechbusinessservices-creator/CompliCore
+---
+
+# Complicore Test Colocated
+
+## Action
+
+Place test files near the code they test using *.test.ts suffix
+
+## Evidence
+
+- Test location marked as colocated
+- backend/src/__tests__/ structure
+
+---
+id: complicore-api-integration-tests
+trigger: "When implementing new API endpoints"
+confidence: 0.87
+domain: testing
+source: repo-analysis
+source_repo: officechbusinessservices-creator/CompliCore
+---
+
+# Complicore Api Integration Tests
+
+## Action
+
+Write integration tests covering the full request/response cycle
+
+## Evidence
+
+- backend/src/__tests__/api.test.ts
+- payments.test.ts
+- Backend API testing workflow
+
+---
+id: complicore-conventional-commits
+trigger: "When committing changes"
+confidence: 0.85
+domain: git
+source: repo-analysis
+source_repo: officechbusinessservices-creator/CompliCore
+---
+
+# Complicore Conventional Commits
+
+## Action
+
+Use conventional commit format: type(scope): description (avg 63 chars)
+
+## Evidence
+
+- fix(build): resolve useSession prerender crash
+- feat(db): wire users/revenue/settings
+- test(backend): cover webhook sync
+
+---
+id: complicore-commit-prefixes
+trigger: "When writing commit messages"
+confidence: 0.9
+domain: git
+source: repo-analysis
+source_repo: officechbusinessservices-creator/CompliCore
+---
+
+# Complicore Commit Prefixes
+
+## Action
+
+Start commits with fix, feat, chore, docs, or test prefixes
+
+## Evidence
+
+- Mixed commit prefixes detected: fix, feat, chore
+- Examples show consistent prefix usage
+
+---
+id: complicore-merge-pr-workflow
+trigger: "When coordinating feature branches or merging to main"
+confidence: 0.95
+domain: workflow
+source: repo-analysis
+source_repo: officechbusinessservices-creator/CompliCore
+---
+
+# Complicore Merge Pr Workflow
+
+## Action
+
+Create pull request, review changes, merge to target branch, update references
+
+## Evidence
+
+- 15x/month frequency
+- Multiple merge PR commits
+- Branch coordination between main/complicore
+
+---
+id: complicore-fix-ci-build
+trigger: "When build fails or deployment config needs updates"
+confidence: 0.88
+domain: workflow
+source: repo-analysis
+source_repo: officechbusinessservices-creator/CompliCore
+---
+
+# Complicore Fix Ci Build
+
+## Action
+
+Check CI config, update dependencies, fix environment variables, validate pipeline
+
+## Evidence
+
+- 5x/month frequency
+- .github/workflows/ci.yml
+- package.json updates
+- backend/src/lib/env.ts
+
+---
+id: complicore-prisma-migration
+trigger: "When adding database tables or modifying schema"
+confidence: 0.92
+domain: workflow
+source: repo-analysis
+source_repo: officechbusinessservices-creator/CompliCore
+---
+
+# Complicore Prisma Migration
+
+## Action
+
+Update Prisma schema, generate migrations, apply to database, update API endpoints
+
+## Evidence
+
+- 3x/month frequency
+- backend/prisma/schema.prisma
+- Migration files pattern
+- Prisma integration
+
+---
+id: complicore-auth-feature-dev
+trigger: "When adding authenticated user features or dashboard pages"
+confidence: 0.9
+domain: workflow
+source: repo-analysis
+source_repo: officechbusinessservices-creator/CompliCore
+---
+
+# Complicore Auth Feature Dev
+
+## Action
+
+Create auth page components, integrate with backend APIs, add auth checks, update routing
+
+## Evidence
+
+- 4x/month frequency
+- src/app/(auth)/*/page.tsx
+- auth-controller.ts
+- API integration pattern
+
+---
+id: complicore-backend-testing
+trigger: "When implementing new API endpoints"
+confidence: 0.87
+domain: workflow
+source: repo-analysis
+source_repo: officechbusinessservices-creator/CompliCore
+---
+
+# Complicore Backend Testing
+
+## Action
+
+Write API integration tests, setup test data, test auth flows, validate contracts
+
+## Evidence
+
+- 3x/month frequency
+- backend/src/__tests__/api.test.ts
+- payments.test.ts
+- Test coverage focus
+
+---
+id: complicore-docs-maintenance
+trigger: "When updating project structure, APIs, or development processes"
+confidence: 0.85
+domain: workflow
+source: repo-analysis
+source_repo: officechbusinessservices-creator/CompliCore
+---
+
+# Complicore Docs Maintenance
+
+## Action
+
+Update documentation files, add technical specs, update setup guides, document API changes
+
+## Evidence
+
+- 4x/month frequency
+- README.md, CLAUDE.md present
+- docs/ structure
+- Technical documentation focus
+
+---
+id: complicore-try-catch-errors
+trigger: "When handling potential errors in functions"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: officechbusinessservices-creator/CompliCore
+---
+
+# Complicore Try Catch Errors
+
+## Action
+
+Use try-catch blocks for error handling
+
+## Evidence
+
+- Error handling style detected as try-catch
+- No custom error classes or boundaries configured
+
+---
+id: complicore-type-based-modules
+trigger: "When organizing code into modules"
+confidence: 0.85
+domain: architecture
+source: repo-analysis
+source_repo: officechbusinessservices-creator/CompliCore
+---
+
+# Complicore Type Based Modules
+
+## Action
+
+Group files by type (components, lib, types) rather than by feature
+
+## Evidence
+
+- Module organization marked as type-based
+- src layout: app, components, lib, styles, test, types
+
