@@ -7,6 +7,7 @@ const nextConfig = {
   allowedDevOrigins: ["*.preview.same-app.com"],
   
   // Production optimizations
+  output: 'standalone',   // Required for Docker multi-stage builds
   reactStrictMode: true,
   poweredByHeader: false,
   compress: true,
