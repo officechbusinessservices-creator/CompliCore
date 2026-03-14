@@ -128,3 +128,26 @@ bash scripts/setup_antigravity_skills.sh --path /your/custom/skills/path
 ```
 
 See also: `docs/operations/skills-usage-guide.md` for practical prompting patterns and starter skill sequencing.
+
+## One-command demo (end product)
+
+If you want to see the full end product quickly (API + worker + one workflow run):
+
+```bash
+# Online dependency setup
+make demo-e2e
+
+# Offline wheelhouse mode
+make demo-e2e-offline
+```
+
+The demo script will:
+
+1. Start infra (`docker compose up -d`)
+2. Setup Python env
+3. Init DB
+4. Launch API + worker in background
+5. Start one workflow run
+6. Query `/health`, `/runs`, `/steps`, `/audit`
+
+Logs are written to `./.demo-logs/`.

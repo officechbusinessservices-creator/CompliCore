@@ -1,4 +1,4 @@
-.PHONY: infra-up infra-down setup-python install-deps init-db api worker scheduler start-workflow query-workflow venv venv-offline venv-verify wheelhouse skills-bootstrap skills-bootstrap-path
+.PHONY: infra-up infra-down setup-python install-deps init-db api worker scheduler start-workflow query-workflow venv venv-offline venv-verify wheelhouse skills-bootstrap skills-bootstrap-path demo-e2e demo-e2e-offline
 
 infra-up:
 	docker compose up -d
@@ -47,3 +47,9 @@ start-workflow:
 
 query-workflow:
 	python apps/cli/query_workflow.py
+
+demo-e2e:
+	bash scripts/demo_end_to_end.sh --online
+
+demo-e2e-offline:
+	bash scripts/demo_end_to_end.sh --offline ./vendor/wheels
