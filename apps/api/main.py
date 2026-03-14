@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import json
 from datetime import datetime, timezone
 
 import os
@@ -239,6 +240,17 @@ def deep_health() -> dict:
         "database": db_status,
         "temporal_host": get_temporal_target(),
     }
+
+
+@app.get("/fleet/model")
+def fleet_model() -> dict:
+    model_path = Path("configs/fleet_operating_model.json")
+    if not model_path.exists():
+        raise HTTPException(status_code=404, detail="Fleet operating model not found")
+    try:
+        return json.loads(model_path.read_text(encoding="utf-8"))
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(status_code=500, detail=f"Failed to read fleet model: {exc}") from exc
 
 
 @app.get("/runs")

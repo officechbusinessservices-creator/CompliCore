@@ -1,0 +1,204 @@
+{
+  "version": "1.0",
+  "execution_agents_total": 1000,
+  "command_layer_agents_total": 10,
+  "command_layer_agents": [
+    "Supreme Orchestrator",
+    "Policy Guard",
+    "Audit Governor",
+    "Budget Controller",
+    "Release Controller",
+    "Memory Governor",
+    "Plugin Governor",
+    "Quality Governor",
+    "Incident Commander",
+    "Chief of Staff Router"
+  ],
+  "divisions": [
+    {
+      "id": 1,
+      "name": "Product & Strategy",
+      "agents": 80
+    },
+    {
+      "id": 2,
+      "name": "Architecture & Backend",
+      "agents": 110
+    },
+    {
+      "id": 3,
+      "name": "Frontend & UX",
+      "agents": 90
+    },
+    {
+      "id": 4,
+      "name": "Data, Context & Memory",
+      "agents": 80
+    },
+    {
+      "id": 5,
+      "name": "Workflow, Agents & Skills",
+      "agents": 90
+    },
+    {
+      "id": 6,
+      "name": "Growth & Marketing",
+      "agents": 80
+    },
+    {
+      "id": 7,
+      "name": "Sales, Partnerships & Revenue",
+      "agents": 80
+    },
+    {
+      "id": 8,
+      "name": "Operations, Support & Documentation",
+      "agents": 70
+    },
+    {
+      "id": 9,
+      "name": "Finance, Legal & Compliance",
+      "agents": 60
+    },
+    {
+      "id": 10,
+      "name": "QA, Security & Reliability",
+      "agents": 80
+    },
+    {
+      "id": 11,
+      "name": "Feedback, Alignment & Ethics",
+      "agents": 40
+    },
+    {
+      "id": 12,
+      "name": "R&D and Model Training",
+      "agents": 50
+    },
+    {
+      "id": 13,
+      "name": "Infrastructure & DevOps",
+      "agents": 50
+    },
+    {
+      "id": 14,
+      "name": "Identity & Access Management",
+      "agents": 30
+    },
+    {
+      "id": 15,
+      "name": "Human-Agent Bridge / Executive Office",
+      "agents": 20
+    }
+  ],
+  "activation_waves": [
+    {
+      "wave": 1,
+      "agents": 60,
+      "purpose": "Define product and activate one controlled vertical slice.",
+      "divisions": [
+        1,
+        2,
+        3,
+        5,
+        10,
+        15
+      ]
+    },
+    {
+      "wave": 2,
+      "agents": 180,
+      "purpose": "Make product deployable, governable, and observable.",
+      "divisions": [
+        4,
+        13,
+        14,
+        9,
+        8
+      ]
+    },
+    {
+      "wave": 3,
+      "agents": 350,
+      "purpose": "Make product revenue-capable and supportable.",
+      "divisions": [
+        6,
+        7,
+        8
+      ]
+    },
+    {
+      "wave": 4,
+      "agents": 650,
+      "purpose": "Make organization durable and self-correcting.",
+      "divisions": [
+        11,
+        12,
+        6,
+        7,
+        10
+      ]
+    },
+    {
+      "wave": 5,
+      "agents": 1000,
+      "purpose": "Scale with portfolio control, optimization and long-horizon planning.",
+      "divisions": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ]
+    }
+  ],
+  "non_negotiable_deliverables": {
+    "alignment_and_ethics": [
+      "ethical boundary policy",
+      "red-team eval suite",
+      "bias audit pipeline",
+      "human override paths",
+      "brand safety guardrails"
+    ],
+    "model_evolution": [
+      "model benchmark dashboard",
+      "routing optimization policy",
+      "embedding migration path",
+      "local-model specialization path",
+      "provider failover policy"
+    ],
+    "infrastructure": [
+      "cost dashboard",
+      "inference cost controls",
+      "GPU/local runtime strategy",
+      "infra incident playbooks",
+      "uptime and scaling policy"
+    ],
+    "iam": [
+      "permissions graph",
+      "secrets vault integration",
+      "MCP capability map",
+      "role-based access boundaries",
+      "secret rotation cadence"
+    ],
+    "executive_bridge": [
+      "operator cockpit",
+      "kill-switch controls",
+      "objective decomposition engine",
+      "executive command brief",
+      "emergency intervention workflow"
+    ]
+  },
+  "division_agents_total": 1010,
+  "allocation_note": "Division weights are preserved exactly as specified in the 15-division table; command-layer planning enforces the 1,000 execution-agent activation cap."
+}
