@@ -18,7 +18,7 @@ CompliCore is a comprehensive, vendor-neutral architecture for short-term rental
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-org/complicore.git
+git clone https://github.com/officechbusinessservices-creator/CompliCore.git
 cd complicore
 
 # Install dependencies
@@ -110,7 +110,7 @@ Backend runs on [http://localhost:4000](http://localhost:4000)
 - **🛡️ Security First** - Zero-trust architecture, encryption everywhere
 
 ## 📚 Documentation
-
+https://github.com/officechbusinessservices-creator/CompliCore/pull/126/conflict?name=apps%252Fapi%252Fmain.py&base_oid=dad80c977b80f6d5bdd10f00c80004076c15fa9e&head_oid=7ad5866d0ff1a4e8539f187f6328626757fd624d
 - **[User Guide](./USER_GUIDE.md)** - Complete user documentation
 - **[Deployment Guide](./DEPLOYMENT.md)** - Production deployment instructions
 - **[Security Guide](./SECURITY_GUIDE.md)** - Open Deep Research hardening notes
@@ -119,6 +119,13 @@ Backend runs on [http://localhost:4000](http://localhost:4000)
 - **[Security & Compliance Framework](./docs/security/compliance_framework.md)** - Auth, RBAC, rate limiting, encryption
 - **[Performance Optimization Guide](./docs/performance/optimization_guide.md)** - Prisma indexes, caching, Next.js optimizations
 - **[Testing Framework](./docs/testing/framework.md)** - Test runner setup, how to run tests, example patterns
+- **[SaaS MVP Brainstorm](./docs/operations/saas-mvp-brainstorm.md)** - Scope, milestones, and delivery plan for the first SaaS MVP
+- **[Antigravity OS Plan](./docs/operations/antigravity-os-plan.md)** - Operator-first architecture (roles + workspaces + skills) with CompliCore as a workspace
+- **[Worker-Layer Startup Runbook](./docs/operations/worker-layer-startup.md)** - Correct startup order for infra, workers, scheduler, and dashboard observer
+- **[Skills Usage Guide](./docs/operations/skills-usage-guide.md)** - How to actually use installed skills, bundles, and prompt patterns
+- **[Context Layer Architecture](./docs/architecture/context-layer.md)** - OpenViking-backed context backbone design
+- **[OpenViking Evaluation](./docs/integrations/openviking-evaluation.md)** - integration scope and ownership boundaries
+- **[Plugin Governance Layer](./docs/architecture/plugin-governance-layer.md)** - Claude plugin packaging and trust-review model
 - **[Worker-Layer Startup Runbook](./docs/operations/worker-layer-startup.md)** - Correct startup order for infra, workers, scheduler, and dashboard observer
 - **[API Reference](http://localhost:3000/api-docs)** - Interactive API documentation
 - **[Public APIs Catalog](./PUBLIC_APIS.md)** - Full public-apis.org reference list
@@ -168,6 +175,10 @@ Explore the platform features:
 
 ## 🤖 Worker Runtime Bootstrap
 
+Install Antigravity skills (default: `~/.gemini/antigravity/skills`) with `npx antigravity-awesome-skills`, or use `--path` for custom locations.
+Start with **Essentials** for general use, **Web Wizard** for web development, and **Security Engineer** for security-focused work.
+
+The worker layer now runs a 4-stage Temporal flow (plan → research → execute → review) with PostgreSQL persistence, approval gating, artifact output, and API visibility (`/runs`, `/steps`, `/audit`, `/approvals`, `/workflow/{id}/status`, `/metrics/summary`). OpenViking is integrated as the context backbone (via context-gateway), while Temporal remains orchestration runtime.
 The worker layer now runs a 4-stage Temporal flow (plan → research → execute → review) with PostgreSQL persistence and API visibility (`/runs`, `/steps`, `/audit`).
 Set up dependencies first with `bash scripts/setup_python_env.sh --online` or `bash scripts/setup_python_env.sh --offline ./vendor/wheels`, then follow `docs/operations/first-runnable-layer.md`.
 
@@ -265,7 +276,7 @@ Security is our top priority. If you discover a security vulnerability, please e
 
 - **Email**: support@complicore.com
 - **Documentation**: [/docs](./docs/)
-- **Issues**: [GitHub Issues](https://github.com/your-org/complicore/issues)
+- **Issues**: [GitHub Issues](https://github.com/officechbusinessservices-creator/CompliCore/issues)
 
 ## 🗺️ Roadmap
 
@@ -512,3 +523,8 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+
+### Operator live runs page
+
+After starting the web app, open `/operator-runs` to view live run status, role/workspace routing, and approval-waiting state from the worker API.

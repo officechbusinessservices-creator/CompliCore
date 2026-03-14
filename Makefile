@@ -1,3 +1,4 @@
+.PHONY: infra-up infra-down setup-python install-deps init-db api worker scheduler start-workflow query-workflow venv venv-offline venv-verify wheelhouse skills-bootstrap skills-bootstrap-path demo-e2e demo-e2e-offline smoke-full context-gateway
 .PHONY: infra-up infra-down setup-python install-deps init-db api worker scheduler start-workflow query-workflow venv venv-offline venv-verify wheelhouse
 
 infra-up:
@@ -22,6 +23,13 @@ venv-verify:
 
 wheelhouse:
 	bash scripts/build_wheelhouse.sh
+
+skills-bootstrap:
+	bash scripts/setup_antigravity_skills.sh
+
+# Usage: make skills-bootstrap-path SKILLS_PATH=/custom/path
+skills-bootstrap-path:
+	bash scripts/setup_antigravity_skills.sh --path "$(SKILLS_PATH)"
 
 init-db:
 	python scripts/init_db.py

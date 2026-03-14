@@ -12,6 +12,7 @@ from datetime import datetime, timezone
 from dotenv import load_dotenv
 from temporalio.client import Client
 
+from packages.shared.run_store import create_workflow_run
 from packages.shared.run_store import complete_workflow_run, create_workflow_run
 from packages.workflows.operator_copilot import OperatorCopilotWorkflow
 
@@ -22,6 +23,17 @@ async def main() -> None:
     client = await Client.connect(os.getenv("TEMPORAL_HOST", "localhost:7233"))
 
     while True:
+        payload = {
+            "objective": "Scheduled autonomous run",
+            "workspace": "complicore",
+            "role": "operator",
+            "constraints": ["timebox:5m"],
+        }
+        db_run_id = create_workflow_run("operator_copilot", payload)
+        workflow_id = f"scheduled-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}"
+        payload["db_run_id"] = db_run_id
+        payload["workflow_id"] = workflow_id
+
         payload = {"objective": "Scheduled autonomous run"}
         db_run_id = create_workflow_run("operator_copilot", payload)
         payload["db_run_id"] = db_run_id
@@ -33,6 +45,7 @@ async def main() -> None:
             id=workflow_id,
             task_queue="orchestrator-queue",
         )
+        await handle.result()
         result = await handle.result()
         complete_workflow_run(db_run_id, result)
         print(f"Started and completed {workflow_id}")

@@ -1,3 +1,5 @@
+> Architecture note: Antigravity OS is operator-first; CompliCore is one workspace inside that OS. See `docs/operations/antigravity-os-plan.md`.
+
 # Worker-Layer Startup Runbook
 
 This runbook defines how to launch the self-running agent system.
@@ -13,6 +15,30 @@ Use one of the supported setup modes before running API/worker/scheduler scripts
 bash scripts/setup_python_env.sh --online
 bash scripts/setup_python_env.sh --offline ./vendor/wheels
 bash scripts/setup_python_env.sh --verify-only
+```
+
+## Antigravity skills bootstrap
+
+## Starter skill routing
+
+When choosing your first skill pack:
+
+- **General use:** start with **Essentials**
+- **Web development work:** start with **Web Wizard**
+- **Security-focused work:** start with **Security Engineer**
+
+This routing should be applied before adding more specialized skills.
+
+Install global Antigravity skills (default path: `~/.gemini/antigravity/skills`):
+
+```bash
+npx antigravity-awesome-skills
+```
+
+Install to a custom path:
+
+```bash
+npx antigravity-awesome-skills --path /your/custom/skills/path
 ```
 
 ## Required startup order
@@ -100,3 +126,17 @@ npm --prefix apps/dashboard run dev
 - A single monolithic `while true` “master agent” loop
 - Triggers that bypass the workflow engine
 - Embedding scheduling logic directly in model prompts
+
+See also: `docs/operations/skills-usage-guide.md` for practical prompting patterns and starter skill sequencing.
+
+
+## Optional: Start OpenViking context backbone
+
+```bash
+docker compose --profile context up -d openviking context-gateway
+```
+
+Context retrieval endpoints:
+
+- `POST /context/retrieve`
+- `GET /context/workspaces`
