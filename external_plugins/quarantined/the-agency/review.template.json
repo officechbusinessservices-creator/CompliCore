@@ -1,0 +1,18 @@
+{
+  "plugin": "the-agency",
+  "state": "quarantined",
+  "source_url": "https://github.com/msitarzewski/agency-agents",
+  "review_status": "pending",
+  "checks": {
+    "source_verified": false,
+    "readme_reviewed": false,
+    "mcp_scope_reviewed": false,
+    "permissions_reviewed": false,
+    "commands_reviewed": false,
+    "agent_behavior_reviewed": false,
+    "skills_reviewed": false,
+    "network_behavior_reviewed": false,
+    "secrets_risk_reviewed": false,
+    "sandbox_decision_made": false
+  }
+}
