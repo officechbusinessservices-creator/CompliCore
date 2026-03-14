@@ -75,3 +75,25 @@ external_plugins/
 - declarations required: `workspace_access`, `role_access`, `secrets_use`, `network_use`, `mcp_endpoints`
 
 Enable operation is blocked if any declaration is missing.
+
+- Source: `https://github.com/openclaw/openclaw`
+- Intake state: `quarantined`
+- Path: `external_plugins/quarantined/openclaw/`
+- Clone helper: `bash scripts/clone_openclaw_repo.sh`
+
+
+## Runtime execution model
+
+Plugins are executable only after passing runtime checks:
+
+1. manifest validation (`.claude-plugin/plugin.json`, `.mcp.json`, commands/agents/skills structure)
+2. controlled loader scans `plugins/` + `external_plugins/approved/`
+3. policy boundaries enforced at dispatch time (workspace, role, permissions, timeout)
+4. command dispatch resolves command -> plugin -> skill handler
+5. audit events written for load/start/finish/failure/policy denial
+
+### Dispatch endpoints
+
+- `POST /plugins/validate`
+- `POST /plugins/load`
+- `POST /plugins/dispatch`

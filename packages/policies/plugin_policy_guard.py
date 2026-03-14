@@ -30,3 +30,38 @@ def evaluate_plugin_enable_policy(plugin: dict, details: dict) -> tuple[bool, li
         violations.append(f"Plugin has disallowed permissions: {names}")
 
     return (len(violations) == 0, violations)
+
+
+def evaluate_plugin_execution_policy(plugin: dict, details: dict, request: dict) -> tuple[bool, list[str]]:
+    violations: list[str] = []
+    permissions = details.get("permissions", [])
+
+    def _scopes(permission_name: str) -> set[str]:
+        return {str(p.get("scope")) for p in permissions if p.get("permission_name") == permission_name and p.get("allowed")}
+
+    workspace = request.get("workspace", "global")
+    role = request.get("role", "global")
+    timeout_s = int(request.get("timeout_s", 30))
+
+    workspace_scopes = _scopes("workspace_access")
+    if "global" not in workspace_scopes and workspace not in workspace_scopes:
+        violations.append(f"Workspace `{workspace}` not allowed by plugin scope")
+
+    role_scopes = _scopes("role_access")
+    if "global" not in role_scopes and role not in role_scopes:
+        violations.append(f"Role `{role}` not allowed by plugin scope")
+
+    if timeout_s > 120:
+        violations.append("Timeout budget exceeded (max 120s)")
+
+    requested_mcp_endpoints = set(request.get("requested_mcp_endpoints", []))
+    allowed_mcp_scopes = _scopes("mcp_endpoints")
+    if requested_mcp_endpoints and "declared" not in allowed_mcp_scopes and not requested_mcp_endpoints.issubset(allowed_mcp_scopes):
+        violations.append("Requested MCP endpoints exceed declared permission")
+
+    requested_tools = set(request.get("requested_tools", []))
+    allowed_tool_scopes = _scopes("allowed_tools")
+    if requested_tools and allowed_tool_scopes and not requested_tools.issubset(allowed_tool_scopes):
+        violations.append("Requested tools exceed plugin allowed_tools scope")
+
+    return (len(violations) == 0, violations)

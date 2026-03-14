@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 import os
 import uuid
 from functools import lru_cache
@@ -17,15 +19,31 @@ from packages.shared.models import Approval, Artifact, AuditEvent, Plugin, Workf
 from packages.shared.run_store import (
     add_plugin_review,
     add_plugin_version,
+    create_experiment,
+    create_failure,
+    create_initiative,
+    create_kpi,
+    create_outcome,
     decide_approval,
     get_approval,
     get_plugin_by_name,
     get_plugin_details,
     install_plugin,
+    list_experiments,
+    list_failures,
+    list_initiatives,
+    list_kpis,
+    list_outcomes,
     list_plugins,
     register_plugin,
     set_plugin_permissions,
     set_plugin_state,
+)
+from packages.tools.plugin_runtime import (
+    PluginValidationError,
+    dispatch_plugin_command,
+    load_plugins_into_registry,
+    validate_plugin_manifest,
 )
 from packages.shared.db import SessionLocal
 from packages.shared.models import Approval, Artifact, AuditEvent, WorkflowRun, WorkflowStep
@@ -83,6 +101,74 @@ class PluginStateRequest(BaseModel):
 
 class PluginPermissionsRequest(BaseModel):
     permissions: list[dict]
+
+
+class PluginValidateRequest(BaseModel):
+    plugin_path: str
+
+
+class PluginDispatchRequest(BaseModel):
+    command: str
+    workspace: str
+    role: str
+    objective: str
+    constraints: list[str] = []
+    timeout_s: int = 30
+
+
+class OutcomeCreateRequest(BaseModel):
+    workspace: str = "complicore"
+    outcome_type: str
+    project: str | None = None
+    campaign: str | None = None
+    opportunity: str | None = None
+    value: str | None = None
+    confidence: str = "medium"
+    source: str | None = None
+    details_json: dict | None = None
+
+
+class KpiCreateRequest(BaseModel):
+    workspace: str = "complicore"
+    name: str
+    owner_role: str = "operator"
+    target: str
+    current: str
+    period: str = "weekly"
+    source: str | None = None
+    status: str = "on-track"
+
+
+class InitiativeCreateRequest(BaseModel):
+    workspace: str = "complicore"
+    name: str
+    owner: str | None = None
+    status: str = "proposed"
+    effort: int = 1
+    upside: int = 1
+    urgency: int = 1
+    confidence: int = 1
+
+
+class ExperimentCreateRequest(BaseModel):
+    workspace: str = "complicore"
+    name: str
+    hypothesis: str
+    success_metric: str
+    variant: str | None = None
+    status: str = "planned"
+    result: str | None = None
+    decision: str | None = None
+
+
+class FailureCreateRequest(BaseModel):
+    workspace: str = "complicore"
+    failure_type: str
+    project: str | None = None
+    root_cause: str
+    cost: str | None = None
+    fix: str | None = None
+    repeat_risk: str = "medium"
 
 
 context_client = OpenVikingContextClient()
@@ -345,6 +431,11 @@ def metrics_summary() -> dict:
             "total_plugins": total_plugins,
             "enabled_plugins": enabled_plugins,
             "completion_rate": round(completed_runs / total_runs, 4) if total_runs else 0,
+            "total_outcomes": len(list_outcomes()),
+            "total_kpis": len(list_kpis()),
+            "total_initiatives": len(list_initiatives()),
+            "total_experiments": len(list_experiments()),
+            "total_failures": len(list_failures()),
         }
     finally:
         db.close()
@@ -485,3 +576,139 @@ def plugin_enable(name: str, request: PluginStateRequest) -> dict:
 
     updated = set_plugin_state(details["plugin"]["id"], "enabled", request.changed_by, request.reason)
     return {"status": "ok", "plugin": updated}
+
+
+@app.post("/plugins/validate")
+def plugin_validate(request: PluginValidateRequest) -> dict:
+    try:
+        validated = validate_plugin_manifest(Path(request.plugin_path))
+        return {
+            "status": "ok",
+            "plugin": validated["manifest"]["name"],
+            "commands": validated["commands"],
+            "skills": sorted(validated["skill_handlers"].keys()),
+            "manifest_hash": validated["manifest_hash"],
+        }
+    except PluginValidationError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@app.post("/plugins/load")
+def plugins_load() -> dict:
+    return load_plugins_into_registry()
+
+
+@app.post("/plugins/dispatch")
+async def plugins_dispatch(request: PluginDispatchRequest) -> dict:
+    try:
+        return await dispatch_plugin_command(
+            command_name=request.command,
+            workspace=request.workspace,
+            role=request.role,
+            objective=request.objective,
+            constraints=request.constraints,
+            timeout_s=request.timeout_s,
+        )
+    except PluginValidationError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+
+# ---------------- Business outcomes and KPI registry ----------------
+@app.get("/outcomes")
+def outcomes_list(workspace: str | None = None) -> list[dict]:
+    return list_outcomes(workspace=workspace)
+
+
+@app.post("/outcomes")
+def outcomes_create(request: OutcomeCreateRequest) -> dict:
+    outcome = create_outcome(
+        workspace=request.workspace,
+        outcome_type=request.outcome_type,
+        project=request.project,
+        campaign=request.campaign,
+        opportunity=request.opportunity,
+        value=request.value,
+        confidence=request.confidence,
+        source=request.source,
+        details_json=request.details_json,
+    )
+    return {"status": "ok", "outcome": outcome}
+
+
+@app.get("/kpis")
+def kpis_list(workspace: str | None = None) -> list[dict]:
+    return list_kpis(workspace=workspace)
+
+
+@app.post("/kpis")
+def kpis_create(request: KpiCreateRequest) -> dict:
+    kpi = create_kpi(
+        workspace=request.workspace,
+        name=request.name,
+        owner_role=request.owner_role,
+        target=request.target,
+        current=request.current,
+        period=request.period,
+        source=request.source,
+        status=request.status,
+    )
+    return {"status": "ok", "kpi": kpi}
+
+
+@app.get("/initiatives")
+def initiatives_list(workspace: str | None = None) -> list[dict]:
+    return list_initiatives(workspace=workspace)
+
+
+@app.post("/initiatives")
+def initiatives_create(request: InitiativeCreateRequest) -> dict:
+    initiative = create_initiative(
+        workspace=request.workspace,
+        name=request.name,
+        owner=request.owner,
+        status=request.status,
+        effort=request.effort,
+        upside=request.upside,
+        urgency=request.urgency,
+        confidence=request.confidence,
+    )
+    return {"status": "ok", "initiative": initiative}
+
+
+@app.get("/experiments")
+def experiments_list(workspace: str | None = None) -> list[dict]:
+    return list_experiments(workspace=workspace)
+
+
+@app.post("/experiments")
+def experiments_create(request: ExperimentCreateRequest) -> dict:
+    experiment = create_experiment(
+        workspace=request.workspace,
+        name=request.name,
+        hypothesis=request.hypothesis,
+        success_metric=request.success_metric,
+        variant=request.variant,
+        status=request.status,
+        result=request.result,
+        decision=request.decision,
+    )
+    return {"status": "ok", "experiment": experiment}
+
+
+@app.get("/failures")
+def failures_list(workspace: str | None = None) -> list[dict]:
+    return list_failures(workspace=workspace)
+
+
+@app.post("/failures")
+def failures_create(request: FailureCreateRequest) -> dict:
+    failure = create_failure(
+        workspace=request.workspace,
+        failure_type=request.failure_type,
+        project=request.project,
+        root_cause=request.root_cause,
+        cost=request.cost,
+        fix=request.fix,
+        repeat_risk=request.repeat_risk,
+    )
+    return {"status": "ok", "failure": failure}

@@ -436,3 +436,8 @@ antigravity plugin enable <name>
 
 Add **The Agency** (`msitarzewski/agency-agents`) as a quarantined external plugin source.
 Do not activate directly from marketplace source; require governance review and explicit promotion into `external_plugins/approved/`.
+
+- Add `openclaw/openclaw` as a quarantined external source and require explicit review before promotion.
+
+
+- Add plugin manifest validation, approved-only loader, command dispatch, execution boundaries, and plugin audit events as runtime requirements.

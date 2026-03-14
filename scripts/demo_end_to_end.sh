@@ -24,6 +24,8 @@ What this does:
   3) Initializes DB schema
   4) Starts API + worker in background
   5) Starts one workflow run
+  6) Loads plugin inventory + dispatches plugin command
+  7) Queries API endpoints: /health /runs /steps /audit
   6) Queries API endpoints: /health /runs /steps /audit
 
 Background logs:
@@ -115,6 +117,7 @@ for _ in {1..30}; do
 done
 curl -s http://localhost:8000/health || true
 
+echo "[7/8] Starting one workflow run + querying outputs..."
 echo "[7/7] Starting one workflow run + querying outputs..."
 python apps/cli/start_workflow.py
 curl -s http://localhost:8000/runs
@@ -122,4 +125,17 @@ printf "\n"
 curl -s http://localhost:8000/steps
 printf "\n"
 curl -s http://localhost:8000/audit
+printf "\n"
+
+echo "[8/8] Plugin load + validate + dispatch demo..."
+python scripts/sync_plugins_registry.py || true
+curl -s -X POST http://localhost:8000/plugins/load
+printf "\n"
+curl -s -X POST http://localhost:8000/plugins/validate -H "Content-Type: application/json" -d "{\"plugin_path\":\"plugins/role-ceo\"}"
+printf "\n"
+curl -s -X POST http://localhost:8000/plugins/dispatch -H "Content-Type: application/json" -d "{\"command\":\"weekly-brief\",\"workspace\":\"complicore\",\"role\":\"ceo\",\"objective\":\"Create weekly CEO brief\",\"constraints\":[\"budget\",\"timebox\"]}"
+printf "\n"
+curl -s -X POST http://localhost:8000/plugins/validate -H "Content-Type: application/json" -d "{\"plugin_path\":\"plugins/role-marketer\"}"
+printf "\n"
+curl -s -X POST http://localhost:8000/plugins/dispatch -H "Content-Type: application/json" -d "{\"command\":\"weekly-business-review\",\"workspace\":\"complicore\",\"role\":\"marketer\",\"objective\":\"Generate weekly business review\",\"constraints\":[\"kpis\",\"outcomes\"]}"
 printf "\n\nDone. Logs in %s\n" "$NOHUP_DIR"

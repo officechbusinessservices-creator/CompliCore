@@ -6,6 +6,14 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 import argparse
+import asyncio
+
+from packages.tools.plugin_runtime import (
+    PluginValidationError,
+    dispatch_plugin_command,
+    load_plugins_into_registry,
+    validate_plugin_manifest,
+)
 
 from packages.shared.run_store import (
     add_plugin_review,
@@ -34,6 +42,11 @@ def parse_args() -> argparse.Namespace:
     install.add_argument("--path", required=True)
     install.add_argument("--by", default="operator")
 
+    for state_cmd in ["enable", "disable", "approve", "quarantine"]:
+        cmd = sub.add_parser(state_cmd, help=f"{state_cmd.title()} plugin")
+        cmd.add_argument("name")
+        cmd.add_argument("--by", default="operator")
+        cmd.add_argument("--reason", default=None)
     enable = sub.add_parser("enable", help="Enable plugin")
     enable.add_argument("name")
     enable.add_argument("--by", default="operator")
@@ -68,6 +81,19 @@ def parse_args() -> argparse.Namespace:
     review.add_argument("--status", required=True)
     review.add_argument("--notes", default=None)
 
+    validate = sub.add_parser("validate", help="Validate plugin manifest/structure")
+    validate.add_argument("--plugin-path", required=True)
+
+    sub.add_parser("load", help="Load executable plugins from plugins/ and external_plugins/approved")
+
+    dispatch = sub.add_parser("dispatch", help="Dispatch plugin command")
+    dispatch.add_argument("--plugin-command", required=True)
+    dispatch.add_argument("--workspace", required=True)
+    dispatch.add_argument("--role", required=True)
+    dispatch.add_argument("--objective", required=True)
+    dispatch.add_argument("--constraints", nargs="*", default=[])
+    dispatch.add_argument("--timeout", type=int, default=30)
+
     return parser.parse_args()
 
 
@@ -80,6 +106,31 @@ def main() -> None:
 
     if args.command == "inspect":
         print(get_plugin_details(args.name))
+        return
+
+    if args.command == "validate":
+        print(validate_plugin_manifest(Path(args.plugin_path)))
+        return
+
+    if args.command == "load":
+        print(load_plugins_into_registry())
+        return
+
+    if args.command == "dispatch":
+        try:
+            result = asyncio.run(
+                dispatch_plugin_command(
+                    command_name=args.plugin_command,
+                    workspace=args.workspace,
+                    role=args.role,
+                    objective=args.objective,
+                    constraints=args.constraints,
+                    timeout_s=args.timeout,
+                )
+            )
+            print(result)
+        except PluginValidationError as exc:
+            raise SystemExit(str(exc)) from exc
         return
 
     if args.command == "register":

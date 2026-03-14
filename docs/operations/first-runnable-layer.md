@@ -252,3 +252,32 @@ python scripts/sync_plugins_registry.py
 # or
 make sync-plugins
 ```
+
+
+### OpenClaw repo intake
+
+```bash
+# clone as quarantined source (not auto-enabled)
+bash scripts/clone_openclaw_repo.sh
+# or
+make clone-openclaw
+```
+
+
+### Plugin-backed operator demo
+
+```bash
+# sync and load executable plugin inventory
+python scripts/sync_plugins_registry.py
+curl -X POST http://localhost:8000/plugins/load
+
+# validate manifest and structure
+curl -X POST http://localhost:8000/plugins/validate \
+  -H "Content-Type: application/json" \
+  -d "{"plugin_path":"plugins/role-ceo"}"
+
+# dispatch command through plugin runtime
+curl -X POST http://localhost:8000/plugins/dispatch \
+  -H "Content-Type: application/json" \
+  -d "{"command":"weekly-brief","workspace":"complicore","role":"ceo","objective":"Create weekly CEO brief"}"
+```

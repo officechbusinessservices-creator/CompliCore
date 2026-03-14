@@ -8,6 +8,11 @@ from packages.shared.models import (
     Approval,
     Artifact,
     AuditEvent,
+    Experiment,
+    Failure,
+    Initiative,
+    KPI,
+    Outcome,
     Plugin,
     PluginInstallation,
     PluginPermission,
@@ -493,5 +498,294 @@ def plugin_to_dict(row: Plugin) -> dict:
         "trust_level": row.trust_level,
         "state": row.state,
         "owner": row.owner,
+        "created_at": row.created_at.isoformat() if row.created_at else None,
+    }
+
+
+# ---------------- Business registry ----------------
+def create_outcome(
+    workspace: str,
+    outcome_type: str,
+    project: str | None,
+    campaign: str | None,
+    opportunity: str | None,
+    value: str | None,
+    confidence: str,
+    source: str | None,
+    details_json: dict | None,
+) -> dict:
+    db = SessionLocal()
+    try:
+        row = Outcome(
+            workspace=workspace,
+            outcome_type=outcome_type,
+            project=project,
+            campaign=campaign,
+            opportunity=opportunity,
+            value=value,
+            confidence=confidence,
+            source=source,
+            details_json=details_json,
+        )
+        db.add(row)
+        db.commit()
+        db.refresh(row)
+        return outcome_to_dict(row)
+    finally:
+        db.close()
+
+
+def list_outcomes(workspace: str | None = None) -> list[dict]:
+    db = SessionLocal()
+    try:
+        query = db.query(Outcome)
+        if workspace:
+            query = query.filter(Outcome.workspace == workspace)
+        rows = query.order_by(Outcome.created_at.desc()).all()
+        return [outcome_to_dict(row) for row in rows]
+    finally:
+        db.close()
+
+
+def create_kpi(
+    workspace: str,
+    name: str,
+    owner_role: str,
+    target: str,
+    current: str,
+    period: str,
+    source: str | None,
+    status: str,
+) -> dict:
+    db = SessionLocal()
+    try:
+        row = KPI(
+            workspace=workspace,
+            name=name,
+            owner_role=owner_role,
+            target=target,
+            current=current,
+            period=period,
+            source=source,
+            status=status,
+        )
+        db.add(row)
+        db.commit()
+        db.refresh(row)
+        return kpi_to_dict(row)
+    finally:
+        db.close()
+
+
+def list_kpis(workspace: str | None = None) -> list[dict]:
+    db = SessionLocal()
+    try:
+        query = db.query(KPI)
+        if workspace:
+            query = query.filter(KPI.workspace == workspace)
+        rows = query.order_by(KPI.created_at.desc()).all()
+        return [kpi_to_dict(row) for row in rows]
+    finally:
+        db.close()
+
+
+def create_initiative(
+    workspace: str,
+    name: str,
+    owner: str | None,
+    status: str,
+    effort: int,
+    upside: int,
+    urgency: int,
+    confidence: int,
+) -> dict:
+    db = SessionLocal()
+    try:
+        score = max(1, upside * urgency * confidence) - effort
+        row = Initiative(
+            workspace=workspace,
+            name=name,
+            owner=owner,
+            status=status,
+            score=score,
+            effort=effort,
+            upside=upside,
+            urgency=urgency,
+            confidence=confidence,
+        )
+        db.add(row)
+        db.commit()
+        db.refresh(row)
+        return initiative_to_dict(row)
+    finally:
+        db.close()
+
+
+def list_initiatives(workspace: str | None = None) -> list[dict]:
+    db = SessionLocal()
+    try:
+        query = db.query(Initiative)
+        if workspace:
+            query = query.filter(Initiative.workspace == workspace)
+        rows = query.order_by(Initiative.score.desc(), Initiative.created_at.desc()).all()
+        return [initiative_to_dict(row) for row in rows]
+    finally:
+        db.close()
+
+
+def create_experiment(
+    workspace: str,
+    name: str,
+    hypothesis: str,
+    success_metric: str,
+    variant: str | None,
+    status: str,
+    result: str | None,
+    decision: str | None,
+) -> dict:
+    db = SessionLocal()
+    try:
+        row = Experiment(
+            workspace=workspace,
+            name=name,
+            hypothesis=hypothesis,
+            success_metric=success_metric,
+            variant=variant,
+            status=status,
+            result=result,
+            decision=decision,
+        )
+        db.add(row)
+        db.commit()
+        db.refresh(row)
+        return experiment_to_dict(row)
+    finally:
+        db.close()
+
+
+def list_experiments(workspace: str | None = None) -> list[dict]:
+    db = SessionLocal()
+    try:
+        query = db.query(Experiment)
+        if workspace:
+            query = query.filter(Experiment.workspace == workspace)
+        rows = query.order_by(Experiment.created_at.desc()).all()
+        return [experiment_to_dict(row) for row in rows]
+    finally:
+        db.close()
+
+
+def create_failure(
+    workspace: str,
+    failure_type: str,
+    project: str | None,
+    root_cause: str,
+    cost: str | None,
+    fix: str | None,
+    repeat_risk: str,
+) -> dict:
+    db = SessionLocal()
+    try:
+        row = Failure(
+            workspace=workspace,
+            failure_type=failure_type,
+            project=project,
+            root_cause=root_cause,
+            cost=cost,
+            fix=fix,
+            repeat_risk=repeat_risk,
+        )
+        db.add(row)
+        db.commit()
+        db.refresh(row)
+        return failure_to_dict(row)
+    finally:
+        db.close()
+
+
+def list_failures(workspace: str | None = None) -> list[dict]:
+    db = SessionLocal()
+    try:
+        query = db.query(Failure)
+        if workspace:
+            query = query.filter(Failure.workspace == workspace)
+        rows = query.order_by(Failure.created_at.desc()).all()
+        return [failure_to_dict(row) for row in rows]
+    finally:
+        db.close()
+
+
+def outcome_to_dict(row: Outcome) -> dict:
+    return {
+        "id": str(row.id),
+        "workspace": row.workspace,
+        "outcome_type": row.outcome_type,
+        "project": row.project,
+        "campaign": row.campaign,
+        "opportunity": row.opportunity,
+        "value": row.value,
+        "confidence": row.confidence,
+        "source": row.source,
+        "details_json": row.details_json,
+        "created_at": row.created_at.isoformat() if row.created_at else None,
+    }
+
+
+def kpi_to_dict(row: KPI) -> dict:
+    return {
+        "id": str(row.id),
+        "workspace": row.workspace,
+        "name": row.name,
+        "owner_role": row.owner_role,
+        "target": row.target,
+        "current": row.current,
+        "period": row.period,
+        "source": row.source,
+        "status": row.status,
+        "created_at": row.created_at.isoformat() if row.created_at else None,
+    }
+
+
+def initiative_to_dict(row: Initiative) -> dict:
+    return {
+        "id": str(row.id),
+        "workspace": row.workspace,
+        "name": row.name,
+        "owner": row.owner,
+        "status": row.status,
+        "score": row.score,
+        "effort": row.effort,
+        "upside": row.upside,
+        "urgency": row.urgency,
+        "confidence": row.confidence,
+        "created_at": row.created_at.isoformat() if row.created_at else None,
+    }
+
+
+def experiment_to_dict(row: Experiment) -> dict:
+    return {
+        "id": str(row.id),
+        "workspace": row.workspace,
+        "name": row.name,
+        "hypothesis": row.hypothesis,
+        "success_metric": row.success_metric,
+        "variant": row.variant,
+        "status": row.status,
+        "result": row.result,
+        "decision": row.decision,
+        "created_at": row.created_at.isoformat() if row.created_at else None,
+    }
+
+
+def failure_to_dict(row: Failure) -> dict:
+    return {
+        "id": str(row.id),
+        "workspace": row.workspace,
+        "failure_type": row.failure_type,
+        "project": row.project,
+        "root_cause": row.root_cause,
+        "cost": row.cost,
+        "fix": row.fix,
+        "repeat_risk": row.repeat_risk,
         "created_at": row.created_at.isoformat() if row.created_at else None,
     }
