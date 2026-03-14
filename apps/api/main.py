@@ -13,6 +13,10 @@ from packages.memory.openviking_client import OpenVikingContextClient
 from packages.shared.db import SessionLocal
 from packages.shared.models import Approval, Artifact, AuditEvent, WorkflowRun, WorkflowStep
 from packages.shared.run_store import decide_approval, get_approval
+from fastapi import FastAPI
+
+from packages.shared.db import SessionLocal
+from packages.shared.models import AuditEvent, WorkflowRun, WorkflowStep
 
 app = FastAPI(title="CompliCore API")
 
@@ -201,6 +205,12 @@ def list_audit() -> list[dict]:
     db = SessionLocal()
     try:
         rows = db.query(AuditEvent).order_by(AuditEvent.created_at.desc()).limit(100).all()
+        rows = (
+            db.query(AuditEvent)
+            .order_by(AuditEvent.created_at.desc())
+            .limit(100)
+            .all()
+        )
         return [
             {
                 "id": str(r.id),

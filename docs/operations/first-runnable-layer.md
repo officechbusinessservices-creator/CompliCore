@@ -7,6 +7,9 @@ This repository now includes a multi-step autonomous layer:
 1. Infrastructure in `docker-compose.yml` (Postgres, Redis, Qdrant, Temporal, Temporal UI, optional OpenViking + context-gateway profile)
 2. Shared database layer and SQLAlchemy models
 3. FastAPI API (`/health`, `/runs`, `/steps`, `/audit`, `/approvals`, `/workflow/{id}/status`)
+1. Infrastructure in `docker-compose.yml` (Postgres, Redis, Qdrant, Temporal, Temporal UI)
+2. Shared database layer and SQLAlchemy models
+3. FastAPI API (`/health`, `/runs`, `/steps`, `/audit`)
 4. Temporal workflow (`operator_copilot`) with 4 bounded stages
 5. Orchestrator worker (`orchestrator-queue`) with registered activities
 6. CLI launcher for DB-backed workflow runs
