@@ -1,0 +1,9 @@
+{
+  "name": "internal-example",
+  "version": "0.1.0",
+  "description": "Internal Antigravity OS plugin template",
+  "commands": "./commands",
+  "agents": "./agents",
+  "skills": "./skills",
+  "mcp": "./.mcp.json"
+}

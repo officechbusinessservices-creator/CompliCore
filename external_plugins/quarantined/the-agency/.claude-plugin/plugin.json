@@ -1,0 +1,11 @@
+{
+  "name": "the-agency",
+  "version": "0.1.0-quarantined",
+  "description": "External specialist-agent pack under trust review",
+  "source": "https://github.com/msitarzewski/agency-agents",
+  "state": "quarantined",
+  "commands": "./commands",
+  "agents": "./agents",
+  "skills": "./skills",
+  "mcp": "./.mcp.json"
+}

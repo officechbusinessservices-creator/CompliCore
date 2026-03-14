@@ -1,4 +1,5 @@
 # CompliCore - Compliance-First Rental Platform
+
 <img width="6250" height="6250" alt="2" src="https://github.com/user-attachments/assets/fafe9ec5-0a66-4c8d-9481-52ed9ccd1f29" />
 
 [![CI](https://github.com/officechbusinessservices-creator/CompliCore/actions/workflows/ci.yml/badge.svg)](https://github.com/officechbusinessservices-creator/CompliCore/actions/workflows/ci.yml)
@@ -9,7 +10,7 @@ CompliCore is a comprehensive, vendor-neutral architecture for short-term rental
 
 ### Prerequisites
 
-- Node.js 20+ 
+- Node.js 20+
 - PostgreSQL 16+ (optional for full backend)
 - npm or yarn
 
@@ -17,7 +18,7 @@ CompliCore is a comprehensive, vendor-neutral architecture for short-term rental
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-org/complicore.git
+git clone https://github.com/officechbusinessservices-creator/CompliCore.git
 cd complicore
 
 # Install dependencies
@@ -32,6 +33,25 @@ npm run dev
 ```
 
 Visit [http://localhost:3000](http://localhost:3000) to see the platform.
+
+### Autonomous Agent Runtime (Worker Layer)
+
+For self-running automation, start the runtime from the worker layer (not the dashboard):
+
+```bash
+docker compose up -d postgres redis temporal qdrant prometheus grafana
+uvicorn apps.api.main:app --host 0.0.0.0 --port 8000
+python apps.worker.run_orchestrator.py
+python apps.worker.run_researcher.py
+python apps.worker.run_executor.py
+python apps.worker.run_reviewer.py
+python apps.worker.run_policy_guard.py
+python apps.worker.run_memory_manager.py
+python apps.scheduler.run.py
+npm --prefix apps/dashboard run dev
+```
+
+See the full runbook: [`docs/operations/worker-layer-startup.md`](./docs/operations/worker-layer-startup.md).
 
 ### Backend Setup (Optional)
 
@@ -57,6 +77,7 @@ Backend runs on [http://localhost:4000](http://localhost:4000)
 ## ✨ Features
 
 ### Core Platform
+
 - 🏠 **Listing Management** - Create and manage property listings
 - 📅 **Booking Engine** - Real-time availability and instant booking
 - 💳 **Payment Processing** - Secure, PCI-compliant payments
@@ -65,6 +86,7 @@ Backend runs on [http://localhost:4000](http://localhost:4000)
 - 📊 **Analytics Dashboard** - Performance metrics and insights
 
 ### AI-Powered Features
+
 - 💰 **Dynamic Pricing** - Market-based price optimization
 - 🤖 **Smart Messaging** - AI-suggested responses
 - 📝 **Listing Optimizer** - SEO and content recommendations
@@ -73,6 +95,7 @@ Backend runs on [http://localhost:4000](http://localhost:4000)
 - 💭 **Sentiment Analysis** - Review and message analysis
 
 ### Integrations
+
 - 🏨 **OTA Channels** - Airbnb, VRBO, Booking.com
 - 🔐 **Smart Locks** - Automated access control
 - 🏢 **PMS Systems** - Property management integration
@@ -96,6 +119,14 @@ Backend runs on [http://localhost:4000](http://localhost:4000)
 - **[Security & Compliance Framework](./docs/security/compliance_framework.md)** - Auth, RBAC, rate limiting, encryption
 - **[Performance Optimization Guide](./docs/performance/optimization_guide.md)** - Prisma indexes, caching, Next.js optimizations
 - **[Testing Framework](./docs/testing/framework.md)** - Test runner setup, how to run tests, example patterns
+- **[SaaS MVP Brainstorm](./docs/operations/saas-mvp-brainstorm.md)** - Scope, milestones, and delivery plan for the first SaaS MVP
+- **[Antigravity OS Plan](./docs/operations/antigravity-os-plan.md)** - Operator-first architecture (roles + workspaces + skills) with CompliCore as a workspace
+- **[Worker-Layer Startup Runbook](./docs/operations/worker-layer-startup.md)** - Correct startup order for infra, workers, scheduler, and dashboard observer
+- **[Skills Usage Guide](./docs/operations/skills-usage-guide.md)** - How to actually use installed skills, bundles, and prompt patterns
+- **[Context Layer Architecture](./docs/architecture/context-layer.md)** - OpenViking-backed context backbone design
+- **[OpenViking Evaluation](./docs/integrations/openviking-evaluation.md)** - integration scope and ownership boundaries
+- **[Plugin Governance Layer](./docs/architecture/plugin-governance-layer.md)** - Claude plugin packaging and trust-review model
+- **[The Agency Integration Evaluation](./docs/integrations/agency-agents-evaluation.md)** - governed external intake decision for agency-agents
 - **[API Reference](http://localhost:3000/api-docs)** - Interactive API documentation
 - **[Public APIs Catalog](./PUBLIC_APIS.md)** - Full public-apis.org reference list
 
@@ -142,6 +173,14 @@ Explore the platform features:
 - **Host Dashboard** - [/prototype/dashboard](http://localhost:3000/prototype/dashboard)
 - **API Documentation** - [/api-docs](http://localhost:3000/api-docs)
 
+## 🤖 Worker Runtime Bootstrap
+
+Install Antigravity skills (default: `~/.gemini/antigravity/skills`) with `npx antigravity-awesome-skills`, or use `--path` for custom locations.
+Start with **Essentials** for general use, **Web Wizard** for web development, and **Security Engineer** for security-focused work.
+
+The worker layer now runs a 4-stage Temporal flow (plan → research → execute → review) with PostgreSQL persistence, approval gating, artifact output, and API visibility (`/runs`, `/steps`, `/audit`, `/approvals`, `/workflow/{id}/status`, `/metrics/summary`). OpenViking is integrated as the context backbone (via context-gateway), while Temporal remains orchestration runtime.
+Set up dependencies first with `bash scripts/setup_python_env.sh --online` or `bash scripts/setup_python_env.sh --offline ./vendor/wheels`, then follow `docs/operations/first-runnable-layer.md`.
+
 ## 🧪 Testing
 
 ```bash
@@ -162,6 +201,7 @@ See [DEPLOYMENT.md](./DEPLOYMENT.md) for detailed deployment instructions.
 ### Quick Deploy Options
 
 **Netlify (Frontend)**
+
 ```bash
 # Build command
 npm run build
@@ -171,6 +211,7 @@ npm run build
 ```
 
 **Render (Backend)**
+
 ```bash
 # Build command
 cd backend && npm install && npm run build
@@ -180,6 +221,7 @@ npm run start
 ```
 
 **Vercel (All-in-One)**
+
 - Import project from GitHub
 - Configure environment variables
 - Deploy automatically
@@ -187,6 +229,7 @@ npm run start
 ## 🛠️ Tech Stack
 
 ### Frontend
+
 - **Framework**: Next.js 16+ (App Router)
 - **Language**: TypeScript
 - **Styling**: Tailwind CSS
@@ -195,6 +238,7 @@ npm run start
 - **Authentication**: NextAuth.js
 
 ### Backend
+
 - **Runtime**: Node.js 20+
 - **Framework**: Fastify
 - **Database**: PostgreSQL 16+
@@ -203,6 +247,7 @@ npm run start
 - **API**: REST
 
 ### Infrastructure
+
 - **Hosting**: Netlify, Vercel, Render
 - **Database**: Render PostgreSQL, AWS RDS
 - **Storage**: S3-compatible
@@ -230,13 +275,14 @@ Security is our top priority. If you discover a security vulnerability, please e
 
 - **Email**: support@complicore.com
 - **Documentation**: [/docs](./docs/)
-- **Issues**: [GitHub Issues](https://github.com/your-org/complicore/issues)
+- **Issues**: [GitHub Issues](https://github.com/officechbusinessservices-creator/CompliCore/issues)
 
 ## 🗺️ Roadmap
 
 See [docs/05-ROADMAP.md](./docs/05-ROADMAP.md) for the complete development roadmap.
 
 ### Current Phase: MVP (P1)
+
 - ✅ Core platform architecture
 - ✅ Booking engine prototype
 - ✅ Host dashboard
@@ -246,6 +292,7 @@ See [docs/05-ROADMAP.md](./docs/05-ROADMAP.md) for the complete development road
 - 📋 Review system
 
 ### Coming Soon (P2)
+
 - OTA channel integrations
 - Smart lock integration
 - Advanced analytics
@@ -316,6 +363,7 @@ Frontend (root):
 2. Start Next.js: `npm run dev`
 
 Notes:
+
 - Backend has demo fallback data if DB is not configured.
 - See `backend/prisma/schema.prisma` for models.
 
@@ -418,7 +466,6 @@ DEMO_PASSWORD=Demo1234
 
 Login page: `/login`
 
-
 ## Deployment (Render + Netlify)
 
 ### Backend (Render)
@@ -475,3 +522,8 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+
+### Operator live runs page
+
+After starting the web app, open `/operator-runs` to view live run status, role/workspace routing, and approval-waiting state from the worker API.
