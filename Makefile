@@ -1,4 +1,4 @@
-.PHONY: infra-up infra-down setup-python install-deps init-db api worker scheduler start-workflow query-workflow venv venv-offline venv-verify wheelhouse skills-bootstrap skills-bootstrap-path demo-e2e demo-e2e-offline smoke-full context-gateway
+.PHONY: infra-up infra-down setup-python install-deps init-db api worker scheduler start-workflow query-workflow venv venv-offline venv-verify wheelhouse skills-bootstrap skills-bootstrap-path demo-e2e demo-e2e-offline smoke-full context-gateway plugin-cli plugin-list plugin-inspect sync-plugins
 
 infra-up:
 	docker compose up -d
@@ -59,3 +59,16 @@ smoke-full:
 
 context-gateway:
 	uvicorn apps.context_gateway.main:app --reload --port 8010
+
+plugin-cli:
+	python apps/cli/plugin_lifecycle.py --help
+
+plugin-list:
+	python apps/cli/plugin_lifecycle.py list
+
+# Usage: make plugin-inspect NAME=role-ceo
+plugin-inspect:
+	python apps/cli/plugin_lifecycle.py inspect "$(NAME)"
+
+sync-plugins:
+	python scripts/sync_plugins_registry.py

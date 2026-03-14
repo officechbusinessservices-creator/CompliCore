@@ -1,5 +1,17 @@
 {
   "name": "role-ceo",
-  "version": "0.1.0",
-  "description": "CEO role plugin"
+  "version": "0.2.0",
+  "description": "CEO role plugin",
+  "commands": "./commands",
+  "agents": "./agents",
+  "skills": "./skills",
+  "workspace_scope": ["global", "complicore", "livily", "personal"],
+  "role_scope": ["ceo"],
+  "required_permissions": [
+    "workspace_access",
+    "role_access",
+    "secrets_use",
+    "network_use",
+    "mcp_endpoints"
+  ]
 }

@@ -171,6 +171,7 @@ Explore the platform features:
 - **Architecture Diagrams** - [/diagrams](http://localhost:3000/diagrams)
 - **Booking Prototype** - [/prototype](http://localhost:3000/prototype)
 - **Host Dashboard** - [/prototype/dashboard](http://localhost:3000/prototype/dashboard)
+- **Operator Plugin Table** - [/operator-plugins](http://localhost:3000/operator-plugins)
 - **API Documentation** - [/api-docs](http://localhost:3000/api-docs)
 
 ## 🤖 Worker Runtime Bootstrap

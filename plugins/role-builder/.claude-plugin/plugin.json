@@ -1,5 +1,7 @@
 {
   "name": "role-builder",
-  "version": "0.1.0",
-  "description": "Builder role plugin"
+  "version": "0.2.0",
+  "description": "Builder role plugin",
+  "workspace_scope": ["global", "complicore"],
+  "role_scope": ["builder"]
 }

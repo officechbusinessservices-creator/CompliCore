@@ -227,3 +227,25 @@ External plugin intake path:
 - `external_plugins/quarantined/the-agency/`
 
 Do not run direct plugin activation from external source until review is complete.
+
+
+### Plugin lifecycle CLI
+
+```bash
+# Wrapper matching desired command style
+./scripts/antigravity plugin list
+./scripts/antigravity plugin inspect role-ceo
+./scripts/antigravity plugin approve role-ceo --by operator
+./scripts/antigravity plugin enable role-ceo --by operator
+./scripts/antigravity plugin disable role-ceo --by operator
+./scripts/antigravity plugin quarantine role-ceo --by operator
+```
+
+
+Register filesystem plugins in DB registry:
+
+```bash
+python scripts/sync_plugins_registry.py
+# or
+make sync-plugins
+```
