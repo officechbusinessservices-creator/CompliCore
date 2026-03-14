@@ -5,11 +5,28 @@ import uuid
 from functools import lru_cache
 
 from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel, Field
 from pydantic import BaseModel
 from sqlalchemy import text
 from temporalio.client import Client
 
 from packages.memory.openviking_client import OpenVikingContextClient
+from packages.policies.plugin_policy_guard import evaluate_plugin_enable_policy
+from packages.shared.db import SessionLocal
+from packages.shared.models import Approval, Artifact, AuditEvent, Plugin, WorkflowRun, WorkflowStep
+from packages.shared.run_store import (
+    add_plugin_review,
+    add_plugin_version,
+    decide_approval,
+    get_approval,
+    get_plugin_by_name,
+    get_plugin_details,
+    install_plugin,
+    list_plugins,
+    register_plugin,
+    set_plugin_permissions,
+    set_plugin_state,
+)
 from packages.shared.db import SessionLocal
 from packages.shared.models import Approval, Artifact, AuditEvent, WorkflowRun, WorkflowStep
 from packages.shared.run_store import decide_approval, get_approval
@@ -32,6 +49,40 @@ class ContextRequest(BaseModel):
     role: str
     query: str
     max_chunks: int = 5
+
+
+class PluginRegisterRequest(BaseModel):
+    name: str
+    source_type: str = Field(pattern="^(internal|external)$")
+    source_url: str | None = None
+    owner: str | None = None
+    version: str = "0.1.0"
+    checksum: str | None = None
+    state: str = "discovered"
+    trust_level: str = "unreviewed"
+
+
+class PluginInstallRequest(BaseModel):
+    workspace: str = "global"
+    role: str = "global"
+    install_path: str
+    installed_by: str = "operator"
+
+
+class PluginReviewRequest(BaseModel):
+    reviewer: str
+    status: str
+    notes: str | None = None
+    checklist_json: dict | None = None
+
+
+class PluginStateRequest(BaseModel):
+    changed_by: str = "operator"
+    reason: str | None = None
+
+
+class PluginPermissionsRequest(BaseModel):
+    permissions: list[dict]
 
 
 context_client = OpenVikingContextClient()
@@ -283,12 +334,16 @@ def metrics_summary() -> dict:
         rejected_runs = db.query(WorkflowRun).filter(WorkflowRun.status == "rejected").count()
         pending_approvals = db.query(Approval).filter(Approval.status == "pending").count()
         total_artifacts = db.query(Artifact).count()
+        total_plugins = db.query(Plugin).count()
+        enabled_plugins = db.query(Plugin).filter(Plugin.state == "enabled").count()
         return {
             "total_runs": total_runs,
             "completed_runs": completed_runs,
             "rejected_runs": rejected_runs,
             "pending_approvals": pending_approvals,
             "total_artifacts": total_artifacts,
+            "total_plugins": total_plugins,
+            "enabled_plugins": enabled_plugins,
             "completion_rate": round(completed_runs / total_runs, 4) if total_runs else 0,
         }
     finally:
@@ -324,3 +379,109 @@ def context_workspaces() -> dict:
             "viking://agent/memories/",
         ]
     }
+
+
+# ---------------- Plugin lifecycle ----------------
+@app.get("/plugins")
+def plugins_list() -> list[dict]:
+    return list_plugins()
+
+
+@app.get("/plugins/{name}")
+def plugin_inspect(name: str) -> dict:
+    details = get_plugin_details(name)
+    if not details:
+        raise HTTPException(status_code=404, detail="Plugin not found")
+    return details
+
+
+@app.post("/plugins/register")
+def plugin_register(request: PluginRegisterRequest) -> dict:
+    plugin = register_plugin(
+        name=request.name,
+        source_type=request.source_type,
+        source_url=request.source_url,
+        owner=request.owner,
+        trust_level=request.trust_level,
+        state=request.state,
+    )
+    add_plugin_version(plugin["id"], request.version, request.checksum, {"source_url": request.source_url})
+    return {"status": "ok", "plugin": plugin}
+
+
+@app.post("/plugins/{name}/permissions")
+def plugin_permissions(name: str, request: PluginPermissionsRequest) -> dict:
+    plugin = get_plugin_by_name(name)
+    if not plugin:
+        raise HTTPException(status_code=404, detail="Plugin not found")
+    permissions = set_plugin_permissions(plugin["id"], request.permissions)
+    return {"status": "ok", "permissions": permissions}
+
+
+@app.post("/plugins/{name}/install")
+def plugin_install(name: str, request: PluginInstallRequest) -> dict:
+    plugin = get_plugin_by_name(name)
+    if not plugin:
+        raise HTTPException(status_code=404, detail="Plugin not found")
+
+    if plugin["state"] not in {"approved", "enabled"}:
+        raise HTTPException(status_code=409, detail="Plugin must be approved before installation")
+
+    installation = install_plugin(
+        plugin_id=plugin["id"],
+        workspace=request.workspace,
+        role=request.role,
+        install_path=request.install_path,
+        installed_by=request.installed_by,
+    )
+    return {"status": "ok", "installation": installation}
+
+
+@app.post("/plugins/{name}/review")
+def plugin_review(name: str, request: PluginReviewRequest) -> dict:
+    plugin = get_plugin_by_name(name)
+    if not plugin:
+        raise HTTPException(status_code=404, detail="Plugin not found")
+    review = add_plugin_review(plugin["id"], request.reviewer, request.status, request.notes, request.checklist_json)
+    return {"status": "ok", "review": review}
+
+
+@app.post("/plugins/{name}/approve")
+def plugin_approve(name: str, request: PluginStateRequest) -> dict:
+    plugin = get_plugin_by_name(name)
+    if not plugin:
+        raise HTTPException(status_code=404, detail="Plugin not found")
+    updated = set_plugin_state(plugin["id"], "approved", request.changed_by, request.reason)
+    return {"status": "ok", "plugin": updated}
+
+
+@app.post("/plugins/{name}/quarantine")
+def plugin_quarantine(name: str, request: PluginStateRequest) -> dict:
+    plugin = get_plugin_by_name(name)
+    if not plugin:
+        raise HTTPException(status_code=404, detail="Plugin not found")
+    updated = set_plugin_state(plugin["id"], "quarantined", request.changed_by, request.reason)
+    return {"status": "ok", "plugin": updated}
+
+
+@app.post("/plugins/{name}/disable")
+def plugin_disable(name: str, request: PluginStateRequest) -> dict:
+    plugin = get_plugin_by_name(name)
+    if not plugin:
+        raise HTTPException(status_code=404, detail="Plugin not found")
+    updated = set_plugin_state(plugin["id"], "disabled", request.changed_by, request.reason)
+    return {"status": "ok", "plugin": updated}
+
+
+@app.post("/plugins/{name}/enable")
+def plugin_enable(name: str, request: PluginStateRequest) -> dict:
+    details = get_plugin_details(name)
+    if not details:
+        raise HTTPException(status_code=404, detail="Plugin not found")
+
+    allowed, violations = evaluate_plugin_enable_policy(details["plugin"], details)
+    if not allowed:
+        raise HTTPException(status_code=409, detail={"policy_violations": violations})
+
+    updated = set_plugin_state(details["plugin"]["id"], "enabled", request.changed_by, request.reason)
+    return {"status": "ok", "plugin": updated}

@@ -178,6 +178,7 @@ antigravity-os/
 │  ├─ workspace-complicore/
 │  ├─ role-ceo/
 │  ├─ role-builder/
+│  ├─ example-internal-plugin/
 │  └─ internal-example/
 ├─ external_plugins/
 │  ├─ approved/
@@ -422,9 +423,16 @@ After approval gating and role/workspace routing:
 
 ```bash
 antigravity plugin list
+antigravity plugin inspect <name>
 antigravity plugin install <name>
 antigravity plugin review <name>
 antigravity plugin approve <name>
 antigravity plugin disable <name>
 antigravity plugin enable <name>
 ```
+
+
+## External Plugin Intake Example
+
+Add **The Agency** (`msitarzewski/agency-agents`) as a quarantined external plugin source.
+Do not activate directly from marketplace source; require governance review and explicit promotion into `external_plugins/approved/`.

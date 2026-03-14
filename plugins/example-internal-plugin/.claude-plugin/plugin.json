@@ -1,0 +1,9 @@
+{
+  "name": "example-internal-plugin",
+  "version": "0.1.0",
+  "description": "Canonical internal plugin scaffold for Antigravity OS",
+  "commands": "./commands",
+  "agents": "./agents",
+  "skills": "./skills",
+  "mcp": "./.mcp.json"
+}

@@ -126,6 +126,7 @@ https://github.com/officechbusinessservices-creator/CompliCore/pull/126/conflict
 - **[Context Layer Architecture](./docs/architecture/context-layer.md)** - OpenViking-backed context backbone design
 - **[OpenViking Evaluation](./docs/integrations/openviking-evaluation.md)** - integration scope and ownership boundaries
 - **[Plugin Governance Layer](./docs/architecture/plugin-governance-layer.md)** - Claude plugin packaging and trust-review model
+ - **[The Agency Integration Evaluation](./docs/integrations/agency-agents-evaluation.md)** - governed external intake decision for agency-agents
 - **[Worker-Layer Startup Runbook](./docs/operations/worker-layer-startup.md)** - Correct startup order for infra, workers, scheduler, and dashboard observer
 - **[API Reference](http://localhost:3000/api-docs)** - Interactive API documentation
 - **[Public APIs Catalog](./PUBLIC_APIS.md)** - Full public-apis.org reference list
@@ -171,6 +172,7 @@ Explore the platform features:
 - **Architecture Diagrams** - [/diagrams](http://localhost:3000/diagrams)
 - **Booking Prototype** - [/prototype](http://localhost:3000/prototype)
 - **Host Dashboard** - [/prototype/dashboard](http://localhost:3000/prototype/dashboard)
+- **Operator Plugin Table** - [/operator-plugins](http://localhost:3000/operator-plugins)
 - **API Documentation** - [/api-docs](http://localhost:3000/api-docs)
 
 ## 🤖 Worker Runtime Bootstrap
