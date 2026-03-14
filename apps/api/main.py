@@ -8,6 +8,7 @@ from functools import lru_cache
 
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
+from pydantic import BaseModel
 from sqlalchemy import text
 from temporalio.client import Client
 
@@ -34,6 +35,13 @@ from packages.tools.plugin_runtime import (
     load_plugins_into_registry,
     validate_plugin_manifest,
 )
+from packages.shared.db import SessionLocal
+from packages.shared.models import Approval, Artifact, AuditEvent, WorkflowRun, WorkflowStep
+from packages.shared.run_store import decide_approval, get_approval
+from fastapi import FastAPI
+
+from packages.shared.db import SessionLocal
+from packages.shared.models import AuditEvent, WorkflowRun, WorkflowStep
 
 app = FastAPI(title="CompliCore API")
 
@@ -269,6 +277,12 @@ def list_audit() -> list[dict]:
     db = SessionLocal()
     try:
         rows = db.query(AuditEvent).order_by(AuditEvent.created_at.desc()).limit(100).all()
+        rows = (
+            db.query(AuditEvent)
+            .order_by(AuditEvent.created_at.desc())
+            .limit(100)
+            .all()
+        )
         return [
             {
                 "id": str(r.id),

@@ -33,6 +33,7 @@ def main() -> None:
                 continue
 
             manifest = validated['manifest']
+            manifest = json.loads(manifest_path.read_text(encoding='utf-8'))
             name = manifest.get('name')
             version = manifest.get('version', '0.1.0')
             source_type = source_type_from_path(manifest_path)
@@ -50,6 +51,7 @@ def main() -> None:
                 state=state,
             )
             add_plugin_version(plugin['id'], version, validated['manifest_hash'], manifest)
+            add_plugin_version(plugin['id'], version, None, manifest)
 
             permissions = []
             for permission in manifest.get('required_permissions', []):
@@ -69,6 +71,7 @@ def main() -> None:
             total += 1
 
     print({'synced_plugins': total, 'failed': failed})
+    print({'synced_plugins': total})
 
 
 if __name__ == '__main__':
