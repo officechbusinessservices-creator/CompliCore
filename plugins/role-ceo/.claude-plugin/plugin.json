@@ -14,4 +14,6 @@
     "network_use",
     "mcp_endpoints"
   ]
+  "version": "0.1.0",
+  "description": "CEO role plugin"
 }
