@@ -123,6 +123,7 @@ https://github.com/officechbusinessservices-creator/CompliCore/pull/126/conflict
 - **[Antigravity OS Plan](./docs/operations/antigravity-os-plan.md)** - Operator-first architecture (roles + workspaces + skills) with CompliCore as a workspace
 - **[Worker-Layer Startup Runbook](./docs/operations/worker-layer-startup.md)** - Correct startup order for infra, workers, scheduler, and dashboard observer
 - **[Skills Usage Guide](./docs/operations/skills-usage-guide.md)** - How to actually use installed skills, bundles, and prompt patterns
+- **[Fleet Operating Model](./docs/operations/fleet-operating-model.md)** - 15-division / 1,000-agent weighted structure with command-layer governors and activation waves
 - **[Context Layer Architecture](./docs/architecture/context-layer.md)** - OpenViking-backed context backbone design
 - **[OpenViking Evaluation](./docs/integrations/openviking-evaluation.md)** - integration scope and ownership boundaries
 - **[Plugin Governance Layer](./docs/architecture/plugin-governance-layer.md)** - Claude plugin packaging and trust-review model

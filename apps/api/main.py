@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from pathlib import Path
+import json
+from datetime import datetime, timezone
 
 import os
 import uuid
@@ -19,20 +21,64 @@ from packages.shared.models import Approval, Artifact, AuditEvent, Plugin, Workf
 from packages.shared.run_store import (
     add_plugin_review,
     add_plugin_version,
+    create_account,
+    create_action,
+    create_action_policy,
+    create_cadence_rule,
+    create_connector,
+    create_contact,
     create_experiment,
     create_failure,
     create_initiative,
     create_kpi,
+    create_opportunity,
+    create_outcome,
+    attach_sequence_contact,
+    create_escalation,
+    create_playbook,
+    create_program,
+    create_program_scorecard,
+    create_sequence,
+    create_trigger,
+    list_escalations,
+    list_playbooks,
+    list_program_scorecards,
+    list_programs,
+    list_sequences,
+    list_triggers,
+    create_recurring_action,
+    create_reminder,
+    create_schedule,
+    decide_approval,
+    execute_action,
     create_outcome,
     decide_approval,
     get_approval,
     get_plugin_by_name,
     get_plugin_details,
     install_plugin,
+    list_accounts,
+    list_action_policies,
+    list_actions,
+    list_connectors,
+    list_contacts,
     list_experiments,
     list_failures,
     list_initiatives,
     list_kpis,
+    list_opportunities,
+    list_outcomes,
+    list_plugins,
+    list_recurring_actions,
+    list_reminders,
+    list_schedules,
+    mark_opportunity_activity,
+    register_plugin,
+    resolve_action_policy,
+    set_plugin_permissions,
+    set_plugin_state,
+    write_artifact,
+    write_audit,
     list_outcomes,
     list_plugins,
     register_plugin,
@@ -211,11 +257,56 @@ def deep_health() -> dict:
     }
 
 
+@app.get("/fleet/model")
+def fleet_model() -> dict:
+    model_path = Path("configs/fleet_operating_model.json")
+    if not model_path.exists():
+        raise HTTPException(status_code=404, detail="Fleet operating model not found")
+    try:
+        return json.loads(model_path.read_text(encoding="utf-8"))
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(status_code=500, detail=f"Failed to read fleet model: {exc}") from exc
+
+
 @app.get("/runs")
 def list_runs() -> list[dict]:
     db = SessionLocal()
     try:
         rows = db.query(WorkflowRun).order_by(WorkflowRun.created_at.desc()).all()
+        output = []
+        for r in rows:
+            latest_step = (
+                db.query(WorkflowStep)
+                .filter(WorkflowStep.run_id == r.id)
+                .order_by(WorkflowStep.created_at.desc())
+                .first()
+            )
+            pending_approval = (
+                db.query(Approval)
+                .filter(Approval.run_id == r.id, Approval.status == "pending")
+                .first()
+            )
+            latest_artifact = (
+                db.query(Artifact)
+                .filter(Artifact.run_id == r.id)
+                .order_by(Artifact.created_at.desc())
+                .first()
+            )
+            output.append(
+                {
+                    "id": str(r.id),
+                    "workflow_name": r.workflow_name,
+                    "status": r.status,
+                    "role": r.role,
+                    "workspace": r.workspace,
+                    "current_stage": latest_step.step_name if latest_step else "pending",
+                    "waiting_for_approval": pending_approval is not None,
+                    "artifact_link": latest_artifact.markdown_path if latest_artifact else None,
+                    "created_at": r.created_at.isoformat() if r.created_at else None,
+                    "last_updated": r.updated_at.isoformat() if r.updated_at else (r.created_at.isoformat() if r.created_at else None),
+                }
+            )
+        return output
         return [
             {
                 "id": str(r.id),
@@ -329,6 +420,26 @@ def list_steps() -> list[dict]:
                 "agent_name": r.agent_name,
                 "step_name": r.step_name,
                 "status": r.status,
+                "created_at": r.created_at.isoformat() if r.created_at else None,
+            }
+            for r in rows
+        ]
+    finally:
+        db.close()
+
+
+@app.get("/artifacts")
+def list_artifacts() -> list[dict]:
+    db = SessionLocal()
+    try:
+        rows = db.query(Artifact).order_by(Artifact.created_at.desc()).all()
+        return [
+            {
+                "id": str(r.id),
+                "run_id": str(r.run_id),
+                "artifact_type": r.artifact_type,
+                "file_path": r.file_path,
+                "markdown_path": r.markdown_path,
                 "created_at": r.created_at.isoformat() if r.created_at else None,
             }
             for r in rows
@@ -712,3 +823,646 @@ def failures_create(request: FailureCreateRequest) -> dict:
         repeat_risk=request.repeat_risk,
     )
     return {"status": "ok", "failure": failure}
+
+
+class AccountCreateRequest(BaseModel):
+    workspace: str = "complicore"
+    name: str
+    status: str = "active"
+
+
+class ContactCreateRequest(BaseModel):
+    workspace: str = "complicore"
+    full_name: str
+    email: str | None = None
+    role: str | None = None
+    account_id: str | None = None
+
+
+class OpportunityCreateRequest(BaseModel):
+    workspace: str = "complicore"
+    name: str
+    stage: str = "discovery"
+    next_step: str | None = None
+    estimated_value: str | None = None
+    account_id: str | None = None
+    contact_id: str | None = None
+
+
+class ConnectorCreateRequest(BaseModel):
+    connector_type: str
+    workspace: str = "complicore"
+    connector_scope: str = "workspace"
+    status: str = "enabled"
+    auth_state: str = "connected"
+    permissions_json: dict | None = None
+
+
+class ActionPolicyCreateRequest(BaseModel):
+    action_type: str
+    workspace: str = "global"
+    role: str = "global"
+    auto_execute: bool = False
+    approval_required: bool = True
+    allowed_connector: str | None = None
+    max_daily_limit: int = 25
+
+
+class ActionCreateRequest(BaseModel):
+    action_type: str
+    action_target: str
+    workspace: str = "complicore"
+    role: str = "operator"
+    connector_type: str | None = None
+
+
+class ActionDecisionRequest(BaseModel):
+    approved: bool = True
+    decided_by: str = "operator"
+
+
+class FollowupDraftSendRequest(BaseModel):
+    workspace: str = "complicore"
+    role: str = "sales"
+    opportunity_id: str
+    contact_id: str | None = None
+    connector_type: str = "email"
+    send_now: bool = False
+    message_goal: str = "Advance opportunity"
+
+
+class ScheduleCreateRequest(BaseModel):
+    workspace: str = "complicore"
+    role: str = "operator"
+    schedule_type: str
+    payload_json: dict | None = None
+    next_run_at: str | None = None
+
+
+class ReminderCreateRequest(BaseModel):
+    workspace: str = "complicore"
+    role: str = "operator"
+    message: str
+    due_at: str
+
+
+class CadenceRuleCreateRequest(BaseModel):
+    workspace: str = "complicore"
+    role: str = "operator"
+    rule_name: str
+    frequency: str = "weekly"
+    action_type: str
+    active: bool = True
+
+
+class RecurringActionCreateRequest(BaseModel):
+    cadence_rule_id: str
+    action_type: str
+    workspace: str = "complicore"
+    role: str = "operator"
+    next_due_at: str | None = None
+
+
+@app.get("/accounts")
+def accounts_list(workspace: str | None = None) -> list[dict]:
+    return list_accounts(workspace=workspace)
+
+
+@app.post("/accounts")
+def accounts_create(request: AccountCreateRequest) -> dict:
+    return {"status": "ok", "account": create_account(request.workspace, request.name, request.status)}
+
+
+@app.get("/contacts")
+def contacts_list(workspace: str | None = None) -> list[dict]:
+    return list_contacts(workspace=workspace)
+
+
+@app.post("/contacts")
+def contacts_create(request: ContactCreateRequest) -> dict:
+    return {
+        "status": "ok",
+        "contact": create_contact(
+            workspace=request.workspace,
+            full_name=request.full_name,
+            email=request.email,
+            role=request.role,
+            account_id=request.account_id,
+        ),
+    }
+
+
+@app.get("/opportunities")
+def opportunities_list(workspace: str | None = None) -> list[dict]:
+    return list_opportunities(workspace=workspace)
+
+
+@app.post("/opportunities")
+def opportunities_create(request: OpportunityCreateRequest) -> dict:
+    return {
+        "status": "ok",
+        "opportunity": create_opportunity(
+            workspace=request.workspace,
+            name=request.name,
+            stage=request.stage,
+            next_step=request.next_step,
+            estimated_value=request.estimated_value,
+            account_id=request.account_id,
+            contact_id=request.contact_id,
+        ),
+    }
+
+
+@app.get("/connectors")
+def connectors_list(workspace: str | None = None) -> list[dict]:
+    return list_connectors(workspace=workspace)
+
+
+@app.post("/connectors")
+def connectors_create(request: ConnectorCreateRequest) -> dict:
+    return {
+        "status": "ok",
+        "connector": create_connector(
+            connector_type=request.connector_type,
+            workspace=request.workspace,
+            connector_scope=request.connector_scope,
+            status=request.status,
+            auth_state=request.auth_state,
+            permissions_json=request.permissions_json,
+        ),
+    }
+
+
+@app.get("/action-policies")
+def action_policies_list(workspace: str | None = None, role: str | None = None) -> list[dict]:
+    return list_action_policies(workspace=workspace, role=role)
+
+
+@app.post("/action-policies")
+def action_policies_create(request: ActionPolicyCreateRequest) -> dict:
+    return {
+        "status": "ok",
+        "policy": create_action_policy(
+            action_type=request.action_type,
+            workspace=request.workspace,
+            role=request.role,
+            auto_execute=request.auto_execute,
+            approval_required=request.approval_required,
+            allowed_connector=request.allowed_connector,
+            max_daily_limit=request.max_daily_limit,
+        ),
+    }
+
+
+@app.get("/actions")
+def actions_list(workspace: str | None = None, status: str | None = None) -> list[dict]:
+    return list_actions(workspace=workspace, status=status)
+
+
+@app.post("/actions")
+def actions_create(request: ActionCreateRequest) -> dict:
+    policy = resolve_action_policy(request.action_type, request.workspace, request.role)
+    requires_approval = True if not policy else policy["approval_required"]
+    action_status = "pending_approval" if requires_approval else "ready"
+    action = create_action(
+        action_type=request.action_type,
+        action_target=request.action_target,
+        workspace=request.workspace,
+        role=request.role,
+        connector_type=request.connector_type,
+        requires_approval=requires_approval,
+        status=action_status,
+    )
+    if policy and policy["auto_execute"] and not requires_approval:
+        executed = execute_action(action["id"], executed_by="policy:auto")
+        return {"status": "ok", "action": executed, "policy": policy}
+    return {"status": "ok", "action": action, "policy": policy}
+
+
+@app.post("/actions/{action_id}/decision")
+def action_decision(action_id: str, request: ActionDecisionRequest) -> dict:
+    action = execute_action(action_id, executed_by=request.decided_by, approved=request.approved)
+    if not action:
+        raise HTTPException(status_code=404, detail="Action not found")
+    return {"status": "ok", "action": action}
+
+
+@app.post("/workflows/followup-draft-and-send")
+def followup_draft_and_send(request: FollowupDraftSendRequest) -> dict:
+    opportunities = {item["id"]: item for item in list_opportunities(request.workspace)}
+    opportunity = opportunities.get(request.opportunity_id)
+    if not opportunity:
+        raise HTTPException(status_code=404, detail="Opportunity not found")
+
+    draft = {
+        "subject": f"Quick follow-up on {opportunity['name']}",
+        "body": (
+            f"Hi, following up regarding {opportunity['name']}. "
+            f"Goal: {request.message_goal}. "
+            "Would next week work for a quick alignment call?"
+        ),
+    }
+
+    artifact = write_artifact(
+        run_id=str(uuid.uuid4()),
+        artifact_name="sales-followup-draft",
+        result={
+            "status": "drafted",
+            "summary": draft["subject"],
+            "next_actions": ["Review draft", "Approve send", "Track reply"],
+            "draft": draft,
+            "opportunity_id": request.opportunity_id,
+            "contact_id": request.contact_id,
+        },
+    )
+
+    policy = resolve_action_policy("email_send", request.workspace, request.role)
+    requires_approval = True if not policy else policy["approval_required"]
+    status = "pending_approval" if requires_approval else "ready"
+
+    action = create_action(
+        action_type="email_send",
+        action_target=request.opportunity_id,
+        workspace=request.workspace,
+        role=request.role,
+        connector_type=request.connector_type,
+        requires_approval=requires_approval,
+        status=status,
+        artifact_id=artifact["artifact_id"],
+        result_json={"draft": draft},
+    )
+
+    updated_opp = None
+    if request.send_now and (not requires_approval or (policy and policy.get("auto_execute"))):
+        action = execute_action(action["id"], executed_by="workflow:followup-draft-and-send", approved=True) or action
+        updated_opp = mark_opportunity_activity(
+            opportunity_id=request.opportunity_id,
+            stage="contacted",
+            next_step="Await response",
+        )
+
+    write_audit(
+        "workflow",
+        "followup-draft-and-send",
+        "workflow_completed",
+        {
+            "opportunity_id": request.opportunity_id,
+            "action_id": action["id"],
+            "requires_approval": requires_approval,
+        },
+    )
+
+    return {
+        "status": "ok",
+        "draft": draft,
+        "artifact": artifact,
+        "action": action,
+        "policy": policy,
+        "opportunity": updated_opp,
+    }
+
+
+@app.get("/schedules")
+def schedules_list(workspace: str | None = None) -> list[dict]:
+    return list_schedules(workspace=workspace)
+
+
+@app.post("/schedules")
+def schedules_create(request: ScheduleCreateRequest) -> dict:
+    next_run = datetime.fromisoformat(request.next_run_at) if request.next_run_at else None
+    return {
+        "status": "ok",
+        "schedule": create_schedule(request.workspace, request.role, request.schedule_type, request.payload_json, next_run),
+    }
+
+
+@app.get("/reminders")
+def reminders_list(workspace: str | None = None, status: str | None = None) -> list[dict]:
+    return list_reminders(workspace=workspace, status=status)
+
+
+@app.post("/reminders")
+def reminders_create(request: ReminderCreateRequest) -> dict:
+    due_at = datetime.fromisoformat(request.due_at)
+    return {"status": "ok", "reminder": create_reminder(request.workspace, request.role, request.message, due_at)}
+
+
+@app.post("/cadence-rules")
+def cadence_rules_create(request: CadenceRuleCreateRequest) -> dict:
+    return {
+        "status": "ok",
+        "rule": create_cadence_rule(
+            workspace=request.workspace,
+            role=request.role,
+            rule_name=request.rule_name,
+            frequency=request.frequency,
+            action_type=request.action_type,
+            active=request.active,
+        ),
+    }
+
+
+@app.get("/recurring-actions")
+def recurring_actions_list(workspace: str | None = None) -> list[dict]:
+    return list_recurring_actions(workspace=workspace)
+
+
+@app.post("/recurring-actions")
+def recurring_actions_create(request: RecurringActionCreateRequest) -> dict:
+    next_due = datetime.fromisoformat(request.next_due_at) if request.next_due_at else None
+    return {
+        "status": "ok",
+        "recurring_action": create_recurring_action(
+            cadence_rule_id=request.cadence_rule_id,
+            action_type=request.action_type,
+            workspace=request.workspace,
+            role=request.role,
+            next_due_at=next_due,
+        ),
+    }
+
+
+@app.get("/actions/dashboard")
+def actions_dashboard(workspace: str = "complicore") -> dict:
+    actions = list_actions(workspace=workspace)
+    reminders = list_reminders(workspace=workspace)
+    connectors = list_connectors(workspace=workspace)
+    return {
+        "workspace": workspace,
+        "actions_pending_approval": [a for a in actions if a["status"] == "pending_approval"],
+        "drafts_ready": [a for a in actions if a["status"] in {"draft", "ready"}],
+        "sends_completed": [a for a in actions if a["status"] == "completed" and a["action_type"] == "email_send"],
+        "failed_executions": [a for a in actions if a["status"] in {"failed", "rejected"}],
+        "overdue_followups": [r for r in reminders if r["status"] == "pending" and r["due_at"] and r["due_at"] < datetime.now(timezone.utc).isoformat()],
+        "connector_health": connectors,
+    }
+
+
+class ProgramCreateRequest(BaseModel):
+    name: str
+    program_type: str
+    workspace: str = "complicore"
+    owner_role: str = "operator"
+    status: str = "active"
+    goal: str
+    kpi: str | None = None
+    cadence: str = "weekly"
+    policy_profile: str = "standard"
+
+
+class PlaybookCreateRequest(BaseModel):
+    name: str
+    workspace: str = "complicore"
+    role: str = "operator"
+    trigger: str
+    success_condition: str
+    failure_path: str | None = None
+    steps: list[dict] = []
+
+
+class TriggerCreateRequest(BaseModel):
+    trigger_type: str
+    trigger_condition: str
+    target_program_id: str
+    enabled: bool = True
+
+
+class SequenceCreateRequest(BaseModel):
+    name: str
+    workspace: str = "complicore"
+    role: str = "sales"
+    exit_condition: str | None = None
+    next_action_at: str | None = None
+    steps: list[dict] = []
+
+
+class SequenceContactRequest(BaseModel):
+    contact_id: str
+    opportunity_id: str | None = None
+    state: str = "active"
+
+
+class EscalationCreateRequest(BaseModel):
+    workspace: str = "complicore"
+    reason: str
+    level: str = "medium"
+    owner: str = "operator"
+    due_at: str | None = None
+    resolution: str | None = None
+
+
+class ProgramScorecardCreateRequest(BaseModel):
+    program_id: str
+    objective: str
+    metrics_json: dict | None = None
+    health: str = "green"
+    blockers_json: list | None = None
+    next_actions_json: list | None = None
+
+
+class PartnershipProgramRequest(BaseModel):
+    workspace: str = "complicore"
+    owner_role: str = "cro"
+
+
+@app.get("/programs")
+def programs_list(workspace: str | None = None) -> list[dict]:
+    return list_programs(workspace=workspace)
+
+
+@app.post("/programs")
+def programs_create(request: ProgramCreateRequest) -> dict:
+    program = create_program(
+        name=request.name,
+        program_type=request.program_type,
+        workspace=request.workspace,
+        owner_role=request.owner_role,
+        status=request.status,
+        goal=request.goal,
+        kpi=request.kpi,
+        cadence=request.cadence,
+        policy_profile=request.policy_profile,
+    )
+    return {"status": "ok", "program": program}
+
+
+@app.get("/playbooks")
+def playbooks_list(workspace: str | None = None) -> list[dict]:
+    return list_playbooks(workspace=workspace)
+
+
+@app.post("/playbooks")
+def playbooks_create(request: PlaybookCreateRequest) -> dict:
+    playbook = create_playbook(
+        name=request.name,
+        workspace=request.workspace,
+        role=request.role,
+        trigger=request.trigger,
+        success_condition=request.success_condition,
+        failure_path=request.failure_path,
+        steps=request.steps,
+    )
+    return {"status": "ok", "playbook": playbook}
+
+
+@app.get("/triggers")
+def triggers_list(target_program_id: str | None = None) -> list[dict]:
+    return list_triggers(target_program_id=target_program_id)
+
+
+@app.post("/triggers")
+def triggers_create(request: TriggerCreateRequest) -> dict:
+    trigger = create_trigger(
+        trigger_type=request.trigger_type,
+        trigger_condition=request.trigger_condition,
+        target_program_id=request.target_program_id,
+        enabled=request.enabled,
+    )
+    return {"status": "ok", "trigger": trigger}
+
+
+@app.get("/sequences")
+def sequences_list(workspace: str | None = None) -> list[dict]:
+    return list_sequences(workspace=workspace)
+
+
+@app.post("/sequences")
+def sequences_create(request: SequenceCreateRequest) -> dict:
+    sequence = create_sequence(
+        name=request.name,
+        workspace=request.workspace,
+        role=request.role,
+        exit_condition=request.exit_condition,
+        next_action_at=datetime.fromisoformat(request.next_action_at) if request.next_action_at else None,
+        steps=request.steps,
+    )
+    return {"status": "ok", "sequence": sequence}
+
+
+@app.post("/sequences/{sequence_id}/contacts")
+def sequence_attach_contact(sequence_id: str, request: SequenceContactRequest) -> dict:
+    assignment = attach_sequence_contact(
+        sequence_id=sequence_id,
+        contact_id=request.contact_id,
+        opportunity_id=request.opportunity_id,
+        state=request.state,
+    )
+    return {"status": "ok", "assignment": assignment}
+
+
+@app.get("/escalations")
+def escalations_list(workspace: str | None = None, status: str | None = None) -> list[dict]:
+    return list_escalations(workspace=workspace, status=status)
+
+
+@app.post("/escalations")
+def escalations_create(request: EscalationCreateRequest) -> dict:
+    escalation = create_escalation(
+        workspace=request.workspace,
+        reason=request.reason,
+        level=request.level,
+        owner=request.owner,
+        due_at=datetime.fromisoformat(request.due_at) if request.due_at else None,
+        resolution=request.resolution,
+    )
+    return {"status": "ok", "escalation": escalation}
+
+
+@app.get("/program-scorecards")
+def program_scorecards_list(program_id: str | None = None) -> list[dict]:
+    return list_program_scorecards(program_id=program_id)
+
+
+@app.post("/program-scorecards")
+def program_scorecards_create(request: ProgramScorecardCreateRequest) -> dict:
+    scorecard = create_program_scorecard(
+        program_id=request.program_id,
+        objective=request.objective,
+        metrics_json=request.metrics_json,
+        health=request.health,
+        blockers_json=request.blockers_json,
+        next_actions_json=request.next_actions_json,
+    )
+    return {"status": "ok", "scorecard": scorecard}
+
+
+@app.post("/programs/partnership-advancement/run")
+def run_partnership_advancement_program(request: PartnershipProgramRequest) -> dict:
+    programs = [p for p in list_programs(workspace=request.workspace) if p["program_type"] == "partnership-advancement"]
+    if programs:
+        program = programs[0]
+    else:
+        program = create_program(
+            name="partnership-advancement-program",
+            program_type="partnership-advancement",
+            workspace=request.workspace,
+            owner_role=request.owner_role,
+            status="active",
+            goal="Advance stalled partnership opportunities",
+            kpi="opportunities_advanced",
+            cadence="weekly",
+            policy_profile="revenue-controlled",
+        )
+
+    opportunities = list_opportunities(workspace=request.workspace)
+    stalled = [o for o in opportunities if o.get("stage") in {"discovery", "proposal"}]
+    actions_created = []
+    escalations_created = []
+
+    for opp in stalled[:10]:
+        action = create_action(
+            action_type="email_send",
+            action_target=opp["id"],
+            workspace=request.workspace,
+            role="sales",
+            connector_type="email",
+            requires_approval=True,
+            status="pending_approval",
+            result_json={"reason": "partnership_advancement", "opportunity": opp["name"]},
+        )
+        actions_created.append(action)
+
+        if opp.get("risk_flag") in {"high", "stalled"}:
+            escalations_created.append(
+                create_escalation(
+                    workspace=request.workspace,
+                    reason=f"Opportunity at risk: {opp['name']}",
+                    level="high",
+                    owner=request.owner_role,
+                    due_at=datetime.now(timezone.utc),
+                )
+            )
+
+    scorecard = create_program_scorecard(
+        program_id=program["id"],
+        objective="Move stalled opportunities forward this cycle",
+        metrics_json={
+            "opportunities_reviewed": len(opportunities),
+            "stalled_detected": len(stalled),
+            "actions_created": len(actions_created),
+        },
+        health="green" if stalled else "amber",
+        blockers_json=[f"{item['name']} waiting approval" for item in stalled[:5]],
+        next_actions_json=["Approve queued sends", "Track responses", "Update stage after outreach"],
+    )
+
+    write_audit(
+        "program",
+        "partnership-advancement-program",
+        "program_run_completed",
+        {
+            "workspace": request.workspace,
+            "program_id": program["id"],
+            "actions_created": len(actions_created),
+            "escalations_created": len(escalations_created),
+        },
+    )
+
+    return {
+        "status": "ok",
+        "program": program,
+        "stalled_opportunities": stalled,
+        "actions_created": actions_created,
+        "escalations_created": escalations_created,
+        "scorecard": scorecard,
+    }

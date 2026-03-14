@@ -67,6 +67,8 @@ while [[ $# -gt 0 ]]; do
 done
 
 mkdir -p "$NOHUP_DIR"
+DEMO_LOG="$NOHUP_DIR/demo.log"
+exec > >(tee -a "$DEMO_LOG") 2>&1
 
 if [[ "$SKIP_INFRA" -eq 0 ]]; then
   echo "[1/7] Starting infrastructure..."
@@ -138,4 +140,15 @@ printf "\n"
 curl -s -X POST http://localhost:8000/plugins/validate -H "Content-Type: application/json" -d "{\"plugin_path\":\"plugins/role-marketer\"}"
 printf "\n"
 curl -s -X POST http://localhost:8000/plugins/dispatch -H "Content-Type: application/json" -d "{\"command\":\"weekly-business-review\",\"workspace\":\"complicore\",\"role\":\"marketer\",\"objective\":\"Generate weekly business review\",\"constraints\":[\"kpis\",\"outcomes\"]}"
+printf "\n"
+curl -s -X POST http://localhost:8000/plugins/validate -H "Content-Type: application/json" -d "{\"plugin_path\":\"plugins/role-sales\"}"
+printf "\n"
+curl -s -X POST http://localhost:8000/plugins/dispatch -H "Content-Type: application/json" -d "{\"command\":\"next-followups\",\"workspace\":\"complicore\",\"role\":\"sales\",\"objective\":\"Prepare follow-ups\",\"constraints\":[\"pipeline\",\"open-loops\"]}"
+curl -s -X POST http://localhost:8000/plugins/validate -H "Content-Type: application/json" -d "{\"plugin_path\":\"plugins/role-cro\"}"
+printf "\n"
+curl -s -X POST http://localhost:8000/plugins/dispatch -H "Content-Type: application/json" -d "{\"command\":\"revenue-brief\",\"workspace\":\"complicore\",\"role\":\"cro\",\"objective\":\"Generate CRO revenue brief\",\"constraints\":[\"pipeline\",\"actions\"]}"
+printf "\n"
+curl -s -X POST http://localhost:8000/programs/partnership-advancement/run -H "Content-Type: application/json" -d "{\"workspace\":\"complicore\",\"owner_role\":\"cro\"}"
+printf "\n"
+printf "\nDone. Logs in %s\n" "$NOHUP_DIR"
 printf "\n\nDone. Logs in %s\n" "$NOHUP_DIR"

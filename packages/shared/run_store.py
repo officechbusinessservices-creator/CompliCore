@@ -5,6 +5,16 @@ from pathlib import Path
 
 from packages.shared.db import SessionLocal
 from packages.shared.models import (
+    Account,
+    Action,
+    ActionPolicy,
+    Approval,
+    Artifact,
+    AuditEvent,
+    CadenceRule,
+    Connector,
+    Contact,
+    Escalation,
     Approval,
     Artifact,
     AuditEvent,
@@ -12,12 +22,25 @@ from packages.shared.models import (
     Failure,
     Initiative,
     KPI,
+    Opportunity,
     Outcome,
     Plugin,
     PluginInstallation,
     PluginPermission,
     PluginReview,
     PluginState,
+    Playbook,
+    PlaybookStep,
+    PluginVersion,
+    Program,
+    ProgramScorecard,
+    RecurringAction,
+    Reminder,
+    Schedule,
+    Sequence,
+    SequenceContact,
+    SequenceStep,
+    Trigger,
     PluginVersion,
     WorkflowRun,
     WorkflowStep,
@@ -789,3 +812,898 @@ def failure_to_dict(row: Failure) -> dict:
         "repeat_risk": row.repeat_risk,
         "created_at": row.created_at.isoformat() if row.created_at else None,
     }
+
+
+def _iso(dt):
+    return dt.isoformat() if dt else None
+
+
+# ---------------- Revenue objects ----------------
+def create_account(workspace: str, name: str, status: str = "active") -> dict:
+    db = SessionLocal()
+    try:
+        row = Account(workspace=workspace, name=name, status=status)
+        db.add(row)
+        db.commit()
+        db.refresh(row)
+        return {"id": str(row.id), "workspace": row.workspace, "name": row.name, "status": row.status, "created_at": _iso(row.created_at)}
+    finally:
+        db.close()
+
+
+def list_accounts(workspace: str | None = None) -> list[dict]:
+    db = SessionLocal()
+    try:
+        query = db.query(Account)
+        if workspace:
+            query = query.filter(Account.workspace == workspace)
+        rows = query.order_by(Account.created_at.desc()).all()
+        return [{"id": str(r.id), "workspace": r.workspace, "name": r.name, "status": r.status, "created_at": _iso(r.created_at)} for r in rows]
+    finally:
+        db.close()
+
+
+def create_contact(workspace: str, full_name: str, email: str | None, role: str | None, account_id: str | None = None) -> dict:
+    db = SessionLocal()
+    try:
+        row = Contact(
+            workspace=workspace,
+            full_name=full_name,
+            email=email,
+            role=role,
+            account_id=uuid.UUID(account_id) if account_id else None,
+        )
+        db.add(row)
+        db.commit()
+        db.refresh(row)
+        return {
+            "id": str(row.id),
+            "workspace": row.workspace,
+            "account_id": str(row.account_id) if row.account_id else None,
+            "full_name": row.full_name,
+            "email": row.email,
+            "role": row.role,
+            "last_activity_at": _iso(row.last_activity_at),
+            "created_at": _iso(row.created_at),
+        }
+    finally:
+        db.close()
+
+
+def list_contacts(workspace: str | None = None) -> list[dict]:
+    db = SessionLocal()
+    try:
+        query = db.query(Contact)
+        if workspace:
+            query = query.filter(Contact.workspace == workspace)
+        rows = query.order_by(Contact.created_at.desc()).all()
+        return [
+            {
+                "id": str(r.id),
+                "workspace": r.workspace,
+                "account_id": str(r.account_id) if r.account_id else None,
+                "full_name": r.full_name,
+                "email": r.email,
+                "role": r.role,
+                "last_activity_at": _iso(r.last_activity_at),
+                "created_at": _iso(r.created_at),
+            }
+            for r in rows
+        ]
+    finally:
+        db.close()
+
+
+def create_opportunity(
+    workspace: str,
+    name: str,
+    stage: str = "discovery",
+    next_step: str | None = None,
+    estimated_value: str | None = None,
+    account_id: str | None = None,
+    contact_id: str | None = None,
+) -> dict:
+    db = SessionLocal()
+    try:
+        row = Opportunity(
+            workspace=workspace,
+            name=name,
+            stage=stage,
+            next_step=next_step,
+            estimated_value=estimated_value,
+            account_id=uuid.UUID(account_id) if account_id else None,
+            contact_id=uuid.UUID(contact_id) if contact_id else None,
+        )
+        db.add(row)
+        db.commit()
+        db.refresh(row)
+        return opportunity_to_dict(row)
+    finally:
+        db.close()
+
+
+def list_opportunities(workspace: str | None = None) -> list[dict]:
+    db = SessionLocal()
+    try:
+        query = db.query(Opportunity)
+        if workspace:
+            query = query.filter(Opportunity.workspace == workspace)
+        rows = query.order_by(Opportunity.created_at.desc()).all()
+        return [opportunity_to_dict(r) for r in rows]
+    finally:
+        db.close()
+
+
+def mark_opportunity_activity(opportunity_id: str, stage: str | None = None, next_step: str | None = None, risk_flag: str | None = None) -> dict | None:
+    db = SessionLocal()
+    try:
+        row = db.query(Opportunity).filter(Opportunity.id == uuid.UUID(opportunity_id)).first()
+        if not row:
+            return None
+        row.last_activity_at = datetime.now(timezone.utc)
+        if stage:
+            row.stage = stage
+        if next_step:
+            row.next_step = next_step
+        if risk_flag:
+            row.risk_flag = risk_flag
+        db.commit()
+        db.refresh(row)
+        return opportunity_to_dict(row)
+    finally:
+        db.close()
+
+
+def opportunity_to_dict(row: Opportunity) -> dict:
+    return {
+        "id": str(row.id),
+        "workspace": row.workspace,
+        "account_id": str(row.account_id) if row.account_id else None,
+        "contact_id": str(row.contact_id) if row.contact_id else None,
+        "name": row.name,
+        "stage": row.stage,
+        "next_step": row.next_step,
+        "estimated_value": row.estimated_value,
+        "risk_flag": row.risk_flag,
+        "last_activity_at": _iso(row.last_activity_at),
+        "created_at": _iso(row.created_at),
+    }
+
+
+# ---------------- Controlled execution ----------------
+def create_connector(
+    connector_type: str,
+    workspace: str,
+    connector_scope: str,
+    status: str,
+    auth_state: str,
+    permissions_json: dict | None,
+) -> dict:
+    db = SessionLocal()
+    try:
+        row = Connector(
+            connector_type=connector_type,
+            workspace=workspace,
+            connector_scope=connector_scope,
+            status=status,
+            auth_state=auth_state,
+            permissions_json=permissions_json,
+            last_check_at=datetime.now(timezone.utc),
+        )
+        db.add(row)
+        db.commit()
+        db.refresh(row)
+        return connector_to_dict(row)
+    finally:
+        db.close()
+
+
+def list_connectors(workspace: str | None = None) -> list[dict]:
+    db = SessionLocal()
+    try:
+        query = db.query(Connector)
+        if workspace:
+            query = query.filter(Connector.workspace == workspace)
+        rows = query.order_by(Connector.created_at.desc()).all()
+        return [connector_to_dict(r) for r in rows]
+    finally:
+        db.close()
+
+
+def connector_to_dict(row: Connector) -> dict:
+    return {
+        "id": str(row.id),
+        "connector_type": row.connector_type,
+        "connector_scope": row.connector_scope,
+        "workspace": row.workspace,
+        "status": row.status,
+        "auth_state": row.auth_state,
+        "permissions_json": row.permissions_json,
+        "last_check_at": _iso(row.last_check_at),
+        "created_at": _iso(row.created_at),
+    }
+
+
+def create_action_policy(
+    action_type: str,
+    workspace: str,
+    role: str,
+    auto_execute: bool,
+    approval_required: bool,
+    allowed_connector: str | None,
+    max_daily_limit: int,
+) -> dict:
+    db = SessionLocal()
+    try:
+        row = ActionPolicy(
+            action_type=action_type,
+            workspace=workspace,
+            role=role,
+            auto_execute=auto_execute,
+            approval_required=approval_required,
+            allowed_connector=allowed_connector,
+            max_daily_limit=max_daily_limit,
+        )
+        db.add(row)
+        db.commit()
+        db.refresh(row)
+        return action_policy_to_dict(row)
+    finally:
+        db.close()
+
+
+def list_action_policies(workspace: str | None = None, role: str | None = None) -> list[dict]:
+    db = SessionLocal()
+    try:
+        query = db.query(ActionPolicy)
+        if workspace:
+            query = query.filter(ActionPolicy.workspace.in_([workspace, "global"]))
+        if role:
+            query = query.filter(ActionPolicy.role.in_([role, "global"]))
+        rows = query.order_by(ActionPolicy.created_at.desc()).all()
+        return [action_policy_to_dict(r) for r in rows]
+    finally:
+        db.close()
+
+
+def action_policy_to_dict(row: ActionPolicy) -> dict:
+    return {
+        "id": str(row.id),
+        "action_type": row.action_type,
+        "workspace": row.workspace,
+        "role": row.role,
+        "auto_execute": row.auto_execute,
+        "approval_required": row.approval_required,
+        "allowed_connector": row.allowed_connector,
+        "max_daily_limit": row.max_daily_limit,
+        "created_at": _iso(row.created_at),
+    }
+
+
+def resolve_action_policy(action_type: str, workspace: str, role: str) -> dict | None:
+    candidates = list_action_policies(workspace=workspace, role=role)
+    for policy in candidates:
+        if policy["action_type"] == action_type and policy["workspace"] in {workspace, "global"} and policy["role"] in {role, "global"}:
+            return policy
+    return None
+
+
+def create_action(
+    action_type: str,
+    action_target: str,
+    workspace: str,
+    role: str,
+    connector_type: str | None,
+    requires_approval: bool,
+    status: str = "pending_approval",
+    result_json: dict | None = None,
+    artifact_id: str | None = None,
+) -> dict:
+    db = SessionLocal()
+    try:
+        row = Action(
+            action_type=action_type,
+            action_target=action_target,
+            workspace=workspace,
+            role=role,
+            connector_type=connector_type,
+            requires_approval=requires_approval,
+            status=status,
+            result_json=result_json,
+            artifact_id=uuid.UUID(artifact_id) if artifact_id else None,
+        )
+        db.add(row)
+        db.commit()
+        db.refresh(row)
+        return action_to_dict(row)
+    finally:
+        db.close()
+
+
+def list_actions(workspace: str | None = None, status: str | None = None) -> list[dict]:
+    db = SessionLocal()
+    try:
+        query = db.query(Action)
+        if workspace:
+            query = query.filter(Action.workspace == workspace)
+        if status:
+            query = query.filter(Action.status == status)
+        rows = query.order_by(Action.created_at.desc()).all()
+        return [action_to_dict(r) for r in rows]
+    finally:
+        db.close()
+
+
+def action_to_dict(row: Action) -> dict:
+    return {
+        "id": str(row.id),
+        "action_type": row.action_type,
+        "action_target": row.action_target,
+        "workspace": row.workspace,
+        "role": row.role,
+        "status": row.status,
+        "requires_approval": row.requires_approval,
+        "connector_type": row.connector_type,
+        "result_json": row.result_json,
+        "artifact_id": str(row.artifact_id) if row.artifact_id else None,
+        "executed_at": _iso(row.executed_at),
+        "created_at": _iso(row.created_at),
+    }
+
+
+def execute_action(action_id: str, executed_by: str, approved: bool = True) -> dict | None:
+    db = SessionLocal()
+    try:
+        row = db.query(Action).filter(Action.id == uuid.UUID(action_id)).first()
+        if not row:
+            return None
+        if row.requires_approval and not approved:
+            row.status = "rejected"
+            row.result_json = {"approved": False, "executed_by": executed_by}
+        else:
+            row.status = "completed"
+            row.executed_at = datetime.now(timezone.utc)
+            row.result_json = {
+                "approved": approved,
+                "executed_by": executed_by,
+                "message": f"Simulated execution for {row.action_type} on {row.action_target}",
+            }
+        db.commit()
+        db.refresh(row)
+        write_audit("action", str(row.id), "action_executed" if row.status == "completed" else "action_rejected", row.result_json or {})
+        return action_to_dict(row)
+    finally:
+        db.close()
+
+
+def create_schedule(workspace: str, role: str, schedule_type: str, payload_json: dict | None, next_run_at: datetime | None) -> dict:
+    db = SessionLocal()
+    try:
+        row = Schedule(workspace=workspace, role=role, schedule_type=schedule_type, payload_json=payload_json, next_run_at=next_run_at)
+        db.add(row)
+        db.commit()
+        db.refresh(row)
+        return {
+            "id": str(row.id),
+            "workspace": row.workspace,
+            "role": row.role,
+            "schedule_type": row.schedule_type,
+            "payload_json": row.payload_json,
+            "next_run_at": _iso(row.next_run_at),
+            "status": row.status,
+            "created_at": _iso(row.created_at),
+        }
+    finally:
+        db.close()
+
+
+def list_schedules(workspace: str | None = None) -> list[dict]:
+    db = SessionLocal()
+    try:
+        query = db.query(Schedule)
+        if workspace:
+            query = query.filter(Schedule.workspace == workspace)
+        rows = query.order_by(Schedule.created_at.desc()).all()
+        return [
+            {
+                "id": str(r.id),
+                "workspace": r.workspace,
+                "role": r.role,
+                "schedule_type": r.schedule_type,
+                "payload_json": r.payload_json,
+                "next_run_at": _iso(r.next_run_at),
+                "status": r.status,
+                "created_at": _iso(r.created_at),
+            }
+            for r in rows
+        ]
+    finally:
+        db.close()
+
+
+def create_reminder(workspace: str, role: str, message: str, due_at: datetime) -> dict:
+    db = SessionLocal()
+    try:
+        row = Reminder(workspace=workspace, role=role, message=message, due_at=due_at)
+        db.add(row)
+        db.commit()
+        db.refresh(row)
+        return {"id": str(row.id), "workspace": row.workspace, "role": row.role, "message": row.message, "due_at": _iso(row.due_at), "status": row.status, "created_at": _iso(row.created_at)}
+    finally:
+        db.close()
+
+
+def list_reminders(workspace: str | None = None, status: str | None = None) -> list[dict]:
+    db = SessionLocal()
+    try:
+        query = db.query(Reminder)
+        if workspace:
+            query = query.filter(Reminder.workspace == workspace)
+        if status:
+            query = query.filter(Reminder.status == status)
+        rows = query.order_by(Reminder.due_at.asc()).all()
+        return [{"id": str(r.id), "workspace": r.workspace, "role": r.role, "message": r.message, "due_at": _iso(r.due_at), "status": r.status, "created_at": _iso(r.created_at)} for r in rows]
+    finally:
+        db.close()
+
+
+def create_cadence_rule(workspace: str, role: str, rule_name: str, frequency: str, action_type: str, active: bool = True) -> dict:
+    db = SessionLocal()
+    try:
+        row = CadenceRule(workspace=workspace, role=role, rule_name=rule_name, frequency=frequency, action_type=action_type, active=active)
+        db.add(row)
+        db.commit()
+        db.refresh(row)
+        return {"id": str(row.id), "workspace": row.workspace, "role": row.role, "rule_name": row.rule_name, "frequency": row.frequency, "action_type": row.action_type, "active": row.active, "created_at": _iso(row.created_at)}
+    finally:
+        db.close()
+
+
+def create_recurring_action(cadence_rule_id: str, action_type: str, workspace: str, role: str, next_due_at: datetime | None) -> dict:
+    db = SessionLocal()
+    try:
+        row = RecurringAction(
+            cadence_rule_id=uuid.UUID(cadence_rule_id),
+            action_type=action_type,
+            workspace=workspace,
+            role=role,
+            next_due_at=next_due_at,
+        )
+        db.add(row)
+        db.commit()
+        db.refresh(row)
+        return {"id": str(row.id), "cadence_rule_id": str(row.cadence_rule_id), "action_type": row.action_type, "workspace": row.workspace, "role": row.role, "status": row.status, "next_due_at": _iso(row.next_due_at), "created_at": _iso(row.created_at)}
+    finally:
+        db.close()
+
+
+def list_recurring_actions(workspace: str | None = None) -> list[dict]:
+    db = SessionLocal()
+    try:
+        query = db.query(RecurringAction)
+        if workspace:
+            query = query.filter(RecurringAction.workspace == workspace)
+        rows = query.order_by(RecurringAction.created_at.desc()).all()
+        return [{"id": str(r.id), "cadence_rule_id": str(r.cadence_rule_id), "action_type": r.action_type, "workspace": r.workspace, "role": r.role, "status": r.status, "next_due_at": _iso(r.next_due_at), "created_at": _iso(r.created_at)} for r in rows]
+    finally:
+        db.close()
+
+
+# ---------------- Program engines ----------------
+def create_program(
+    name: str,
+    program_type: str,
+    workspace: str,
+    owner_role: str,
+    goal: str,
+    kpi: str | None,
+    cadence: str,
+    policy_profile: str,
+    status: str = "active",
+) -> dict:
+    db = SessionLocal()
+    try:
+        row = Program(
+            name=name,
+            program_type=program_type,
+            workspace=workspace,
+            owner_role=owner_role,
+            status=status,
+            goal=goal,
+            kpi=kpi,
+            cadence=cadence,
+            policy_profile=policy_profile,
+        )
+        db.add(row)
+        db.commit()
+        db.refresh(row)
+        return {
+            "id": str(row.id),
+            "name": row.name,
+            "program_type": row.program_type,
+            "workspace": row.workspace,
+            "owner_role": row.owner_role,
+            "status": row.status,
+            "goal": row.goal,
+            "kpi": row.kpi,
+            "cadence": row.cadence,
+            "policy_profile": row.policy_profile,
+            "created_at": _iso(row.created_at),
+        }
+    finally:
+        db.close()
+
+
+def list_programs(workspace: str | None = None) -> list[dict]:
+    db = SessionLocal()
+    try:
+        query = db.query(Program)
+        if workspace:
+            query = query.filter(Program.workspace == workspace)
+        rows = query.order_by(Program.created_at.desc()).all()
+        return [
+            {
+                "id": str(r.id),
+                "name": r.name,
+                "program_type": r.program_type,
+                "workspace": r.workspace,
+                "owner_role": r.owner_role,
+                "status": r.status,
+                "goal": r.goal,
+                "kpi": r.kpi,
+                "cadence": r.cadence,
+                "policy_profile": r.policy_profile,
+                "created_at": _iso(r.created_at),
+            }
+            for r in rows
+        ]
+    finally:
+        db.close()
+
+
+def create_playbook(
+    name: str,
+    workspace: str,
+    role: str,
+    trigger: str,
+    success_condition: str,
+    failure_path: str | None,
+    steps: list[dict],
+) -> dict:
+    db = SessionLocal()
+    try:
+        row = Playbook(
+            name=name,
+            workspace=workspace,
+            role=role,
+            trigger=trigger,
+            success_condition=success_condition,
+            failure_path=failure_path,
+        )
+        db.add(row)
+        db.flush()
+        for idx, step in enumerate(steps, start=1):
+            db.add(
+                PlaybookStep(
+                    playbook_id=row.id,
+                    step_order=step.get("step_order", idx),
+                    step_name=step.get("step_name", f"step-{idx}"),
+                    step_action_type=step.get("step_action_type", "task_create"),
+                )
+            )
+        db.commit()
+        db.refresh(row)
+        return {"id": str(row.id), "name": row.name, "workspace": row.workspace, "role": row.role, "trigger": row.trigger}
+    finally:
+        db.close()
+
+
+def list_playbooks(workspace: str | None = None) -> list[dict]:
+    db = SessionLocal()
+    try:
+        query = db.query(Playbook)
+        if workspace:
+            query = query.filter(Playbook.workspace == workspace)
+        rows = query.order_by(Playbook.created_at.desc()).all()
+        output = []
+        for row in rows:
+            steps = (
+                db.query(PlaybookStep)
+                .filter(PlaybookStep.playbook_id == row.id)
+                .order_by(PlaybookStep.step_order.asc())
+                .all()
+            )
+            output.append(
+                {
+                    "id": str(row.id),
+                    "name": row.name,
+                    "workspace": row.workspace,
+                    "role": row.role,
+                    "trigger": row.trigger,
+                    "success_condition": row.success_condition,
+                    "failure_path": row.failure_path,
+                    "steps": [
+                        {
+                            "id": str(step.id),
+                            "step_order": step.step_order,
+                            "step_name": step.step_name,
+                            "step_action_type": step.step_action_type,
+                        }
+                        for step in steps
+                    ],
+                }
+            )
+        return output
+    finally:
+        db.close()
+
+
+def create_trigger(trigger_type: str, trigger_condition: str, target_program_id: str, enabled: bool = True) -> dict:
+    db = SessionLocal()
+    try:
+        row = Trigger(
+            trigger_type=trigger_type,
+            trigger_condition=trigger_condition,
+            target_program_id=uuid.UUID(target_program_id),
+            enabled=enabled,
+        )
+        db.add(row)
+        db.commit()
+        db.refresh(row)
+        return {
+            "id": str(row.id),
+            "trigger_type": row.trigger_type,
+            "trigger_condition": row.trigger_condition,
+            "target_program_id": str(row.target_program_id),
+            "enabled": row.enabled,
+            "last_fired_at": _iso(row.last_fired_at),
+        }
+    finally:
+        db.close()
+
+
+def list_triggers(target_program_id: str | None = None) -> list[dict]:
+    db = SessionLocal()
+    try:
+        query = db.query(Trigger)
+        if target_program_id:
+            query = query.filter(Trigger.target_program_id == uuid.UUID(target_program_id))
+        rows = query.order_by(Trigger.created_at.desc()).all()
+        return [
+            {
+                "id": str(r.id),
+                "trigger_type": r.trigger_type,
+                "trigger_condition": r.trigger_condition,
+                "target_program_id": str(r.target_program_id),
+                "enabled": r.enabled,
+                "last_fired_at": _iso(r.last_fired_at),
+                "created_at": _iso(r.created_at),
+            }
+            for r in rows
+        ]
+    finally:
+        db.close()
+
+
+def create_sequence(
+    name: str,
+    workspace: str,
+    role: str,
+    exit_condition: str | None,
+    next_action_at: datetime | None,
+    steps: list[dict],
+) -> dict:
+    db = SessionLocal()
+    try:
+        row = Sequence(
+            name=name,
+            workspace=workspace,
+            role=role,
+            exit_condition=exit_condition,
+            next_action_at=next_action_at,
+        )
+        db.add(row)
+        db.flush()
+        for idx, step in enumerate(steps, start=1):
+            db.add(
+                SequenceStep(
+                    sequence_id=row.id,
+                    step_order=step.get("step_order", idx),
+                    action_type=step.get("action_type", "email_send"),
+                    template=step.get("template"),
+                )
+            )
+        db.commit()
+        db.refresh(row)
+        return {
+            "id": str(row.id),
+            "name": row.name,
+            "workspace": row.workspace,
+            "role": row.role,
+            "state": row.state,
+            "next_action_at": _iso(row.next_action_at),
+        }
+    finally:
+        db.close()
+
+
+def attach_sequence_contact(sequence_id: str, contact_id: str, opportunity_id: str | None = None, state: str = "active") -> dict:
+    db = SessionLocal()
+    try:
+        row = SequenceContact(
+            sequence_id=uuid.UUID(sequence_id),
+            contact_id=uuid.UUID(contact_id),
+            opportunity_id=uuid.UUID(opportunity_id) if opportunity_id else None,
+            state=state,
+        )
+        db.add(row)
+        db.commit()
+        db.refresh(row)
+        return {
+            "id": str(row.id),
+            "sequence_id": str(row.sequence_id),
+            "contact_id": str(row.contact_id),
+            "opportunity_id": str(row.opportunity_id) if row.opportunity_id else None,
+            "state": row.state,
+        }
+    finally:
+        db.close()
+
+
+def list_sequences(workspace: str | None = None) -> list[dict]:
+    db = SessionLocal()
+    try:
+        query = db.query(Sequence)
+        if workspace:
+            query = query.filter(Sequence.workspace == workspace)
+        rows = query.order_by(Sequence.created_at.desc()).all()
+        out = []
+        for row in rows:
+            steps = db.query(SequenceStep).filter(SequenceStep.sequence_id == row.id).order_by(SequenceStep.step_order.asc()).all()
+            contacts = db.query(SequenceContact).filter(SequenceContact.sequence_id == row.id).all()
+            out.append(
+                {
+                    "id": str(row.id),
+                    "name": row.name,
+                    "workspace": row.workspace,
+                    "role": row.role,
+                    "state": row.state,
+                    "next_action_at": _iso(row.next_action_at),
+                    "exit_condition": row.exit_condition,
+                    "steps": [
+                        {
+                            "id": str(s.id),
+                            "step_order": s.step_order,
+                            "action_type": s.action_type,
+                            "template": s.template,
+                        }
+                        for s in steps
+                    ],
+                    "contacts": [
+                        {
+                            "id": str(c.id),
+                            "contact_id": str(c.contact_id),
+                            "opportunity_id": str(c.opportunity_id) if c.opportunity_id else None,
+                            "state": c.state,
+                        }
+                        for c in contacts
+                    ],
+                }
+            )
+        return out
+    finally:
+        db.close()
+
+
+def create_escalation(workspace: str, reason: str, level: str, owner: str, due_at: datetime | None, resolution: str | None = None) -> dict:
+    db = SessionLocal()
+    try:
+        row = Escalation(
+            workspace=workspace,
+            reason=reason,
+            level=level,
+            owner=owner,
+            due_at=due_at,
+            resolution=resolution,
+        )
+        db.add(row)
+        db.commit()
+        db.refresh(row)
+        return {
+            "id": str(row.id),
+            "workspace": row.workspace,
+            "reason": row.reason,
+            "level": row.level,
+            "owner": row.owner,
+            "due_at": _iso(row.due_at),
+            "resolution": row.resolution,
+            "status": row.status,
+        }
+    finally:
+        db.close()
+
+
+def list_escalations(workspace: str | None = None, status: str | None = None) -> list[dict]:
+    db = SessionLocal()
+    try:
+        query = db.query(Escalation)
+        if workspace:
+            query = query.filter(Escalation.workspace == workspace)
+        if status:
+            query = query.filter(Escalation.status == status)
+        rows = query.order_by(Escalation.created_at.desc()).all()
+        return [
+            {
+                "id": str(r.id),
+                "workspace": r.workspace,
+                "reason": r.reason,
+                "level": r.level,
+                "owner": r.owner,
+                "due_at": _iso(r.due_at),
+                "resolution": r.resolution,
+                "status": r.status,
+                "created_at": _iso(r.created_at),
+            }
+            for r in rows
+        ]
+    finally:
+        db.close()
+
+
+def create_program_scorecard(
+    program_id: str,
+    objective: str,
+    metrics_json: dict | None,
+    health: str,
+    blockers_json: list | None,
+    next_actions_json: list | None,
+) -> dict:
+    db = SessionLocal()
+    try:
+        row = ProgramScorecard(
+            program_id=uuid.UUID(program_id),
+            objective=objective,
+            metrics_json=metrics_json,
+            health=health,
+            blockers_json=blockers_json,
+            next_actions_json=next_actions_json,
+        )
+        db.add(row)
+        db.commit()
+        db.refresh(row)
+        return {
+            "id": str(row.id),
+            "program_id": str(row.program_id),
+            "objective": row.objective,
+            "metrics_json": row.metrics_json,
+            "health": row.health,
+            "blockers_json": row.blockers_json,
+            "next_actions_json": row.next_actions_json,
+            "created_at": _iso(row.created_at),
+        }
+    finally:
+        db.close()
+
+
+def list_program_scorecards(program_id: str | None = None) -> list[dict]:
+    db = SessionLocal()
+    try:
+        query = db.query(ProgramScorecard)
+        if program_id:
+            query = query.filter(ProgramScorecard.program_id == uuid.UUID(program_id))
+        rows = query.order_by(ProgramScorecard.created_at.desc()).all()
+        return [
+            {
+                "id": str(r.id),
+                "program_id": str(r.program_id),
+                "objective": r.objective,
+                "metrics_json": r.metrics_json,
+                "health": r.health,
+                "blockers_json": r.blockers_json,
+                "next_actions_json": r.next_actions_json,
+                "created_at": _iso(r.created_at),
+            }
+            for r in rows
+        ]
+    finally:
+        db.close()
