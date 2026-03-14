@@ -148,7 +148,8 @@ antigravity-os/
 │  ├─ worker/
 │  ├─ scheduler/
 │  ├─ dashboard/
-│  └─ cli/
+│  ├─ cli/
+│  └─ context-gateway/
 ├─ packages/
 │  ├─ roles/
 │  ├─ workspaces/
@@ -168,6 +169,11 @@ antigravity-os/
 │     ├─ zelloo/
 │     └─ personal/
 ├─ infra/
+│  ├─ postgres/
+│  ├─ redis/
+│  ├─ temporal/
+│  ├─ openviking/
+│  └─ observability/
 ├─ scripts/
 ├─ tests/
 └─ docs/
@@ -285,3 +291,10 @@ Final separation:
 
 - **Antigravity OS** supports Elias.
 - **CompliCore** is one workspace/product inside it.
+
+
+## Context Layer Decision
+
+Adopt **OpenViking** as the context database for Antigravity OS.
+Use it for workspace resources, user memory, agent memory, and skill-linked retrieval through `viking://` URI roots.
+Keep **Temporal** as workflow engine and **PostgreSQL** as transactional system of record.

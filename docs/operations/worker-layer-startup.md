@@ -128,3 +128,15 @@ npm --prefix apps/dashboard run dev
 - Embedding scheduling logic directly in model prompts
 
 See also: `docs/operations/skills-usage-guide.md` for practical prompting patterns and starter skill sequencing.
+
+
+## Optional: Start OpenViking context backbone
+
+```bash
+docker compose --profile context up -d openviking context-gateway
+```
+
+Context retrieval endpoints:
+
+- `POST /context/retrieve`
+- `GET /context/workspaces`

@@ -4,6 +4,7 @@ from typing import Literal
 from pydantic import BaseModel, Field
 from temporalio import activity
 
+from packages.memory.openviking_client import OpenVikingContextClient
 from packages.shared.run_store import (
     create_workflow_step,
     request_approval,
@@ -154,11 +155,20 @@ async def planner_activity(payload: dict) -> dict:
 @activity.defn
 async def researcher_activity(plan_payload: dict) -> dict:
     plan = PlanResult.model_validate(plan_payload)
+    context_client = OpenVikingContextClient()
+    context = await context_client.retrieve(
+        workspace=plan.workspace,
+        role=plan.role,
+        query=plan.objective,
+        max_chunks=5,
+    )
     evidence = [
-        f"Workspace `{plan.workspace}` context loaded",
+        f"Workspace `{plan.workspace}` context loaded via {context.get('provider')}",
         f"Role `{plan.role}` playbook selected",
         f"Objective assessed: {plan.objective}",
     ]
+    for chunk in context.get("chunks", [])[:3]:
+        evidence.append(f"Context hit: {chunk.get('uri', 'unknown')}")
     result = ResearchResult(
         db_run_id=plan.db_run_id,
         workflow_id=plan.workflow_id,
@@ -167,6 +177,7 @@ async def researcher_activity(plan_payload: dict) -> dict:
         assumptions=["Core systems and API endpoints reachable"],
     )
     payload_out = result.model_dump()
+    payload_out["context"] = context
     create_workflow_step(plan.db_run_id, "researcher", "research_context", payload_out)
     write_audit("agent", "researcher", "stage_completed", payload_out)
     return payload_out

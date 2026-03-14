@@ -1,4 +1,4 @@
-.PHONY: infra-up infra-down setup-python install-deps init-db api worker scheduler start-workflow query-workflow venv venv-offline venv-verify wheelhouse skills-bootstrap skills-bootstrap-path demo-e2e demo-e2e-offline smoke-full
+.PHONY: infra-up infra-down setup-python install-deps init-db api worker scheduler start-workflow query-workflow venv venv-offline venv-verify wheelhouse skills-bootstrap skills-bootstrap-path demo-e2e demo-e2e-offline smoke-full context-gateway
 
 infra-up:
 	docker compose up -d
@@ -56,3 +56,6 @@ demo-e2e-offline:
 
 smoke-full:
 	bash scripts/smoke_full.sh
+
+context-gateway:
+	uvicorn apps.context_gateway.main:app --reload --port 8010

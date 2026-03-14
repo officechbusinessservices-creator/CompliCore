@@ -9,6 +9,7 @@ from pydantic import BaseModel
 from sqlalchemy import text
 from temporalio.client import Client
 
+from packages.memory.openviking_client import OpenVikingContextClient
 from packages.shared.db import SessionLocal
 from packages.shared.models import Approval, Artifact, AuditEvent, WorkflowRun, WorkflowStep
 from packages.shared.run_store import decide_approval, get_approval
@@ -20,6 +21,16 @@ class ApprovalDecisionRequest(BaseModel):
     decision: str
     decided_by: str = "operator"
     reason: str | None = None
+
+
+class ContextRequest(BaseModel):
+    workspace: str
+    role: str
+    query: str
+    max_chunks: int = 5
+
+
+context_client = OpenVikingContextClient()
 
 
 @lru_cache(maxsize=1)
@@ -272,3 +283,34 @@ def metrics_summary() -> dict:
         }
     finally:
         db.close()
+
+
+@app.post("/context/retrieve")
+async def retrieve_context(request: ContextRequest) -> dict:
+    context = await context_client.retrieve(
+        workspace=request.workspace,
+        role=request.role,
+        query=request.query,
+        max_chunks=request.max_chunks,
+    )
+    return {
+        "workspace": request.workspace,
+        "role": request.role,
+        "query": request.query,
+        "context": context,
+    }
+
+
+@app.get("/context/workspaces")
+def context_workspaces() -> dict:
+    return {
+        "roots": [
+            "viking://resources/complicore/",
+            "viking://resources/livily/",
+            "viking://resources/zelloo/",
+            "viking://resources/personal/",
+            "viking://user/memories/",
+            "viking://agent/skills/",
+            "viking://agent/memories/",
+        ]
+    }

@@ -4,7 +4,7 @@
 
 This repository now includes a multi-step autonomous layer:
 
-1. Infrastructure in `docker-compose.yml` (Postgres, Redis, Qdrant, Temporal, Temporal UI)
+1. Infrastructure in `docker-compose.yml` (Postgres, Redis, Qdrant, Temporal, Temporal UI, optional OpenViking + context-gateway profile)
 2. Shared database layer and SQLAlchemy models
 3. FastAPI API (`/health`, `/runs`, `/steps`, `/audit`, `/approvals`, `/workflow/{id}/status`)
 4. Temporal workflow (`operator_copilot`) with 4 bounded stages
@@ -186,3 +186,24 @@ Run full reliability smoke (includes approval path + artifact checks):
 ```bash
 make smoke-full
 ```
+
+
+## OpenViking context backbone (optional profile)
+
+Start context services:
+
+```bash
+docker compose --profile context up -d openviking context-gateway
+```
+
+Use API context endpoints:
+
+```bash
+curl -X POST http://localhost:8000/context/retrieve \
+  -H "Content-Type: application/json" \
+  -d '{"workspace":"complicore","role":"builder","query":"roadmap"}'
+
+curl http://localhost:8000/context/workspaces
+```
+
+If OpenViking is unavailable, retrieval falls back to local files under `data/workspaces/<workspace>`.
