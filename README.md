@@ -18,7 +18,7 @@ CompliCore is a comprehensive, vendor-neutral architecture for short-term rental
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-org/complicore.git
+git clone https://github.com/officechbusinessservices-creator/CompliCore.git
 cd complicore
 
 # Install dependencies
@@ -270,7 +270,7 @@ Security is our top priority. If you discover a security vulnerability, please e
 
 - **Email**: support@complicore.com
 - **Documentation**: [/docs](./docs/)
-- **Issues**: [GitHub Issues](https://github.com/your-org/complicore/issues)
+- **Issues**: [GitHub Issues](https://github.com/officechbusinessservices-creator/CompliCore/issues)
 
 ## 🗺️ Roadmap
 
