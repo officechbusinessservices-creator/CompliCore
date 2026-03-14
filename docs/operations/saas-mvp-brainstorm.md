@@ -1,3 +1,5 @@
+> Architecture note: Antigravity OS is operator-first; CompliCore is one workspace inside that OS. See `docs/operations/antigravity-os-plan.md`.
+
 # SaaS MVP Brainstorm (CompliCore Worker Layer)
 
 ## 1) MVP Goal

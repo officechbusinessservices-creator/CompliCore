@@ -1,3 +1,5 @@
+> Architecture note: Antigravity OS is operator-first; CompliCore is one workspace inside that OS. See `docs/operations/antigravity-os-plan.md`.
+
 # Worker-Layer Startup Runbook
 
 This runbook defines how to launch the self-running agent system.

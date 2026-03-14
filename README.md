@@ -120,6 +120,7 @@ Backend runs on [http://localhost:4000](http://localhost:4000)
 - **[Performance Optimization Guide](./docs/performance/optimization_guide.md)** - Prisma indexes, caching, Next.js optimizations
 - **[Testing Framework](./docs/testing/framework.md)** - Test runner setup, how to run tests, example patterns
 - **[SaaS MVP Brainstorm](./docs/operations/saas-mvp-brainstorm.md)** - Scope, milestones, and delivery plan for the first SaaS MVP
+- **[Antigravity OS Plan](./docs/operations/antigravity-os-plan.md)** - Operator-first architecture (roles + workspaces + skills) with CompliCore as a workspace
 - **[Worker-Layer Startup Runbook](./docs/operations/worker-layer-startup.md)** - Correct startup order for infra, workers, scheduler, and dashboard observer
 - **[Skills Usage Guide](./docs/operations/skills-usage-guide.md)** - How to actually use installed skills, bundles, and prompt patterns
 - **[API Reference](http://localhost:3000/api-docs)** - Interactive API documentation

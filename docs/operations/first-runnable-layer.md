@@ -1,3 +1,5 @@
+> Architecture note: Antigravity OS is operator-first; CompliCore is one workspace inside that OS. See `docs/operations/antigravity-os-plan.md`.
+
 # First Runnable Worker Layer
 
 This repository now includes a multi-step autonomous layer:
