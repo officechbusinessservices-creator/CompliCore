@@ -26,6 +26,7 @@ What this does:
   5) Starts one workflow run
   6) Loads plugin inventory + dispatches plugin command
   7) Queries API endpoints: /health /runs /steps /audit
+  6) Queries API endpoints: /health /runs /steps /audit
 
 Background logs:
   $NOHUP_DIR/api.log
@@ -117,6 +118,7 @@ done
 curl -s http://localhost:8000/health || true
 
 echo "[7/8] Starting one workflow run + querying outputs..."
+echo "[7/7] Starting one workflow run + querying outputs..."
 python apps/cli/start_workflow.py
 curl -s http://localhost:8000/runs
 printf "\n"

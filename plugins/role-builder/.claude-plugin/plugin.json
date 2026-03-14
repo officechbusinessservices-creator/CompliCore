@@ -4,4 +4,6 @@
   "description": "Builder role plugin",
   "workspace_scope": ["global", "complicore"],
   "role_scope": ["builder"]
+  "version": "0.1.0",
+  "description": "Builder role plugin"
 }

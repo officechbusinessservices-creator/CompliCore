@@ -13,6 +13,7 @@ from dotenv import load_dotenv
 from temporalio.client import Client
 
 from packages.shared.run_store import create_workflow_run
+from packages.shared.run_store import complete_workflow_run, create_workflow_run
 from packages.workflows.operator_copilot import OperatorCopilotWorkflow
 
 load_dotenv()
@@ -49,6 +50,13 @@ async def main() -> None:
 
     client = await Client.connect(os.getenv("TEMPORAL_HOST", "localhost:7233"))
 
+async def main() -> None:
+    payload = {"objective": "Test self-running system"}
+    db_run_id = create_workflow_run("operator_copilot", payload)
+    payload["db_run_id"] = db_run_id
+
+    client = await Client.connect(os.getenv("TEMPORAL_HOST", "localhost:7233"))
+    workflow_id = f"operator-copilot-{db_run_id}"
     handle = await client.start_workflow(
         OperatorCopilotWorkflow.run,
         payload,
@@ -61,6 +69,8 @@ async def main() -> None:
         return
 
     result = await handle.result()
+    result = await handle.result()
+    complete_workflow_run(db_run_id, result)
     print({"workflow_id": workflow_id, "db_run_id": db_run_id, "result": result})
 
 
