@@ -1,0 +1,11 @@
+{
+  "name": "openclaw-core",
+  "version": "0.1.0-quarantined",
+  "description": "OpenClaw core platform source under governance review",
+  "source": "https://github.com/openclaw/openclaw",
+  "state": "quarantined",
+  "commands": "./commands",
+  "agents": "./agents",
+  "skills": "./skills",
+  "mcp": "./.mcp.json"
+}

@@ -1,0 +1,21 @@
+{
+  "name": "role-ceo",
+  "version": "0.3.0",
+  "description": "CEO role plugin",
+  "state": "approved",
+  "commands": "./commands",
+  "agents": "./agents",
+  "skills": "./skills",
+  "workspace_scope": ["global", "complicore", "livily", "personal"],
+  "role_scope": ["ceo"],
+  "required_permissions": [
+    "workspace_access",
+    "role_access",
+    "secrets_use",
+    "network_use",
+    "mcp_endpoints"
+  ],
+  "command_skill_map": {
+    "weekly-brief": "create_execution_plan"
+  }
+}
