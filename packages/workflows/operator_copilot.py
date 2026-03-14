@@ -7,6 +7,7 @@ with workflow.unsafe.imports_passed_through():
         create_approval_request_activity,
         executor_activity,
         finalize_workflow_activity,
+        executor_activity,
         planner_activity,
         researcher_activity,
         reviewer_activity,
@@ -41,6 +42,9 @@ class OperatorCopilotWorkflow:
         self.approval_status = "rejected"
         if approval_id:
             self.pending_approval_id = approval_id
+
+            "last_result": self.last_result,
+        }
 
     @workflow.run
     async def run(self, payload: dict) -> dict:
@@ -106,6 +110,9 @@ class OperatorCopilotWorkflow:
                 )
                 return rejected
 
+        )
+        self.last_result["execution"] = execution
+
         self.current_stage = "reviewing"
         review = await workflow.execute_activity(
             reviewer_activity,
@@ -122,6 +129,9 @@ class OperatorCopilotWorkflow:
             "workspace": payload.get("workspace"),
             "role": payload.get("role"),
             "approval_id": self.pending_approval_id,
+        return {
+            "objective": payload.get("objective"),
+            "status": "completed",
             "plan": plan,
             "research": research,
             "execution": execution,
@@ -136,3 +146,4 @@ class OperatorCopilotWorkflow:
             retry_policy=workflow.RetryPolicy(maximum_attempts=2),
         )
         return final_result
+        }

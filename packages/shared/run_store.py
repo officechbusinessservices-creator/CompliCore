@@ -15,6 +15,9 @@ from packages.shared.models import (
     Connector,
     Contact,
     Escalation,
+    Approval,
+    Artifact,
+    AuditEvent,
     Experiment,
     Failure,
     Initiative,
@@ -38,11 +41,19 @@ from packages.shared.models import (
     SequenceContact,
     SequenceStep,
     Trigger,
+    PluginVersion,
     WorkflowRun,
     WorkflowStep,
 )
 
 ARTIFACTS_DIR = Path("artifacts")
+from packages.shared.models import Approval, Artifact, AuditEvent, WorkflowRun, WorkflowStep
+
+ARTIFACTS_DIR = Path("artifacts")
+import uuid
+
+from packages.shared.db import SessionLocal
+from packages.shared.models import AuditEvent, WorkflowRun, WorkflowStep
 
 
 def create_workflow_run(workflow_name: str, payload: dict) -> str:
@@ -70,6 +81,7 @@ def create_workflow_step(
     payload: dict,
     status: str = "completed",
 ) -> None:
+def create_workflow_step(run_id: str, agent_name: str, step_name: str, payload: dict) -> None:
     db = SessionLocal()
     try:
         row = WorkflowStep(
@@ -79,6 +91,8 @@ def create_workflow_step(
             status=status,
             input_json=payload,
             output_json=payload,
+            status="completed",
+            input_json=payload,
         )
         db.add(row)
         db.commit()
@@ -171,11 +185,13 @@ def get_approval(approval_id: str) -> dict | None:
 
 
 def complete_workflow_run(run_id: str, output: dict, status: str = "completed") -> None:
+def complete_workflow_run(run_id: str, output: dict) -> None:
     db = SessionLocal()
     try:
         row = db.query(WorkflowRun).filter(WorkflowRun.id == uuid.UUID(run_id)).first()
         if row:
             row.status = status
+            row.status = "completed"
             row.output_json = output
             db.commit()
     finally:

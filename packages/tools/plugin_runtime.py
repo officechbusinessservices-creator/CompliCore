@@ -21,6 +21,7 @@ from packages.shared.run_store import (
 
 ALLOWED_WORKSPACE_SCOPES = {"global", "complicore", "livily", "personal", "zelloo"}
 ALLOWED_ROLE_SCOPES = {"global", "ceo", "builder", "marketer", "operator", "sales", "researcher", "cro"}
+ALLOWED_ROLE_SCOPES = {"global", "ceo", "builder", "marketer", "operator", "sales", "researcher"}
 REQUIRED_MANIFEST_FIELDS = {"name", "version", "description", "commands", "agents", "skills"}
 
 
