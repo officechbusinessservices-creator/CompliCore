@@ -6,7 +6,7 @@ This repository now includes a multi-step autonomous layer:
 
 1. Infrastructure in `docker-compose.yml` (Postgres, Redis, Qdrant, Temporal, Temporal UI)
 2. Shared database layer and SQLAlchemy models
-3. FastAPI API (`/health`, `/runs`, `/steps`, `/audit`)
+3. FastAPI API (`/health`, `/runs`, `/steps`, `/audit`, `/approvals`, `/workflow/{id}/status`)
 4. Temporal workflow (`operator_copilot`) with 4 bounded stages
 5. Orchestrator worker (`orchestrator-queue`) with registered activities
 6. CLI launcher for DB-backed workflow runs
@@ -148,6 +148,41 @@ The demo script will:
 3. Init DB
 4. Launch API + worker in background
 5. Start one workflow run
-6. Query `/health`, `/runs`, `/steps`, `/audit`
+6. Query `/health`, `/runs`, `/steps`, `/audit`, `/approvals`
 
 Logs are written to `./.demo-logs/`.
+
+
+## Approval-gated control loop
+
+Start an approval-gated run (returns immediately):
+
+```bash
+python apps/cli/start_workflow.py --objective "Prepare operator brief" --workspace complicore --role ceo --no-wait
+```
+
+List pending approvals:
+
+```bash
+curl http://localhost:8000/approvals
+```
+
+Approve a pending item:
+
+```bash
+curl -X POST http://localhost:8000/approvals/<approval_id>/decision \
+  -H "Content-Type: application/json" \
+  -d '{"decision":"approve","decided_by":"operator"}'
+```
+
+Check exact run status:
+
+```bash
+curl http://localhost:8000/workflow/<run_id>/status
+```
+
+Run full reliability smoke (includes approval path + artifact checks):
+
+```bash
+make smoke-full
+```

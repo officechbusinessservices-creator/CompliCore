@@ -13,7 +13,9 @@ from temporalio.client import Client
 from temporalio.worker import Worker
 
 from packages.agents.activities import (
+    create_approval_request_activity,
     executor_activity,
+    finalize_workflow_activity,
     planner_activity,
     researcher_activity,
     reviewer_activity,
@@ -34,6 +36,8 @@ async def main() -> None:
             researcher_activity,
             executor_activity,
             reviewer_activity,
+            create_approval_request_activity,
+            finalize_workflow_activity,
         ],
     )
     print("Orchestrator worker running on orchestrator-queue")

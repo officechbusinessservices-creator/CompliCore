@@ -13,12 +13,12 @@ class WorkflowRun(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     workflow_name = Column(String, nullable=False)
     status = Column(String, nullable=False, default="pending")
+    role = Column(String, nullable=False, default="operator")
+    workspace = Column(String, nullable=False, default="default")
     input_json = Column(JSON, nullable=True)
     output_json = Column(JSON, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(
-        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
-    )
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
 
 class WorkflowStep(Base):
@@ -76,8 +76,22 @@ class Approval(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     run_id = Column(UUID(as_uuid=True), nullable=False)
+    workflow_id = Column(String, nullable=False)
     action_type = Column(String, nullable=False)
     status = Column(String, nullable=False, default="pending")
     approved = Column(Boolean, nullable=False, default=False)
+    payload_json = Column(JSON, nullable=True)
+    decision_json = Column(JSON, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class Artifact(Base):
+    __tablename__ = "artifacts"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    run_id = Column(UUID(as_uuid=True), nullable=False)
+    artifact_type = Column(String, nullable=False)
+    file_path = Column(String, nullable=False)
+    markdown_path = Column(String, nullable=False)
     payload_json = Column(JSON, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())

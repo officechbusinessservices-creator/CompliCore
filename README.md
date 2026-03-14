@@ -174,7 +174,7 @@ Explore the platform features:
 Install Antigravity skills (default: `~/.gemini/antigravity/skills`) with `npx antigravity-awesome-skills`, or use `--path` for custom locations.
 Start with **Essentials** for general use, **Web Wizard** for web development, and **Security Engineer** for security-focused work.
 
-The worker layer now runs a 4-stage Temporal flow (plan → research → execute → review) with PostgreSQL persistence and API visibility (`/runs`, `/steps`, `/audit`).
+The worker layer now runs a 4-stage Temporal flow (plan → research → execute → review) with PostgreSQL persistence, approval gating, artifact output, and API visibility (`/runs`, `/steps`, `/audit`, `/approvals`, `/workflow/{id}/status`, `/metrics/summary`).
 Set up dependencies first with `bash scripts/setup_python_env.sh --online` or `bash scripts/setup_python_env.sh --offline ./vendor/wheels`, then follow `docs/operations/first-runnable-layer.md`.
 
 ## 🧪 Testing
@@ -518,3 +518,8 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+
+### Operator live runs page
+
+After starting the web app, open `/operator-runs` to view live run status, role/workspace routing, and approval-waiting state from the worker API.

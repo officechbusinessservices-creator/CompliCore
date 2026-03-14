@@ -1,4 +1,4 @@
-.PHONY: infra-up infra-down setup-python install-deps init-db api worker scheduler start-workflow query-workflow venv venv-offline venv-verify wheelhouse skills-bootstrap skills-bootstrap-path demo-e2e demo-e2e-offline
+.PHONY: infra-up infra-down setup-python install-deps init-db api worker scheduler start-workflow query-workflow venv venv-offline venv-verify wheelhouse skills-bootstrap skills-bootstrap-path demo-e2e demo-e2e-offline smoke-full
 
 infra-up:
 	docker compose up -d
@@ -53,3 +53,6 @@ demo-e2e:
 
 demo-e2e-offline:
 	bash scripts/demo_end_to_end.sh --offline ./vendor/wheels
+
+smoke-full:
+	bash scripts/smoke_full.sh
