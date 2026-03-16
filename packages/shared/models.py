@@ -498,3 +498,22 @@ class ProgramScorecard(Base):
     blockers_json = Column(JSON, nullable=True)
     next_actions_json = Column(JSON, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class WorkerHeartbeat(Base):
+    __tablename__ = "worker_heartbeats"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    worker_id = Column(String, nullable=False, unique=True)
+    worker_type = Column(String, nullable=False)
+    queue_name = Column(String, nullable=False)
+    host = Column(String, nullable=False, default="unknown")
+    version = Column(String, nullable=False, default="dev")
+    status = Column(String, nullable=False, default="healthy")
+    current_load = Column(Integer, nullable=False, default=0)
+    max_concurrency = Column(Integer, nullable=False, default=1)
+    current_workspace = Column(String, nullable=True)
+    current_role = Column(String, nullable=True)
+    metadata_json = Column(JSON, nullable=True)
+    started_at = Column(DateTime(timezone=True), nullable=True)
+    heartbeat_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())

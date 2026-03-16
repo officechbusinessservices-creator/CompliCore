@@ -1,0 +1,36 @@
+{
+  "queue_plan": [
+    "orchestrator-queue",
+    "planning-queue",
+    "research-queue",
+    "execution-queue",
+    "review-queue",
+    "policy-queue",
+    "artifact-queue",
+    "scheduler-queue",
+    "plugin-queue",
+    "context-queue"
+  ],
+  "worker_classes": [
+    {"type": "orchestrator", "start_count": "1-2", "default_queue": "orchestrator-queue", "default_concurrency": 2},
+    {"type": "planner", "start_count": "2-4", "default_queue": "planning-queue", "default_concurrency": 4},
+    {"type": "research", "start_count": "4-8", "default_queue": "research-queue", "default_concurrency": 8},
+    {"type": "execution", "start_count": "4-12", "default_queue": "execution-queue", "default_concurrency": 4},
+    {"type": "review", "start_count": "2-6", "default_queue": "review-queue", "default_concurrency": 4},
+    {"type": "context", "start_count": "2-6", "default_queue": "context-queue", "default_concurrency": 6},
+    {"type": "plugin", "start_count": "2-6", "default_queue": "plugin-queue", "default_concurrency": 3}
+  ],
+  "scale_waves": [
+    {"wave": 1, "target_workers": 5, "goal": "queue isolation and idempotency"},
+    {"wave": 2, "target_workers": 15, "goal": "parallel workflows and bottleneck detection"},
+    {"wave": 3, "target_workers": 30, "goal": "workspace/role parallelism"},
+    {"wave": 4, "target_workers": 60, "goal": "multi-program operations"},
+    {"wave": 5, "target_workers": 100, "goal": "autoscaling and governance at fleet level"}
+  ],
+  "autoscaling_rules": [
+    "if execution-queue depth > 50 for 5m, add 2 execution workers",
+    "if research-queue avg wait > 30s, add 1 research worker",
+    "if approval backlog rises, add review/policy workers",
+    "if provider rate-limit pressure is high, reduce execution concurrency"
+  ]
+}

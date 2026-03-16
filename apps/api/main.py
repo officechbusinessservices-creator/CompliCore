@@ -15,6 +15,10 @@ from sqlalchemy import text
 from temporalio.client import Client
 
 from packages.memory.openviking_client import OpenVikingContextClient
+from packages.agents.gemini_planner import create_execution_plan
+from packages.agents.gemini_reviewer import review_output
+from packages.agents.nemotron_finalizer import finalize_complicore_flow
+from packages.models import GeminiClient
 from packages.policies.plugin_policy_guard import evaluate_plugin_enable_policy
 from packages.shared.db import SessionLocal
 from packages.shared.models import Approval, Artifact, AuditEvent, Plugin, WorkflowRun, WorkflowStep
@@ -79,6 +83,9 @@ from packages.shared.run_store import (
     set_plugin_state,
     write_artifact,
     write_audit,
+    upsert_worker_heartbeat,
+    list_worker_heartbeats,
+    fleet_worker_summary,
     list_outcomes,
     list_plugins,
     register_plugin,
@@ -207,6 +214,63 @@ class ExperimentCreateRequest(BaseModel):
     decision: str | None = None
 
 
+
+
+class WorkerHeartbeatRequest(BaseModel):
+    worker_id: str
+    worker_type: str
+    queue_name: str
+    host: str = "unknown"
+    version: str = "dev"
+    status: str = "healthy"
+    current_load: int = 0
+    max_concurrency: int = 1
+    current_workspace: str | None = None
+    current_role: str | None = None
+    metadata_json: dict | None = None
+    started_at: datetime | None = None
+
+
+class GeminiPlanRequest(BaseModel):
+    workspace: str
+    role: str
+    objective: str
+    constraints: list[str] = []
+    model: str = "gemini-2.5-pro"
+
+
+class GeminiRepoReviewPlanRequest(BaseModel):
+    objective: str
+    scope: str = "repo"
+
+
+class GeminiWeeklyBriefRequest(BaseModel):
+    workspace: str = "complicore"
+    role: str = "ceo"
+    objective: str = "weekly_ceo_brief"
+
+
+class GeminiFollowupDraftsRequest(BaseModel):
+    workspace: str
+    role: str = "sales"
+    opportunities: list[str]
+
+
+class GeminiBatchReviewRequest(BaseModel):
+    rubric: str
+    items: list[str]
+    model: str = "gemini-2.5-flash"
+
+
+class NemotronFinalizeRequest(BaseModel):
+    workspace: str = "complicore"
+    role: str = "operator"
+    objective: str = "Finalize CompliCore production-readiness"
+    constraints: list[str] = []
+    benchmark_notes: str = "Nemotron-3 Super claims #1 DeepResearch and 84.7% PinchBench (source-provided)"
+    quality_bar: int = 80
+
+
 class FailureCreateRequest(BaseModel):
     workspace: str = "complicore"
     failure_type: str
@@ -255,6 +319,17 @@ def deep_health() -> dict:
         "database": db_status,
         "temporal_host": get_temporal_target(),
     }
+
+
+@app.get("/fleet/scaling-plan")
+def fleet_scaling_plan() -> dict:
+    plan_path = Path("configs/worker_scaling_plan.json")
+    if not plan_path.exists():
+        raise HTTPException(status_code=404, detail="Worker scaling plan not found")
+    try:
+        return json.loads(plan_path.read_text(encoding="utf-8"))
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(status_code=500, detail=f"Failed to read worker scaling plan: {exc}") from exc
 
 
 @app.get("/fleet/model")
@@ -520,6 +595,195 @@ async def decision_approval(approval_id: str, request: ApprovalDecisionRequest) 
         "status": "ok",
         "approval": decided,
     }
+
+
+
+
+@app.post("/workers/heartbeat")
+def worker_heartbeat(request: WorkerHeartbeatRequest) -> dict:
+    return {
+        "status": "ok",
+        "worker": upsert_worker_heartbeat(
+            worker_id=request.worker_id,
+            worker_type=request.worker_type,
+            queue_name=request.queue_name,
+            host=request.host,
+            version=request.version,
+            status=request.status,
+            current_load=request.current_load,
+            max_concurrency=request.max_concurrency,
+            current_workspace=request.current_workspace,
+            current_role=request.current_role,
+            metadata_json=request.metadata_json,
+            started_at=request.started_at,
+        ),
+    }
+
+
+@app.get("/workers")
+def list_workers(worker_type: str | None = None, queue_name: str | None = None) -> list[dict]:
+    return list_worker_heartbeats(worker_type=worker_type, queue_name=queue_name)
+
+
+@app.get("/fleet/summary")
+def fleet_summary() -> dict:
+    return fleet_worker_summary()
+@app.get("/models/providers")
+def model_providers() -> dict:
+    providers_path = Path("configs/model_provider_matrix.json")
+    if not providers_path.exists():
+        raise HTTPException(status_code=404, detail="Model provider matrix not found")
+    try:
+        return json.loads(providers_path.read_text(encoding="utf-8"))
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(status_code=500, detail=f"Failed to read model provider matrix: {exc}") from exc
+
+
+@app.get("/fleet/brain")
+def fleet_brain() -> dict:
+    brain_path = Path("configs/gemini_automation_layer.json")
+    if not brain_path.exists():
+        raise HTTPException(status_code=404, detail="Gemini automation layer config not found")
+    try:
+        return json.loads(brain_path.read_text(encoding="utf-8"))
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(status_code=500, detail=f"Failed to read Gemini automation config: {exc}") from exc
+
+
+@app.post("/gemini/workflows/create_execution_plan")
+def gemini_create_execution_plan(request: GeminiPlanRequest) -> dict:
+    try:
+        plan = create_execution_plan(
+            workspace=request.workspace,
+            role=request.role,
+            objective=request.objective,
+            constraints=request.constraints,
+            model=request.model,
+        )
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(status_code=502, detail=f"Gemini planning failed: {exc}") from exc
+    return {"status": "ok", "plan": plan}
+
+
+@app.post("/gemini/workflows/repo_review_plan")
+def gemini_repo_review_plan(request: GeminiRepoReviewPlanRequest) -> dict:
+    prompt = (
+        "Generate a read-only repository review plan using Gemini CLI plan mode. "
+        f"Objective: {request.objective}. Scope: {request.scope}. "
+        "Return milestones, risk checks, and validation steps as JSON."
+    )
+    client = GeminiClient(default_model="gemini-2.5-pro")
+    try:
+        result = client.run_sync(prompt=prompt)
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(status_code=502, detail=f"Gemini repo review plan failed: {exc}") from exc
+    return {"status": "ok", "result": result}
+
+
+@app.post("/gemini/workflows/weekly_ceo_brief")
+def gemini_weekly_ceo_brief(request: GeminiWeeklyBriefRequest) -> dict:
+    outcomes = list_outcomes(workspace=request.workspace)[:20]
+    kpis = list_kpis(workspace=request.workspace)[:20]
+    initiatives = list_initiatives(workspace=request.workspace)[:20]
+    prompt = (
+        f"Create weekly CEO brief for workspace={request.workspace}, role={request.role}. "
+        "Summarize outcomes, blockers, open loops, and KPI changes. Return JSON."
+        f"\nOutcomes={outcomes}\nKPIs={kpis}\nInitiatives={initiatives}"
+    )
+    client = GeminiClient(default_model="gemini-2.5-pro")
+    try:
+        result = client.run_sync(prompt=prompt)
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(status_code=502, detail=f"Gemini weekly brief failed: {exc}") from exc
+    return {"status": "ok", "brief": result}
+
+
+@app.post("/gemini/workflows/pipeline_followup_drafts")
+def gemini_pipeline_followup_drafts(request: GeminiFollowupDraftsRequest) -> dict:
+    tools = [
+        {
+            "functionDeclarations": [
+                {
+                    "name": "prepare_followup_draft",
+                    "description": "Prepare follow-up drafts that still require approval before sending",
+                    "parameters": {
+                        "type": "OBJECT",
+                        "properties": {
+                            "opportunity": {"type": "STRING"},
+                            "subject": {"type": "STRING"},
+                            "body": {"type": "STRING"},
+                        },
+                    },
+                }
+            ]
+        }
+    ]
+    prompt = (
+        f"Workspace={request.workspace} role={request.role}. Prepare follow-up drafts for opportunities "
+        f"{request.opportunities}. Do not send actions. Return draft payloads only."
+    )
+    client = GeminiClient(default_model="gemini-2.5-pro")
+    try:
+        result = client.run_with_tools(prompt=prompt, tools=tools)
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(status_code=502, detail=f"Gemini followup draft failed: {exc}") from exc
+    return {"status": "ok", "drafts": result, "requires_approval": True}
+
+
+@app.post("/gemini/workflows/batch_quality_review")
+def gemini_batch_quality_review(request: GeminiBatchReviewRequest) -> dict:
+    client = GeminiClient(default_model=request.model)
+    batch_payload = [
+        {
+            "requestId": str(index),
+            "contents": [
+                {
+                    "parts": [
+                        {
+                            "text": (
+                                "Review this output against rubric and return score_0_to_100, contradictions, and recommendation. "
+                                f"Rubric: {request.rubric}\nCandidate: {item}"
+                            )
+                        }
+                    ]
+                }
+            ],
+        }
+        for index, item in enumerate(request.items)
+    ]
+    try:
+        result = client.run_batch(batch_payload, model=request.model)
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(status_code=502, detail=f"Gemini batch review failed: {exc}") from exc
+    return {"status": "submitted", "batch": result, "item_count": len(request.items)}
+
+
+@app.get("/nemotron/flows/finalizer")
+def nemotron_finalizer_flow() -> dict:
+    flow_path = Path("configs/nemotron_finalizer_flow.json")
+    if not flow_path.exists():
+        raise HTTPException(status_code=404, detail="Nemotron finalizer flow config not found")
+    try:
+        return json.loads(flow_path.read_text(encoding="utf-8"))
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(status_code=500, detail=f"Failed to read Nemotron finalizer flow: {exc}") from exc
+
+
+@app.post("/nemotron/workflows/finalize_complicore")
+def nemotron_finalize_complicore(request: NemotronFinalizeRequest) -> dict:
+    try:
+        result = finalize_complicore_flow(request.model_dump())
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(status_code=502, detail=f"Nemotron finalizer flow failed: {exc}") from exc
+    return {"status": "ok", "result": result}
+
+
+@app.post("/gemini/review")
+def gemini_review(content: str, rubric: str, min_score: int = 70) -> dict:
+    try:
+        return {"status": "ok", "review": review_output(content=content, rubric=rubric, min_score=min_score)}
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(status_code=502, detail=f"Gemini review failed: {exc}") from exc
 
 
 @app.get("/metrics/summary")

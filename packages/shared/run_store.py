@@ -41,6 +41,12 @@ from packages.shared.models import (
     SequenceContact,
     SequenceStep,
     Trigger,
+    WorkflowRun,
+    WorkflowStep,
+    WorkerHeartbeat,
+)
+
+ARTIFACTS_DIR = Path("artifacts")
     PluginVersion,
     WorkflowRun,
     WorkflowStep,
@@ -1707,3 +1713,137 @@ def list_program_scorecards(program_id: str | None = None) -> list[dict]:
         ]
     finally:
         db.close()
+
+
+def upsert_worker_heartbeat(
+    worker_id: str,
+    worker_type: str,
+    queue_name: str,
+    host: str,
+    version: str,
+    status: str,
+    current_load: int,
+    max_concurrency: int,
+    current_workspace: str | None = None,
+    current_role: str | None = None,
+    metadata_json: dict | None = None,
+    started_at: datetime | None = None,
+) -> dict:
+    db = SessionLocal()
+    try:
+        row = db.query(WorkerHeartbeat).filter(WorkerHeartbeat.worker_id == worker_id).first()
+        if row:
+            row.worker_type = worker_type
+            row.queue_name = queue_name
+            row.host = host
+            row.version = version
+            row.status = status
+            row.current_load = current_load
+            row.max_concurrency = max_concurrency
+            row.current_workspace = current_workspace
+            row.current_role = current_role
+            row.metadata_json = metadata_json
+            if started_at:
+                row.started_at = started_at
+        else:
+            row = WorkerHeartbeat(
+                worker_id=worker_id,
+                worker_type=worker_type,
+                queue_name=queue_name,
+                host=host,
+                version=version,
+                status=status,
+                current_load=current_load,
+                max_concurrency=max_concurrency,
+                current_workspace=current_workspace,
+                current_role=current_role,
+                metadata_json=metadata_json,
+                started_at=started_at,
+            )
+            db.add(row)
+        db.commit()
+        db.refresh(row)
+        return {
+            "id": str(row.id),
+            "worker_id": row.worker_id,
+            "worker_type": row.worker_type,
+            "queue_name": row.queue_name,
+            "host": row.host,
+            "version": row.version,
+            "status": row.status,
+            "current_load": row.current_load,
+            "max_concurrency": row.max_concurrency,
+            "current_workspace": row.current_workspace,
+            "current_role": row.current_role,
+            "metadata_json": row.metadata_json,
+            "started_at": _iso(row.started_at),
+            "heartbeat_at": _iso(row.heartbeat_at),
+        }
+    finally:
+        db.close()
+
+
+def list_worker_heartbeats(worker_type: str | None = None, queue_name: str | None = None) -> list[dict]:
+    db = SessionLocal()
+    try:
+        query = db.query(WorkerHeartbeat)
+        if worker_type:
+            query = query.filter(WorkerHeartbeat.worker_type == worker_type)
+        if queue_name:
+            query = query.filter(WorkerHeartbeat.queue_name == queue_name)
+        rows = query.order_by(WorkerHeartbeat.heartbeat_at.desc()).all()
+        return [
+            {
+                "id": str(r.id),
+                "worker_id": r.worker_id,
+                "worker_type": r.worker_type,
+                "queue_name": r.queue_name,
+                "host": r.host,
+                "version": r.version,
+                "status": r.status,
+                "current_load": r.current_load,
+                "max_concurrency": r.max_concurrency,
+                "current_workspace": r.current_workspace,
+                "current_role": r.current_role,
+                "metadata_json": r.metadata_json,
+                "started_at": _iso(r.started_at),
+                "heartbeat_at": _iso(r.heartbeat_at),
+            }
+            for r in rows
+        ]
+    finally:
+        db.close()
+
+
+def fleet_worker_summary() -> dict:
+    workers = list_worker_heartbeats()
+    by_type: dict[str, dict] = {}
+    by_queue: dict[str, dict] = {}
+
+    for worker in workers:
+        wt = worker["worker_type"]
+        qn = worker["queue_name"]
+        by_type.setdefault(wt, {"active_workers": 0, "busy_workers": 0, "total_load": 0, "total_concurrency": 0, "error_workers": 0})
+        by_queue.setdefault(qn, {"active_workers": 0, "busy_workers": 0, "total_load": 0, "total_concurrency": 0, "error_workers": 0})
+
+        for bucket in (by_type[wt], by_queue[qn]):
+            bucket["active_workers"] += 1
+            bucket["total_load"] += worker["current_load"]
+            bucket["total_concurrency"] += worker["max_concurrency"]
+            if worker["current_load"] > 0:
+                bucket["busy_workers"] += 1
+            if worker["status"] != "healthy":
+                bucket["error_workers"] += 1
+
+    for bucket in list(by_type.values()) + list(by_queue.values()):
+        total_capacity = bucket["total_concurrency"]
+        bucket["idle_workers"] = max(bucket["active_workers"] - bucket["busy_workers"], 0)
+        bucket["utilization"] = round(bucket["total_load"] / total_capacity, 4) if total_capacity else 0
+
+    return {
+        "total_workers": len(workers),
+        "healthy_workers": sum(1 for w in workers if w["status"] == "healthy"),
+        "unhealthy_workers": sum(1 for w in workers if w["status"] != "healthy"),
+        "by_type": by_type,
+        "by_queue": by_queue,
+    }
