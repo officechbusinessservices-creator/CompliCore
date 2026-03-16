@@ -1,0 +1,22 @@
+{
+  "name": "role-cro",
+  "version": "0.1.0",
+  "description": "Chief Revenue Officer cross-functional revenue coordination plugin.",
+  "state": "approved",
+  "commands": "./commands",
+  "agents": "./agents",
+  "skills": "./skills",
+  "workspace_scope": ["global", "complicore", "livily", "zelloo", "personal"],
+  "role_scope": ["cro", "ceo", "sales", "marketer", "operator"],
+  "required_permissions": [
+    "workspace_access",
+    "role_access",
+    "secrets_use",
+    "network_use",
+    "mcp_endpoints"
+  ],
+  "command_skill_map": {
+    "revenue-brief": "prioritize_pipeline_actions",
+    "deal-risks": "surface_revenue_blockers"
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "name": "nemotron_finalizer_flow",
+  "goal": "Finalize CompliCore with an open-weight local model control layer under policy and approval safeguards.",
+  "stages": [
+    {
+      "id": "plan",
+      "agent": "nemotron_planner",
+      "output": ["milestones", "blockers", "ownership", "next_actions", "risk_controls"]
+    },
+    {
+      "id": "research",
+      "agent": "nemotron_researcher",
+      "output": ["insights", "evidence_gaps", "experiment_backlog", "references_needed", "confidence"]
+    },
+    {
+      "id": "review",
+      "agent": "nemotron_reviewer",
+      "output": ["score_0_to_100", "contradictions", "acceptance", "required_human_review", "fixes"]
+    },
+    {
+      "id": "approval",
+      "agent": "policy_guard",
+      "rule": "if required_human_review=true then route to human approval before side effects"
+    }
+  ],
+  "api_surface": {
+    "trigger": "POST /nemotron/workflows/finalize_complicore"
+  }
+}
