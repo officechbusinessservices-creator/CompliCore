@@ -1,4 +1,6 @@
 .PHONY: infra-up infra-down setup-python install-deps init-db api worker scheduler start-workflow query-workflow venv venv-offline venv-verify wheelhouse skills-bootstrap skills-bootstrap-path demo-e2e demo-e2e-offline smoke-full context-gateway plugin-cli plugin-list plugin-inspect plugin-load plugin-validate-ceo plugin-dispatch-weekly-brief sync-plugins clone-openclaw
+.PHONY: preflight bootstrap health smoke infra-up infra-down setup-python install-deps init-db api worker scheduler start-workflow query-workflow venv venv-offline venv-verify wheelhouse skills-bootstrap skills-bootstrap-path demo-e2e demo-e2e-offline smoke-full context-gateway plugin-cli plugin-list plugin-inspect plugin-load plugin-validate-ceo plugin-dispatch-weekly-brief plugin-dispatch-weekly-business-review plugin-dispatch-next-followups plugin-dispatch-revenue-brief sync-plugins clone-openclaw
+.PHONY: infra-up infra-down setup-python install-deps init-db api worker scheduler start-workflow query-workflow venv venv-offline venv-verify wheelhouse skills-bootstrap skills-bootstrap-path demo-e2e demo-e2e-offline smoke-full context-gateway plugin-cli plugin-list plugin-inspect plugin-load plugin-validate-ceo plugin-dispatch-weekly-brief plugin-dispatch-weekly-business-review sync-plugins clone-openclaw
 .PHONY: infra-up infra-down setup-python install-deps init-db api worker scheduler start-workflow query-workflow venv venv-offline venv-verify wheelhouse skills-bootstrap skills-bootstrap-path demo-e2e demo-e2e-offline smoke-full context-gateway plugin-cli plugin-list plugin-inspect sync-plugins
 .PHONY: infra-up infra-down setup-python install-deps init-db api worker scheduler start-workflow query-workflow venv venv-offline venv-verify wheelhouse skills-bootstrap skills-bootstrap-path demo-e2e demo-e2e-offline smoke-full context-gateway
 .PHONY: infra-up infra-down setup-python install-deps init-db api worker scheduler start-workflow query-workflow venv venv-offline venv-verify wheelhouse
@@ -87,3 +89,24 @@ plugin-validate-ceo:
 
 plugin-dispatch-weekly-brief:
 	python apps/cli/plugin_lifecycle.py dispatch --plugin-command weekly-brief --workspace complicore --role ceo --objective "Weekly CEO brief"
+
+plugin-dispatch-weekly-business-review:
+	python apps/cli/plugin_lifecycle.py dispatch --plugin-command weekly-business-review --workspace complicore --role marketer --objective "Weekly business review"
+
+plugin-dispatch-next-followups:
+	python apps/cli/plugin_lifecycle.py dispatch --plugin-command next-followups --workspace complicore --role sales --objective "Prepare next follow-ups"
+
+plugin-dispatch-revenue-brief:
+	python apps/cli/plugin_lifecycle.py dispatch --plugin-command revenue-brief --workspace complicore --role cro --objective "Generate CRO revenue brief"
+
+bootstrap:
+	bash scripts/bootstrap.sh --online
+
+health:
+	bash scripts/check_services.sh
+
+smoke:
+	bash scripts/smoke_full.sh
+
+preflight:
+	bash scripts/preflight.sh

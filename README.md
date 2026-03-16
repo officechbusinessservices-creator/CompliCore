@@ -123,6 +123,13 @@ https://github.com/officechbusinessservices-creator/CompliCore/pull/126/conflict
 - **[Antigravity OS Plan](./docs/operations/antigravity-os-plan.md)** - Operator-first architecture (roles + workspaces + skills) with CompliCore as a workspace
 - **[Worker-Layer Startup Runbook](./docs/operations/worker-layer-startup.md)** - Correct startup order for infra, workers, scheduler, and dashboard observer
 - **[Skills Usage Guide](./docs/operations/skills-usage-guide.md)** - How to actually use installed skills, bundles, and prompt patterns
+- **[Superpowers Install Note](./docs/operations/superpowers-install-note.md)** - Optional setup notes for adding Superpowers workflows across Codex/Gemini/Claude/Cursor
+- **[Fleet Operating Model](./docs/operations/fleet-operating-model.md)** - 15-division / 1,000-agent weighted structure with command-layer governors and activation waves
+- **[Worker Scaling Playbook](./docs/operations/worker-scaling-playbook.md)** - Layered 1→100+ worker scaling, queue isolation, worker identity, and fleet monitoring controls
+- **[Gemini Automation Layer](./docs/operations/gemini-automation-layer.md)** - Fleet-brain architecture for commander/planner/reviewer/batch roles with control-plane safety
+- **[Nemotron Automation Layer](./docs/operations/nemotron-automation-layer.md)** - Open-weight local model routing layer integrated with Temporal/Postgres control surfaces
+- **[Nemotron Finalizer Flow](./docs/operations/nemotron-finalizer-flow.md)** - Planner/research/review/approval flow to finalize CompliCore using Nemotron agents
+- **[Fleet Operating Model](./docs/operations/fleet-operating-model.md)** - 15-division / 1,000-agent weighted structure with command-layer governors and activation waves
 - **[Context Layer Architecture](./docs/architecture/context-layer.md)** - OpenViking-backed context backbone design
 - **[OpenViking Evaluation](./docs/integrations/openviking-evaluation.md)** - integration scope and ownership boundaries
 - **[Plugin Governance Layer](./docs/architecture/plugin-governance-layer.md)** - Claude plugin packaging and trust-review model
@@ -533,3 +540,10 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 ### Operator live runs page
 
 After starting the web app, open `/operator-runs` to view live run status, role/workspace routing, and approval-waiting state from the worker API.
+
+
+Optional Superpowers setup note generator:
+
+```bash
+bash scripts/setup_superpowers.sh --mode codex
+```
