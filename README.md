@@ -110,7 +110,7 @@ Backend runs on [http://localhost:4000](http://localhost:4000)
 - **🛡️ Security First** - Zero-trust architecture, encryption everywhere
 
 ## 📚 Documentation
-
+https://github.com/officechbusinessservices-creator/CompliCore/pull/126/conflict?name=apps%252Fapi%252Fmain.py&base_oid=dad80c977b80f6d5bdd10f00c80004076c15fa9e&head_oid=7ad5866d0ff1a4e8539f187f6328626757fd624d
 - **[User Guide](./USER_GUIDE.md)** - Complete user documentation
 - **[Deployment Guide](./DEPLOYMENT.md)** - Production deployment instructions
 - **[Security Guide](./SECURITY_GUIDE.md)** - Open Deep Research hardening notes
@@ -129,11 +129,14 @@ Backend runs on [http://localhost:4000](http://localhost:4000)
 - **[Gemini Automation Layer](./docs/operations/gemini-automation-layer.md)** - Fleet-brain architecture for commander/planner/reviewer/batch roles with control-plane safety
 - **[Nemotron Automation Layer](./docs/operations/nemotron-automation-layer.md)** - Open-weight local model routing layer integrated with Temporal/Postgres control surfaces
 - **[Nemotron Finalizer Flow](./docs/operations/nemotron-finalizer-flow.md)** - Planner/research/review/approval flow to finalize CompliCore using Nemotron agents
+- **[Fleet Operating Model](./docs/operations/fleet-operating-model.md)** - 15-division / 1,000-agent weighted structure with command-layer governors and activation waves
 - **[Context Layer Architecture](./docs/architecture/context-layer.md)** - OpenViking-backed context backbone design
 - **[OpenViking Evaluation](./docs/integrations/openviking-evaluation.md)** - integration scope and ownership boundaries
 - **[Plugin Governance Layer](./docs/architecture/plugin-governance-layer.md)** - Claude plugin packaging and trust-review model
 - **[The Agency Integration Evaluation](./docs/integrations/agency-agents-evaluation.md)** - governed external intake decision for agency-agents
 - **[OpenClaw Quarantined Source](./external_plugins/quarantined/openclaw/README.md)** - governed intake and clone path for openclaw/openclaw
+ - **[The Agency Integration Evaluation](./docs/integrations/agency-agents-evaluation.md)** - governed external intake decision for agency-agents
+- **[Worker-Layer Startup Runbook](./docs/operations/worker-layer-startup.md)** - Correct startup order for infra, workers, scheduler, and dashboard observer
 - **[API Reference](http://localhost:3000/api-docs)** - Interactive API documentation
 - **[Public APIs Catalog](./PUBLIC_APIS.md)** - Full public-apis.org reference list
 
@@ -187,6 +190,8 @@ Install Antigravity skills (default: `~/.gemini/antigravity/skills`) with `npx a
 Start with **Essentials** for general use, **Web Wizard** for web development, and **Security Engineer** for security-focused work.
 
 The worker layer now runs a 4-stage Temporal flow (plan → research → execute → review) with PostgreSQL persistence, approval gating, artifact output, and API visibility (`/runs`, `/steps`, `/audit`, `/approvals`, `/workflow/{id}/status`, `/metrics/summary`). Plugin runtime endpoints (`/plugins/validate`, `/plugins/load`, `/plugins/dispatch`) support executable plugin command dispatch with policy boundaries. OpenViking is integrated as the context backbone (via context-gateway), while Temporal remains orchestration runtime.
+The worker layer now runs a 4-stage Temporal flow (plan → research → execute → review) with PostgreSQL persistence, approval gating, artifact output, and API visibility (`/runs`, `/steps`, `/audit`, `/approvals`, `/workflow/{id}/status`, `/metrics/summary`). OpenViking is integrated as the context backbone (via context-gateway), while Temporal remains orchestration runtime.
+The worker layer now runs a 4-stage Temporal flow (plan → research → execute → review) with PostgreSQL persistence and API visibility (`/runs`, `/steps`, `/audit`).
 Set up dependencies first with `bash scripts/setup_python_env.sh --online` or `bash scripts/setup_python_env.sh --offline ./vendor/wheels`, then follow `docs/operations/first-runnable-layer.md`.
 
 ## 🧪 Testing

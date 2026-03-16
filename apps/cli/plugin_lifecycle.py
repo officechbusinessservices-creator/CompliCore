@@ -14,6 +14,7 @@ from packages.tools.plugin_runtime import (
     load_plugins_into_registry,
     validate_plugin_manifest,
 )
+
 from packages.shared.run_store import (
     add_plugin_review,
     get_plugin_by_name,
@@ -46,6 +47,25 @@ def parse_args() -> argparse.Namespace:
         cmd.add_argument("name")
         cmd.add_argument("--by", default="operator")
         cmd.add_argument("--reason", default=None)
+    enable = sub.add_parser("enable", help="Enable plugin")
+    enable.add_argument("name")
+    enable.add_argument("--by", default="operator")
+    enable.add_argument("--reason", default=None)
+
+    disable = sub.add_parser("disable", help="Disable plugin")
+    disable.add_argument("name")
+    disable.add_argument("--by", default="operator")
+    disable.add_argument("--reason", default=None)
+
+    approve = sub.add_parser("approve", help="Approve plugin")
+    approve.add_argument("name")
+    approve.add_argument("--by", default="operator")
+    approve.add_argument("--reason", default=None)
+
+    quarantine = sub.add_parser("quarantine", help="Quarantine plugin")
+    quarantine.add_argument("name")
+    quarantine.add_argument("--by", default="operator")
+    quarantine.add_argument("--reason", default=None)
 
     register = sub.add_parser("register", help="Register plugin in registry")
     register.add_argument("name")

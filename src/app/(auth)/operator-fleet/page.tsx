@@ -32,6 +32,9 @@ export default function OperatorFleetPage() {
         setModel(modelData);
         setScalingPlan(scalingData);
         setSummary(summaryData);
+        const res = await fetch(`${OPERATOR_API_BASE}/fleet/model`, { cache: "no-store" });
+        if (!res.ok) throw new Error("Failed to load fleet model");
+        setModel(await res.json());
       } catch (e) {
         setError(e instanceof Error ? e.message : "Unknown error");
       }
@@ -44,6 +47,7 @@ export default function OperatorFleetPage() {
       <div>
         <h1 className="text-xl font-semibold">Fleet Operating Model</h1>
         <p className="text-sm text-muted-foreground">Control surfaces for command governance, role-separated workers, and scale waves from 1 worker to 100+.</p>
+        <p className="text-sm text-muted-foreground">Canonical control-surface plan for 15 divisions, 1,000 execution agents, and 10 command-layer governors.</p>
       </div>
 
       {error ? <p className="text-sm text-rose-500">{error}</p> : null}
@@ -53,6 +57,10 @@ export default function OperatorFleetPage() {
         <Metric label="Command Governors" value={model?.command_layer_agents_total ?? 0} />
         <Metric label="Active Workers" value={summary?.total_workers ?? 0} />
         <Metric label="Unhealthy Workers" value={summary?.unhealthy_workers ?? 0} />
+      <div className="grid gap-3 md:grid-cols-3">
+        <Metric label="Execution Agents" value={model?.execution_agents_total ?? 0} />
+        <Metric label="Command-Layer Agents" value={model?.command_layer_agents_total ?? 0} />
+        <Metric label="Divisions" value={model?.divisions?.length ?? 0} />
       </div>
 
       <div className="rounded-xl border border-border bg-card overflow-x-auto">

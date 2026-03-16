@@ -3,6 +3,8 @@
   "version": "0.3.0",
   "description": "CEO role plugin",
   "state": "approved",
+  "version": "0.2.0",
+  "description": "CEO role plugin",
   "commands": "./commands",
   "agents": "./agents",
   "skills": "./skills",
@@ -18,4 +20,7 @@
   "command_skill_map": {
     "weekly-brief": "create_execution_plan"
   }
+  ]
+  "version": "0.1.0",
+  "description": "CEO role plugin"
 }

@@ -12,6 +12,7 @@ interface RunRow {
   waiting_for_approval: boolean;
   artifact_link: string | null;
   last_updated: string | null;
+  created_at: string;
 }
 
 interface ApprovalRow {
@@ -35,6 +36,7 @@ export default function OperatorRunsPage() {
         const [runsRes, approvalsRes] = await Promise.all([
           fetch(`${OPERATOR_API_BASE}/runs`, { cache: "no-store" }),
           fetch(`${OPERATOR_API_BASE}/approvals?status=all`, { cache: "no-store" }),
+          fetch(`${OPERATOR_API_BASE}/approvals`, { cache: "no-store" }),
         ]);
         if (!runsRes.ok || !approvalsRes.ok) {
           throw new Error("Failed to load operator data");
@@ -57,6 +59,7 @@ export default function OperatorRunsPage() {
       if (approval.status === "pending") {
         mapping.set(approval.run_id, approval);
       }
+      mapping.set(approval.run_id, approval);
     }
     return mapping;
   }, [approvals]);
@@ -66,6 +69,7 @@ export default function OperatorRunsPage() {
       <div>
         <h1 className="text-xl font-semibold">Operator Live Runs</h1>
         <p className="text-sm text-muted-foreground">Live workflow monitor across run state, stage, approvals, artifacts, and update timestamp.</p>
+        <p className="text-sm text-muted-foreground">Live workflow monitor with approval gate visibility.</p>
       </div>
 
       {error ? <p className="text-sm text-rose-500">{error}</p> : null}
@@ -120,6 +124,32 @@ export default function OperatorRunsPage() {
             )}
           </tbody>
         </table>
+      <div className="rounded-xl border border-border bg-card overflow-hidden">
+        <div className="grid grid-cols-6 px-4 py-3 text-xs uppercase text-muted-foreground border-b border-border">
+          <span>Run</span>
+          <span>Stage / Status</span>
+          <span>Role</span>
+          <span>Workspace</span>
+          <span>Approval</span>
+          <span>Updated</span>
+        </div>
+        {runs.length === 0 ? (
+          <div className="px-4 py-8 text-sm text-muted-foreground">No live runs yet.</div>
+        ) : (
+          runs.map((run) => {
+            const approval = approvalMap.get(run.id);
+            return (
+              <div key={run.id} className="grid grid-cols-6 gap-2 px-4 py-3 text-sm border-b border-border/60 last:border-b-0">
+                <span className="font-mono text-xs truncate">{run.id}</span>
+                <span>{run.status}</span>
+                <span>{run.role}</span>
+                <span>{run.workspace}</span>
+                <span>{approval ? `${approval.status} (${approval.action_type})` : "—"}</span>
+                <span>{run.created_at ? new Date(run.created_at).toLocaleString() : "—"}</span>
+              </div>
+            );
+          })
+        )}
       </div>
     </div>
   );

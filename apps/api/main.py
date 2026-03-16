@@ -10,6 +10,7 @@ from functools import lru_cache
 
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
+from pydantic import BaseModel
 from sqlalchemy import text
 from temporalio.client import Client
 
@@ -54,6 +55,8 @@ from packages.shared.run_store import (
     create_schedule,
     decide_approval,
     execute_action,
+    create_outcome,
+    decide_approval,
     get_approval,
     get_plugin_by_name,
     get_plugin_details,
@@ -83,6 +86,11 @@ from packages.shared.run_store import (
     upsert_worker_heartbeat,
     list_worker_heartbeats,
     fleet_worker_summary,
+    list_outcomes,
+    list_plugins,
+    register_plugin,
+    set_plugin_permissions,
+    set_plugin_state,
 )
 from packages.tools.plugin_runtime import (
     PluginValidationError,
@@ -90,6 +98,13 @@ from packages.tools.plugin_runtime import (
     load_plugins_into_registry,
     validate_plugin_manifest,
 )
+from packages.shared.db import SessionLocal
+from packages.shared.models import Approval, Artifact, AuditEvent, WorkflowRun, WorkflowStep
+from packages.shared.run_store import decide_approval, get_approval
+from fastapi import FastAPI
+
+from packages.shared.db import SessionLocal
+from packages.shared.models import AuditEvent, WorkflowRun, WorkflowStep
 
 app = FastAPI(title="CompliCore API")
 
@@ -367,6 +382,17 @@ def list_runs() -> list[dict]:
                 }
             )
         return output
+        return [
+            {
+                "id": str(r.id),
+                "workflow_name": r.workflow_name,
+                "status": r.status,
+                "role": r.role,
+                "workspace": r.workspace,
+                "created_at": r.created_at.isoformat() if r.created_at else None,
+            }
+            for r in rows
+        ]
     finally:
         db.close()
 
@@ -502,6 +528,12 @@ def list_audit() -> list[dict]:
     db = SessionLocal()
     try:
         rows = db.query(AuditEvent).order_by(AuditEvent.created_at.desc()).limit(100).all()
+        rows = (
+            db.query(AuditEvent)
+            .order_by(AuditEvent.created_at.desc())
+            .limit(100)
+            .all()
+        )
         return [
             {
                 "id": str(r.id),

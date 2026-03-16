@@ -18,6 +18,7 @@ from packages.agents.activities import (
     create_approval_request_activity,
     executor_activity,
     finalize_workflow_activity,
+    executor_activity,
     planner_activity,
     researcher_activity,
     reviewer_activity,
@@ -119,6 +120,24 @@ async def main() -> None:
         raise RuntimeError("No activities configured and no orchestrator queue assigned.")
 
     await asyncio.gather(*[run_worker_for_queue(client, queue, activities, max_concurrency) for queue in queue_names])
+
+async def main() -> None:
+    client = await Client.connect(os.getenv("TEMPORAL_HOST", "localhost:7233"))
+    worker = Worker(
+        client,
+        task_queue="orchestrator-queue",
+        workflows=[OperatorCopilotWorkflow],
+        activities=[
+            planner_activity,
+            researcher_activity,
+            executor_activity,
+            reviewer_activity,
+            create_approval_request_activity,
+            finalize_workflow_activity,
+        ],
+    )
+    print("Orchestrator worker running on orchestrator-queue")
+    await worker.run()
 
 
 if __name__ == "__main__":
