@@ -1,44 +1,11 @@
-[images]
-  remote_images = ["https://source.unsplash.com/.*", "https://images.unsplash.com/.*", "https://ext.same-assets.com/.*", "https://ugc.same-assets.com/.*"]
-
 [build]
-  command = "npm run build"
-  publish = ".next"
+command = "npm run build"
+publish = ".next"
 
-  [build.environment]
-    NEXT_PUBLIC_SPLIT_BRANCH = "main"
+[build.environment]
+NODE_VERSION = "20"
 
-[functions]
-  directory = "netlify/functions"
-
-[[edge_functions]]
-  pattern = "/(.*)"
-  excludedPattern = [
-    "/api/(.*)",
-    "/fapi/(.*)",
-    "(.*).(png|svg|map|woff2|ico|css)"
-  ]
-  function = "human-enforcer"
-
-[[plugins]]
-  package = "@netlify/plugin-nextjs"
-
-# ─── Split Testing: Branch Deploy Contexts ───────────────────────────
-# Netlify builds every branch listed here as a separate deploy.
-# Split Testing in the Netlify dashboard distributes traffic between them.
-# Docs: https://docs.netlify.com/site-deploys/split-testing/
-
-[context.beta]
-  command = "npm run build"
-
-  [context.beta.environment]
-    NEXT_PUBLIC_SPLIT_BRANCH = "beta"
-
-# Allow branch deploys only for branches used in split tests
-[context.branch-deploy]
-  command = "npm run build"
-
-[[headers]]
-  for = "/*"
-  [headers.values]
-    X-Split-Branch = "main"
+[[redirects]]
+from = "/*"
+to = "/index.html"
+status = 200
