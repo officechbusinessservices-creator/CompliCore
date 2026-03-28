@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "Complicore+ (Next.js)",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "port": 3000
+    },
+    {
+      "name": "CompliCore CFO (Express + Vite)",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["-c", "cd /Users/eliaschouchani/Documents/Claude/Projects/Complicore+/complicore-cfo && npm run dev"],
+      "port": 3000
+    }
+  ]
+}
