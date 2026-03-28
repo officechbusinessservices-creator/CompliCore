@@ -1,0 +1,54 @@
+{
+  "providers": [
+    {
+      "id": "gemini",
+      "category": "hosted",
+      "roles": ["commander", "planner", "reviewer", "batch_worker_brain"],
+      "deployment_mode": "api",
+      "strengths": [
+        "function/tool calling",
+        "batch API for asynchronous large workloads",
+        "high-quality planning and review"
+      ],
+      "risk_controls": [
+        "approval gates for external side effects",
+        "policy guard before dispatch",
+        "budget caps and request quotas"
+      ]
+    },
+    {
+      "id": "nemotron-3-super-120b-a12b",
+      "category": "open_weight_local",
+      "roles": ["planner", "reviewer", "research"],
+      "deployment_mode": "self-hosted",
+      "positioning": "Open-weight local flagship for high-throughput private workloads",
+      "claims_reference": {
+        "deepresearch_bench": "#1 SOTA (source-provided)",
+        "pinchbench": "84.7% (source-provided)",
+        "active_params_per_token": "12B (A12B LatentMoE)"
+      },
+      "preferred_use_cases": [
+        "private-document research",
+        "long-context synthesis",
+        "local-first enterprise workloads",
+        "cost-controlled review batches"
+      ],
+      "do_not_use_for": [
+        "direct destructive actions without approval",
+        "single-point monolithic control of entire fleet",
+        "replacing orchestration database or policy controls"
+      ],
+      "runtime_notes": [
+        "Use as model provider behind router service, not as workflow engine",
+        "Keep Temporal as orchestration and Postgres as system-of-record",
+        "Route non-urgent parallel jobs to batch worker flows"
+      ]
+    }
+  ],
+  "routing_policy": {
+    "interactive_high_priority": ["gemini"],
+    "local_private_high_volume": ["nemotron-3-super-120b-a12b"],
+    "batch_non_urgent": ["gemini", "nemotron-3-super-120b-a12b"],
+    "fallback_order": ["gemini", "nemotron-3-super-120b-a12b"]
+  }
+}

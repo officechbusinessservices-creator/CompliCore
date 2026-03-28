@@ -1,0 +1,188 @@
+From 9be6b88cfa71e90b039165c7c35c9022347712ce Mon Sep 17 00:00:00 2001
+From: CompliCore Setup <office.ch.business.services@gmail.com>
+Date: Wed, 25 Mar 2026 15:08:38 -0400
+Subject: [PATCH] Add essential Next.js configuration files to fix Netlify
+ build process
+
+- package.json: Declare Node.js dependencies and scripts
+- tsconfig.json: TypeScript compiler configuration with strict type checking
+- next.config.ts: Next.js build configuration
+- postcss.config.js: Tailwind CSS and Autoprefixer pipeline
+- .gitignore: Standard Node.js/Next.js ignore patterns
+
+These files resolve the Netlify deployment failure that was incorrectly attempting a Python build instead of detecting this as a Next.js project.
+---
+ .gitignore        | 41 +++++++++++++++++++++++++++++++++++++++++
+ next.config.ts    | 12 ++++++++++++
+ package.json      | 32 ++++++++++++++++++++++++++++++++
+ postcss.config.js |  6 ++++++
+ tsconfig.json     | 38 ++++++++++++++++++++++++++++++++++++++
+ 5 files changed, 129 insertions(+)
+ create mode 100644 .gitignore
+ create mode 100644 next.config.ts
+ create mode 100644 package.json
+ create mode 100644 postcss.config.js
+ create mode 100644 tsconfig.json
+
+diff --git a/.gitignore b/.gitignore
+new file mode 100644
+index 0000000..9d0c4f4
+--- /dev/null
++++ b/.gitignore
+@@ -0,0 +1,41 @@
++# Dependencies
++node_modules
++/.pnp
++.pnp.js
++
++# Testing
++/coverage
++
++# Next.js
++/.next/
++/out/
++
++# Production
++/build
++
++# Misc
++.DS_Store
++*.pem
++
++# Debug
++npm-debug.log*
++yarn-debug.log*
++yarn-error.log*
++
++# Local env files
++.env
++.env.local
++.env.development.local
++.env.test.local
++.env.production.local
++
++# IDE
++.idea
++.vscode
++*.swp
++*.swo
++*~
++
++# OS
++.DS_Store
++Thumbs.db
+diff --git a/next.config.ts b/next.config.ts
+new file mode 100644
+index 0000000..a58af87
+--- /dev/null
++++ b/next.config.ts
+@@ -0,0 +1,12 @@
++import type { NextConfig } from 'next'
++
++const nextConfig: NextConfig = {
++  reactStrictMode: true,
++  swcMinify: true,
++  productionBrowserSourceMaps: false,
++  experimental: {
++    typedRoutes: true,
++  },
++}
++
++export default nextConfig
+diff --git a/package.json b/package.json
+new file mode 100644
+index 0000000..fba5c5b
+--- /dev/null
++++ b/package.json
+@@ -0,0 +1,32 @@
++{
++  "name": "complicore",
++  "version": "1.0.0",
++  "description": "CompliCore+ — Zero Operational Friction",
++  "private": true,
++  "scripts": {
++    "dev": "next dev",
++    "build": "next build",
++    "start": "next start",
++    "lint": "next lint"
++  },
++  "dependencies": {
++    "react": "^19.0.0",
++    "react-dom": "^19.0.0",
++    "next": "^15.0.0",
++    "@supabase/supabase-js": "^2.43.0",
++    "@supabase/ssr": "^0.1.0",
++    "stripe": "^17.0.0",
++    "tailwindcss": "^3.4.0"
++  },
++  "devDependencies": {
++    "typescript": "^5.3.3",
++    "@types/node": "^20.10.5",
++    "@types/react": "^18.2.45",
++    "@types/react-dom": "^18.2.18",
++    "autoprefixer": "^10.4.16",
++    "postcss": "^8.4.32"
++  },
++  "engines": {
++    "node": ">=18.0.0"
++  }
++}
+diff --git a/postcss.config.js b/postcss.config.js
+new file mode 100644
+index 0000000..33ad091
+--- /dev/null
++++ b/postcss.config.js
+@@ -0,0 +1,6 @@
++module.exports = {
++  plugins: {
++    tailwindcss: {},
++    autoprefixer: {},
++  },
++}
+diff --git a/tsconfig.json b/tsconfig.json
+new file mode 100644
+index 0000000..61d359a
+--- /dev/null
++++ b/tsconfig.json
+@@ -0,0 +1,38 @@
++{
++  "compilerOptions": {
++    "target": "ES2020",
++    "lib": ["ES2020", "DOM", "DOM.Iterable"],
++    "jsx": "preserve",
++    "module": "ESNext",
++    "moduleResolution": "bundler",
++    "allowImportingTsExtensions": true,
++    "resolveJsonModule": true,
++    "isolatedModules": true,
++    "noEmit": true,
++    "skipLibCheck": true,
++    "esModuleInterop": true,
++    "allowSyntheticDefaultImports": true,
++    "strict": true,
++    "noUncheckedIndexedAccess": true,
++    "noImplicitOverride": true,
++    "forceConsistentCasingInFileNames": true,
++    "baseUrl": ".",
++    "paths": {
++      "@/*": ["./*"]
++    },
++    "plugins": [
++      {
++        "name": "next"
++      }
++    ]
++  },
++  "include": [
++    "next-env.d.ts",
++    "**/*.ts",
++    "**/*.tsx",
++    ".next/types/**/*.ts"
++  ],
++  "exclude": [
++    "node_modules"
++  ]
++}
+-- 
+2.34.1
+

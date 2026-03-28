@@ -1,0 +1,65 @@
+{
+  "color": {
+    "primary": "#6EA8FE",
+    "primaryHover": "#8AB8FF",
+    "surface": "#11182D",
+    "canvas": "#0B1020",
+    "surfaceElevated": "#16203A",
+    "border": "#25314F",
+    "textPrimary": "#F5F7FB",
+    "textSecondary": "#B8C1D9",
+    "success": "#22C55E",
+    "warning": "#F59E0B",
+    "danger": "#EF4444"
+  },
+  "font": {
+    "family": "Inter, system-ui, sans-serif",
+    "weightRegular": 400,
+    "weightMedium": 500,
+    "weightSemibold": 600,
+    "weightBold": 700
+  },
+  "typeScale": {
+    "12": "12px",
+    "14": "14px",
+    "16": "16px",
+    "18": "18px",
+    "20": "20px",
+    "24": "24px",
+    "30": "30px",
+    "36": "36px",
+    "48": "48px"
+  },
+  "spacing": {
+    "1": "8px",
+    "2": "16px",
+    "3": "24px",
+    "4": "32px",
+    "5": "40px",
+    "6": "48px",
+    "7": "64px",
+    "8": "80px"
+  },
+  "radius": {
+    "sm": "8px",
+    "md": "12px",
+    "lg": "16px",
+    "xl": "20px"
+  },
+  "shadow": {
+    "sm": "0 2px 8px rgba(0,0,0,.18)",
+    "md": "0 8px 24px rgba(0,0,0,.24)",
+    "lg": "0 16px 40px rgba(0,0,0,.28)"
+  },
+  "breakpoint": {
+    "mobile": "375px",
+    "tablet": "768px",
+    "desktop": "1440px"
+  },
+  "motion": {
+    "standard": "180ms",
+    "medium": "220ms",
+    "slow": "300ms",
+    "hero": "500ms"
+  }
+}
