@@ -4,6 +4,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from packages.shared.db import SessionLocal
+from packages.shared.models import Approval, Artifact, AuditEvent, WorkflowRun, WorkflowStep
+
+ARTIFACTS_DIR = Path("artifacts")
 from packages.shared.models import (
     Account,
     Action,

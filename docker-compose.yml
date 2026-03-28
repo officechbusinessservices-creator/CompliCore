@@ -1,5 +1,6 @@
 version: "3.9"
 
+
 services:
   postgres:
     image: postgres:16
@@ -106,6 +107,27 @@ services:
       POSTGRES_DB: complicore
       POSTGRES_USER: complicore
       POSTGRES_PASSWORD: complicore
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7
+    container_name: complicore-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: complicore-qdrant
+    restart: unless-stopped
+    ports:
+      - "6333:6333"
+    volumes:
+      - qdrant_data:/qdrant/storage
+
     ports:
       - "5432:5432"
     volumes:
@@ -307,6 +329,8 @@ services:
       - "7233:7233"
 
 
+
+
   openviking:
     image: ghcr.io/volcengine/openviking:latest
     container_name: complicore-openviking
@@ -326,6 +350,7 @@ services:
     environment:
       OPENVIKING_BASE_URL: http://openviking:9701
       PYTHONPATH: /workspace
+    volumes:
     volumes:
       - ./:/workspace
     command: >
@@ -434,6 +459,7 @@ services:
       - temporal
     environment:
       TEMPORAL_ADDRESS: temporal:7233
+    ports:
     ports:
     ports:
     ports:
