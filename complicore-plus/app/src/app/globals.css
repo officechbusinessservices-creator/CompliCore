@@ -1,0 +1,86 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-canvas: #0B1020;
+  --bg-surface: #11182D;
+  --bg-elevated: #16203A;
+  --brand-primary: #6EA8FE;
+  --brand-hover: #8AB8FF;
+  --success: #22C55E;
+  --warning: #F59E0B;
+  --danger: #EF4444;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: #0B1020;
+  color: #F5F7FB;
+  font-family: 'Inter', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+::-webkit-scrollbar-track {
+  background: #0B1020;
+}
+::-webkit-scrollbar-thumb {
+  background: #25314F;
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #33426A;
+}
+
+/* Focus */
+:focus-visible {
+  outline: 2px solid #6EA8FE;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Animations */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes pulse-once {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+.animate-fade-up {
+  animation: fadeUp 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+.animate-fade-up-delay-1 {
+  animation: fadeUp 0.5s 0.1s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.animate-fade-up-delay-2 {
+  animation: fadeUp 0.5s 0.2s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.animate-fade-up-delay-3 {
+  animation: fadeUp 0.5s 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
