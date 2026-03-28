@@ -32,3 +32,22 @@
 
 - This manifesto is designed to pair with `contracts/ComplicoreInstantSettlement.sol`.
 - Agent execution **must not** emit settlement-intent unless booking escrow exists and compliance oracle path is valid.
+
+---
+
+## Ruflo Agent Runtime
+
+Ruflo is the recommended runtime for deploying and orchestrating CompliCore sub-agents locally or in CI.
+
+### Install
+
+```bash
+# One-line install (recommended)
+curl -fsSL https://cdn.jsdelivr.net/gh/ruvnet/ruflo@main/scripts/install.sh | bash
+
+# Or full setup with MCP + diagnostics
+curl -fsSL https://cdn.jsdelivr.net/gh/ruvnet/ruflo@main/scripts/install.sh | bash -s -- --full
+
+# Or via npx
+npx ruflo@latest init --wizard
+```
