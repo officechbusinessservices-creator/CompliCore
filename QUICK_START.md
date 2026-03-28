@@ -1,8 +1,9 @@
-# Quick Start Guide
+# 🚀 Quick Start: Deploy to complicore.live
 
-Get CompliCore up and running in 5 minutes!
+## Problem Solved ✅
+Netlify was failing because it couldn't find Next.js configuration files. All required files have been created and committed locally.
 
-## 🚀 Fastest Way to Start
+## What You Need to Do (3 Simple Steps)
 
 ```bash
 # 1. Install dependencies
@@ -134,74 +135,37 @@ Password: Demo1234
 ```
 
 ## 🛠️ Common Commands
+### Step 1: Get the Patch File
+Download the patch file: `0001-next-js-config-fix.patch`
 
+### Step 2: Apply to Your GitHub Repo
 ```bash
-# Development
-npm run dev              # Start frontend
-cd backend && npm run dev # Start backend
+# Clone your repo (if not already cloned)
+git clone https://github.com/officechbusinessservices-creator/CompliCore.git
+cd CompliCore
 
-# Building
-npm run build            # Build for production
-npm run start            # Start production server
+# Apply the patch
+git apply /path/to/0001-next-js-config-fix.patch
 
-# Testing
-npm test                 # Run all tests
-npm run lint             # Check code quality
-
-# Database
-cd backend
-npx prisma studio        # Open database GUI
-npx prisma migrate dev   # Run migrations
-npm run seed             # Seed sample data
+# Push to GitHub
+git push origin main
 ```
 
-## 🐛 Troubleshooting
+### Step 3: Wait for Netlify
+Once you push to GitHub, Netlify will automatically:
+1. Detect the changes
+2. Start a new build with **Node.js** (not Python)
+3. Deploy successfully to **complicore.live**
 
-### Port Already in Use
+## Files Being Added
+- ✅ `package.json` - Node.js dependencies
+- ✅ `tsconfig.json` - TypeScript config
+- ✅ `next.config.ts` - Next.js config
+- ✅ `postcss.config.js` - CSS pipeline
+- ✅ `.gitignore` - Git ignore rules
 
-```bash
-# Kill process on port 3000
-lsof -ti:3000 | xargs kill -9
+## That's It!
+Your site will be live at **complicore.live** once the Netlify build completes (usually 1-3 minutes).
 
-# Or use a different port
-npm run dev -- -p 3001
-```
-
-### Database Connection Error
-
-```bash
-# Check PostgreSQL is running
-brew services list
-
-# Start PostgreSQL
-brew services start postgresql@15
-
-# Create database
-createdb rental_dev
-```
-
-### Module Not Found
-
-```bash
-# Clear cache and reinstall
-rm -rf node_modules package-lock.json
-npm install
-```
-
-## 📚 Learn More
-
-- **[User Guide](./USER_GUIDE.md)** - Complete documentation
-- **[Deployment Guide](./DEPLOYMENT.md)** - Production deployment
-- **[README](./README.md)** - Full project overview
-
-## 💡 Tips
-
-1. **No Database?** The frontend works standalone with mock data
-2. **Want to customize?** Edit files in `src/app/` and see changes instantly
-3. **Need help?** Check the [User Guide](./USER_GUIDE.md) or [docs/](./docs/) folder
-
-## 🎉 You're Ready!
-
-Start exploring the platform at [http://localhost:3000](http://localhost:3000)
-
-Happy coding! 🚀
+## Need Help?
+See `DEPLOYMENT_INSTRUCTIONS.md` for detailed information and alternative methods.

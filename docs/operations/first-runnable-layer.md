@@ -7,6 +7,9 @@ This repository now includes a multi-step autonomous layer:
 1. Infrastructure in `docker-compose.yml` (Postgres, Redis, Qdrant, Temporal, Temporal UI, optional OpenViking + context-gateway profile)
 2. Shared database layer and SQLAlchemy models
 3. FastAPI API (`/health`, `/runs`, `/steps`, `/audit`, `/approvals`, `/workflow/{id}/status`)
+1. Infrastructure in `docker-compose.yml` (Postgres, Redis, Qdrant, Temporal, Temporal UI)
+2. Shared database layer and SQLAlchemy models
+3. FastAPI API (`/health`, `/runs`, `/steps`, `/audit`)
 4. Temporal workflow (`operator_copilot`) with 4 bounded stages
 5. Orchestrator worker (`orchestrator-queue`) with registered activities
 6. CLI launcher for DB-backed workflow runs
@@ -207,3 +210,74 @@ curl http://localhost:8000/context/workspaces
 ```
 
 If OpenViking is unavailable, retrieval falls back to local files under `data/workspaces/<workspace>`.
+
+
+## Plugin governance layer
+
+Use Claude-compatible plugin packaging under:
+
+- `plugins/` (internal)
+- `external_plugins/approved/`
+- `external_plugins/quarantined/`
+
+Do not activate discovered plugins directly. Route through review and approval workflow first.
+
+
+### The Agency intake (governed)
+
+External plugin intake path:
+
+- `external_plugins/quarantined/the-agency/`
+
+Do not run direct plugin activation from external source until review is complete.
+
+
+### Plugin lifecycle CLI
+
+```bash
+# Wrapper matching desired command style
+./scripts/antigravity plugin list
+./scripts/antigravity plugin inspect role-ceo
+./scripts/antigravity plugin approve role-ceo --by operator
+./scripts/antigravity plugin enable role-ceo --by operator
+./scripts/antigravity plugin disable role-ceo --by operator
+./scripts/antigravity plugin quarantine role-ceo --by operator
+```
+
+
+Register filesystem plugins in DB registry:
+
+```bash
+python scripts/sync_plugins_registry.py
+# or
+make sync-plugins
+```
+
+
+### OpenClaw repo intake
+
+```bash
+# clone as quarantined source (not auto-enabled)
+bash scripts/clone_openclaw_repo.sh
+# or
+make clone-openclaw
+```
+
+
+### Plugin-backed operator demo
+
+```bash
+# sync and load executable plugin inventory
+python scripts/sync_plugins_registry.py
+curl -X POST http://localhost:8000/plugins/load
+
+# validate manifest and structure
+curl -X POST http://localhost:8000/plugins/validate \
+  -H "Content-Type: application/json" \
+  -d "{"plugin_path":"plugins/role-ceo"}"
+
+# dispatch command through plugin runtime
+curl -X POST http://localhost:8000/plugins/dispatch \
+  -H "Content-Type: application/json" \
+  -d "{"command":"weekly-brief","workspace":"complicore","role":"ceo","objective":"Create weekly CEO brief"}"
+```

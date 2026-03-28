@@ -1,0 +1,58 @@
+{
+  "name": "Gemini Automation Layer",
+  "purpose": "Use Gemini as planner/router/reviewer/batch brain over the worker fleet without replacing Temporal, Postgres, or approvals.",
+  "roles": [
+    {
+      "name": "commander",
+      "responsibilities": [
+        "decompose objectives",
+        "route work to divisions",
+        "assign queues and priorities"
+      ]
+    },
+    {
+      "name": "planner",
+      "responsibilities": [
+        "create execution plans",
+        "select skills",
+        "choose agent classes"
+      ]
+    },
+    {
+      "name": "reviewer",
+      "responsibilities": [
+        "validate outputs",
+        "catch contradictions",
+        "score quality before commit"
+      ]
+    },
+    {
+      "name": "batch_worker_brain",
+      "responsibilities": [
+        "handle high-volume asynchronous non-urgent tasks",
+        "run batch evaluations/classification/summarization",
+        "reduce cost for large review passes"
+      ]
+    }
+  ],
+  "not_allowed": [
+    "workflow engine replacement",
+    "approval system replacement",
+    "database replacement",
+    "single monolithic super-agent",
+    "exclusive model dependency"
+  ],
+  "service_topology": [
+    "apps/gemini-router",
+    "apps/gemini-batch-manager",
+    "apps/gemini-review-service",
+    "apps/gemini-cli-bridge"
+  ],
+  "initial_workflows": [
+    "create_execution_plan",
+    "repo_review_plan",
+    "weekly_ceo_brief",
+    "pipeline_followup_drafts",
+    "batch_quality_review"
+  ]
+}

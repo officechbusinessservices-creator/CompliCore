@@ -1,0 +1,23 @@
+{
+  "name": "role-marketer",
+  "version": "0.1.0",
+  "description": "Marketing operator plugin for campaign planning and channel analysis.",
+  "state": "approved",
+  "commands": "./commands",
+  "agents": "./agents",
+  "skills": "./skills",
+  "workspace_scope": ["global", "complicore", "livily", "zelloo", "personal"],
+  "role_scope": ["marketer", "ceo", "operator"],
+  "required_permissions": [
+    "workspace_access",
+    "role_access",
+    "secrets_use",
+    "network_use",
+    "mcp_endpoints"
+  ],
+  "command_skill_map": {
+    "campaign-brief": "build_campaign_plan",
+    "content-priorities": "generate_content_queue",
+    "weekly-business-review": "analyze_channel_performance"
+  }
+}

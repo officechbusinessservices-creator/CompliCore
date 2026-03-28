@@ -53,6 +53,24 @@ Windows users: symlink handling can break skill layout if cloning without symlin
 
 ## Installation
 
+
+## Superpowers plugin (optional)
+
+If you want structured design→plan→subagent workflows (brainstorming, writing plans, TDD, review gates), install **Superpowers** and keep it as an additional skill system alongside Antigravity.
+
+### Quick install references
+
+- Codex: `Fetch and follow instructions from https://raw.githubusercontent.com/obra/superpowers/refs/heads/main/.codex/INSTALL.md`
+- Gemini CLI: `gemini extensions install https://github.com/obra/superpowers`
+- Claude marketplace: `/plugin install superpowers@claude-plugins-official`
+- Cursor: `/add-plugin superpowers`
+
+To store local installation notes in this repo, run:
+
+```bash
+bash scripts/setup_superpowers.sh --mode codex
+```
+
 ### Option A — npx (recommended)
 
 ```bash

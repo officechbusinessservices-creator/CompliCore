@@ -174,6 +174,15 @@ antigravity-os/
 │  ├─ temporal/
 │  ├─ openviking/
 │  └─ observability/
+├─ plugins/
+│  ├─ workspace-complicore/
+│  ├─ role-ceo/
+│  ├─ role-builder/
+│  ├─ example-internal-plugin/
+│  └─ internal-example/
+├─ external_plugins/
+│  ├─ approved/
+│  └─ quarantined/
 ├─ scripts/
 ├─ tests/
 └─ docs/
@@ -263,6 +272,7 @@ Recommended cross-workspace entities:
 - workspace_projects, tasks, decisions, notes
 - contacts, opportunities, skills
 - workflow_runs, artifacts, memories, approvals, audit_events
+- plugins, plugin_versions, plugin_permissions, plugin_installations, plugin_reviews, plugin_states
 
 ## CLI Direction
 
@@ -298,3 +308,136 @@ Final separation:
 Adopt **OpenViking** as the context database for Antigravity OS.
 Use it for workspace resources, user memory, agent memory, and skill-linked retrieval through `viking://` URI roots.
 Keep **Temporal** as workflow engine and **PostgreSQL** as transactional system of record.
+
+
+## Plugin Marketplace and Packaging Layer
+
+Adopt the **Claude Code Plugins Directory** as the distribution and packaging model for Claude-compatible extensions.
+
+Use it for:
+
+- installing vetted Claude Code plugins
+- discovering reusable MCP-backed integrations
+- packaging internal Antigravity OS extensions in Claude-compatible format
+- organizing commands, agents, skills, and MCP configs in one plugin unit
+
+### Claude Plugin Directory Standard
+
+```text
+plugin-name/
+├── .claude-plugin/
+│   └── plugin.json
+├── .mcp.json
+├── commands/
+├── agents/
+├── skills/
+└── README.md
+```
+
+### Revised Stack Placement
+
+```text
+Terminal / CLI
+    ↓
+Workflow Engine (Temporal)
+    ↓
+Agents / Skills / Policies
+    ↓
+Plugin Layer
+    ├─ Claude Code Plugins Directory
+    ├─ Internal plugins
+    └─ External plugins
+    ↓
+Context Layer (OpenViking)
+    ↓
+System DB (PostgreSQL)
+```
+
+### Separation Rules
+
+Plugin layer does **not** replace:
+
+- native tools layer
+- internal MCP servers
+- workflow engine
+- approval engine
+
+### Internal vs External Plugin Paths
+
+- `plugins/` for internal role/workspace extensions
+- `external_plugins/approved/` for production-allowed third-party plugins
+- `external_plugins/quarantined/` for review-only plugins
+
+## Claude Code Plugin Standard
+
+Antigravity OS supports Claude Code plugin packaging as a first-class extension model.
+Internal extensions follow the Claude plugin directory structure, including plugin metadata, optional MCP config, commands, agents, skills, and docs.
+External plugins are isolated behind review and approval before activation.
+
+## Plugin Governance Policy
+
+### Required checks before activation
+
+- source verified
+- README reviewed
+- MCP scope reviewed
+- permissions reviewed
+- commands reviewed
+- agent behavior reviewed
+- skills reviewed
+- network behavior reviewed
+- secrets exposure risk reviewed
+- sandbox decision made
+
+### Plugin lifecycle states
+
+- discovered
+- quarantined
+- approved
+- disabled
+- deprecated
+
+### Plugin governance entities (PostgreSQL)
+
+- `plugins`
+- `plugin_versions`
+- `plugin_permissions`
+- `plugin_installations`
+- `plugin_reviews`
+- `plugin_states`
+
+## Plugin Standardization Phase (Roadmap)
+
+After approval gating and role/workspace routing:
+
+1. create `plugins/` and `external_plugins/`
+2. define `.claude-plugin/plugin.json` schema baseline
+3. create internal plugin template
+4. add plugin registry tables
+5. add plugin review workflow
+6. add plugin state machine
+7. add install/enable/disable commands
+8. enforce approved/quarantined separation
+
+## CLI Direction (Extended)
+
+```bash
+antigravity plugin list
+antigravity plugin inspect <name>
+antigravity plugin install <name>
+antigravity plugin review <name>
+antigravity plugin approve <name>
+antigravity plugin disable <name>
+antigravity plugin enable <name>
+```
+
+
+## External Plugin Intake Example
+
+Add **The Agency** (`msitarzewski/agency-agents`) as a quarantined external plugin source.
+Do not activate directly from marketplace source; require governance review and explicit promotion into `external_plugins/approved/`.
+
+- Add `openclaw/openclaw` as a quarantined external source and require explicit review before promotion.
+
+
+- Add plugin manifest validation, approved-only loader, command dispatch, execution boundaries, and plugin audit events as runtime requirements.

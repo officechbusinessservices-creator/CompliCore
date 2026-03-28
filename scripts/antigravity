@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [[ "${1:-}" != "plugin" ]]; then
+  echo "Usage: antigravity plugin <list|inspect|install|enable|disable|approve|quarantine|register|review> ..."
+  exit 1
+fi
+shift
+python apps/cli/plugin_lifecycle.py "$@"

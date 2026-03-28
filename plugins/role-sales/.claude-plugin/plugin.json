@@ -1,0 +1,22 @@
+{
+  "name": "role-sales",
+  "version": "0.1.0",
+  "description": "Sales execution plugin with follow-up and pipeline advancement commands.",
+  "state": "approved",
+  "commands": "./commands",
+  "agents": "./agents",
+  "skills": "./skills",
+  "workspace_scope": ["global", "complicore", "livily", "zelloo", "personal"],
+  "role_scope": ["sales", "operator", "ceo"],
+  "required_permissions": [
+    "workspace_access",
+    "role_access",
+    "secrets_use",
+    "network_use",
+    "mcp_endpoints"
+  ],
+  "command_skill_map": {
+    "pipeline-brief": "advance_pipeline",
+    "next-followups": "prepare_followups"
+  }
+}
