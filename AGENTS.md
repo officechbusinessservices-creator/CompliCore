@@ -51,3 +51,40 @@ curl -fsSL https://cdn.jsdelivr.net/gh/ruvnet/ruflo@main/scripts/install.sh | ba
 # Or via npx
 npx ruflo@latest init --wizard
 ```
+
+---
+
+## Integrated Agent Frameworks
+
+Complicore integrates 8 external agent frameworks and skill libraries to power its 1,000-agent fleet:
+
+### Context & Memory
+- **OpenViking** (`packages/openviking/`) - Context database backbone with tiered loading (L0/L1/L2)
+
+### Agent Fleet (144+ Personalities)
+- **Agency Agents** (`external_plugins/approved/agency-agents-*/`) - Specialized agents across 12 divisions
+- **Oh-My-Claudecode** (`packages/oh-my-claudecode/`) - Multi-agent orchestration with 19 roles + model routing
+
+### Dev Workflows & Skills
+- **Superpowers** (`skills/`, `packages/skills/`) - TDD, systematic debugging, subagent-driven development
+- **Skills (Pocock)** (`skills/`) - PRD creation, implementation planning, git guardrails, DDD extraction
+
+### Agent Runtimes
+- **Deer-Flow** (`packages/deer-flow/`) - Sub-agent harness with sandbox execution (ByteDance)
+- **Open-SWE** (`packages/open-swe/`) - Coding agent with cloud sandbox + Slack/Linear/GitHub surfaces (LangChain)
+- **Agent-Framework** (`packages/agent-framework/`) - Graph workflows, HITL, A2A hosting (Microsoft)
+
+### Skill Registry
+All skills from Superpowers and Pocock are available in `skills/`:
+- `test-driven-development/` - Red-green-refactor cycle
+- `systematic-debugging/` - Root cause analysis
+- `subagent-driven-development/` - Parallel execution
+- `write-a-prd/` - Interactive PRD creation
+- `prd-to-plan/` - Implementation planning
+- `tdd/` - Test-driven development
+- `triage-issue/` - Bug investigation
+- `grill-me/` - Adversarial design review
+- `git-guardrails-claude-code/` - Git safety
+- `ubiquitous-language/` - DDD glossary extraction
+
+For full integration details, see `docs/integrations/EXTERNAL_INTEGRATIONS.md`
