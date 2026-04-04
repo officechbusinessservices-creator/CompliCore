@@ -1,0 +1,37 @@
+{
+  "protocol": "CCP-301",
+  "version": "draft-2026-02-12",
+  "title": "Real-World Asset Bridge Manifest",
+  "asset_class": "Fractional_Real_Estate",
+  "compliance_engine": "CCP-201_Integrated",
+  "legal_wrapper": {
+    "type": "SPV",
+    "custody_model": "Tier-1_Custodian_Enclave",
+    "jurisdiction_binding": true
+  },
+  "verification_method": {
+    "type": "Chainlink_Proof_of_Reserve",
+    "heartbeat_seconds": 60,
+    "threshold": "1.0_Asset_to_1.0_Token"
+  },
+  "token_standard": {
+    "name": "ERC-7518",
+    "identity_bound": true,
+    "transfer_mode": "DvP_Atomic"
+  },
+  "transfer_restrictions": {
+    "kyc_required": true,
+    "ssi_required": true,
+    "geofence": ["EU", "US", "SG"],
+    "min_holding_period": "24h"
+  },
+  "policy_linkage": {
+    "jurisdiction_policy": "CCP-201",
+    "deny_on_policy_mismatch": true,
+    "audit_reason_codes": true
+  },
+  "settlement_slo": {
+    "target_p95_seconds": 2,
+    "integrity_target": "99.99%"
+  }
+}

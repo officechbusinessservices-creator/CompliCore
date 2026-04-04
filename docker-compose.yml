@@ -1,0 +1,521 @@
+version: "3.9"
+
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: complicore-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: complicore
+      POSTGRES_USER: complicore
+      POSTGRES_PASSWORD: complicore
+    ports:
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: complicore-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: complicore
+      POSTGRES_USER: complicore
+      POSTGRES_PASSWORD: complicore
+    ports:
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: complicore-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: complicore
+      POSTGRES_USER: complicore
+      POSTGRES_PASSWORD: complicore
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7
+    container_name: complicore-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: complicore-qdrant
+    restart: unless-stopped
+    ports:
+      - "6333:6333"
+    volumes:
+      - qdrant_data:/qdrant/storage
+
+  temporal-postgresql:
+    image: postgres:16
+    container_name: temporal-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: temporal
+      POSTGRES_PASSWORD: temporal
+      POSTGRES_DB: temporal
+    ports:
+      - "5433:5432"
+
+  temporal:
+    image: temporalio/auto-setup:latest
+    container_name: complicore-temporal
+    restart: unless-stopped
+    depends_on:
+      - temporal-postgresql
+    environment:
+      DB: postgresql
+      DB_PORT: 5432
+      POSTGRES_USER: temporal
+      POSTGRES_PWD: temporal
+      POSTGRES_SEEDS: temporal-postgresql
+    ports:
+      - "7233:7233"
+
+
+  openviking:
+    image: ghcr.io/volcengine/openviking:latest
+    container_name: complicore-openviking
+    restart: unless-stopped
+    profiles: ["context"]
+    ports:
+      - "9701:9701"
+
+  context-gateway:
+    image: python:3.11-slim
+    container_name: complicore-context-gateway
+    restart: unless-stopped
+    profiles: ["context"]
+    depends_on:
+      - openviking
+    working_dir: /workspace
+    environment:
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: complicore-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: complicore
+      POSTGRES_USER: complicore
+      POSTGRES_PASSWORD: complicore
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7
+    container_name: complicore-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: complicore-qdrant
+    restart: unless-stopped
+    ports:
+      - "6333:6333"
+    volumes:
+      - qdrant_data:/qdrant/storage
+
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7
+    container_name: complicore-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: complicore-qdrant
+    restart: unless-stopped
+    ports:
+      - "6333:6333"
+    volumes:
+      - qdrant_data:/qdrant/storage
+
+  temporal-postgresql:
+    image: postgres:16
+    container_name: temporal-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: temporal
+      POSTGRES_PASSWORD: temporal
+      POSTGRES_DB: temporal
+    ports:
+      - "5433:5432"
+
+  temporal:
+    image: temporalio/auto-setup:latest
+    container_name: complicore-temporal
+    restart: unless-stopped
+    depends_on:
+      - temporal-postgresql
+    environment:
+      DB: postgresql
+      DB_PORT: 5432
+      POSTGRES_USER: temporal
+      POSTGRES_PWD: temporal
+      POSTGRES_SEEDS: temporal-postgresql
+    ports:
+      - "7233:7233"
+
+
+  openviking:
+    image: ghcr.io/volcengine/openviking:latest
+    container_name: complicore-openviking
+    restart: unless-stopped
+    profiles: ["context"]
+    ports:
+    environment:
+      POSTGRES_USER: temporal
+      POSTGRES_PASSWORD: temporal
+      POSTGRES_DB: temporal
+    ports:
+      - "5433:5432"
+
+  temporal:
+    image: temporalio/auto-setup:latest
+    container_name: complicore-temporal
+    restart: unless-stopped
+    depends_on:
+      - temporal-postgresql
+    environment:
+      DB: postgresql
+      DB_PORT: 5432
+      POSTGRES_USER: temporal
+      POSTGRES_PWD: temporal
+      POSTGRES_SEEDS: temporal-postgresql
+    ports:
+      - "7233:7233"
+
+
+  openviking:
+    image: ghcr.io/volcengine/openviking:latest
+    container_name: complicore-openviking
+    restart: unless-stopped
+    profiles: ["context"]
+    ports:
+      - "9701:9701"
+
+  context-gateway:
+    image: python:3.11-slim
+    container_name: complicore-context-gateway
+    restart: unless-stopped
+    profiles: ["context"]
+    depends_on:
+
+  temporal-postgresql:
+    image: postgres:16
+    container_name: temporal-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: temporal
+      POSTGRES_PASSWORD: temporal
+      POSTGRES_DB: temporal
+    ports:
+      - "5433:5432"
+
+  temporal:
+    image: temporalio/auto-setup:latest
+    container_name: complicore-temporal
+    restart: unless-stopped
+    depends_on:
+      - temporal-postgresql
+    environment:
+      DB: postgresql
+      DB_PORT: 5432
+      POSTGRES_USER: temporal
+      POSTGRES_PWD: temporal
+      POSTGRES_SEEDS: temporal-postgresql
+    ports:
+      - "7233:7233"
+
+
+  openviking:
+    image: ghcr.io/volcengine/openviking:latest
+    container_name: complicore-openviking
+    restart: unless-stopped
+    profiles: ["context"]
+    ports:
+      - "9701:9701"
+
+  context-gateway:
+    image: python:3.11-slim
+    container_name: complicore-context-gateway
+    restart: unless-stopped
+    profiles: ["context"]
+    depends_on:
+      - openviking
+    working_dir: /workspace
+    environment:
+      OPENVIKING_BASE_URL: http://openviking:9701
+      PYTHONPATH: /workspace
+    volumes:
+    depends_on:
+      - openviking
+    working_dir: /workspace
+    environment:
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: complicore-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: complicore
+      POSTGRES_USER: complicore
+      POSTGRES_PASSWORD: complicore
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7
+    container_name: complicore-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: complicore-qdrant
+    restart: unless-stopped
+    ports:
+      - "6333:6333"
+    volumes:
+      - qdrant_data:/qdrant/storage
+
+  temporal-postgresql:
+    image: postgres:16
+    container_name: temporal-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: temporal
+      POSTGRES_PASSWORD: temporal
+      POSTGRES_DB: temporal
+    ports:
+      - "5433:5432"
+
+  temporal:
+    image: temporalio/auto-setup:latest
+    container_name: complicore-temporal
+    restart: unless-stopped
+    depends_on:
+      - temporal-postgresql
+    environment:
+      DB: postgresql
+      DB_PORT: 5432
+      POSTGRES_USER: temporal
+      POSTGRES_PWD: temporal
+      POSTGRES_SEEDS: temporal-postgresql
+    ports:
+      - "7233:7233"
+
+
+
+
+  openviking:
+    image: ghcr.io/volcengine/openviking:latest
+    container_name: complicore-openviking
+    restart: unless-stopped
+    profiles: ["context"]
+    ports:
+      - "9701:9701"
+
+  context-gateway:
+    image: python:3.11-slim
+    container_name: complicore-context-gateway
+    restart: unless-stopped
+    profiles: ["context"]
+    depends_on:
+      - openviking
+    working_dir: /workspace
+    environment:
+      OPENVIKING_BASE_URL: http://openviking:9701
+      PYTHONPATH: /workspace
+    volumes:
+    volumes:
+      - ./:/workspace
+    command: >
+      bash -lc "pip install -r requirements.txt && uvicorn apps.context_gateway.main:app --host 0.0.0.0 --port 8010"
+    ports:
+      - "8010:8010"
+
+  temporal-ui:
+    image: temporalio/ui:latest
+    container_name: complicore-temporal-ui
+    restart: unless-stopped
+    depends_on:
+      - temporal
+    environment:
+      TEMPORAL_ADDRESS: temporal:7233
+    ports:
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: complicore-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: complicore
+      POSTGRES_USER: complicore
+      POSTGRES_PASSWORD: complicore
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7
+    container_name: complicore-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: complicore-qdrant
+    restart: unless-stopped
+    ports:
+      - "6333:6333"
+    volumes:
+      - qdrant_data:/qdrant/storage
+
+  temporal-postgresql:
+    image: postgres:16
+    container_name: temporal-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: temporal
+      POSTGRES_PASSWORD: temporal
+      POSTGRES_DB: temporal
+    ports:
+      - "5433:5432"
+
+  temporal:
+    image: temporalio/auto-setup:latest
+    container_name: complicore-temporal
+    restart: unless-stopped
+    depends_on:
+      - temporal-postgresql
+    environment:
+      DB: postgresql
+      DB_PORT: 5432
+      POSTGRES_USER: temporal
+      POSTGRES_PWD: temporal
+      POSTGRES_SEEDS: temporal-postgresql
+    ports:
+      - "7233:7233"
+
+
+  openviking:
+    image: ghcr.io/volcengine/openviking:latest
+    container_name: complicore-openviking
+    restart: unless-stopped
+    profiles: ["context"]
+    ports:
+      - "9701:9701"
+
+  context-gateway:
+    image: python:3.11-slim
+    container_name: complicore-context-gateway
+    restart: unless-stopped
+    profiles: ["context"]
+    depends_on:
+      - openviking
+    working_dir: /workspace
+    environment:
+      OPENVIKING_BASE_URL: http://openviking:9701
+      PYTHONPATH: /workspace
+    volumes:
+      - ./:/workspace
+    command: >
+      bash -lc "pip install -r requirements.txt && uvicorn apps.context_gateway.main:app --host 0.0.0.0 --port 8010"
+    ports:
+      - "8010:8010"
+
+  temporal-ui:
+    image: temporalio/ui:latest
+    container_name: complicore-temporal-ui
+    restart: unless-stopped
+    depends_on:
+      - temporal
+    environment:
+      TEMPORAL_ADDRESS: temporal:7233
+    ports:
+    ports:
+    ports:
+    ports:
+  redis:
+    image: redis:7
+    container_name: complicore-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: complicore-qdrant
+    restart: unless-stopped
+    ports:
+      - "6333:6333"
+    volumes:
+      - qdrant_data:/qdrant/storage
+
+  temporal-postgresql:
+    image: postgres:16
+    container_name: temporal-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: temporal
+      POSTGRES_PASSWORD: temporal
+      POSTGRES_DB: temporal
+    ports:
+      - "5433:5432"
+
+  temporal:
+    image: temporalio/auto-setup:latest
+    container_name: complicore-temporal
+    restart: unless-stopped
+    depends_on:
+      - temporal-postgresql
+    environment:
+      DB: postgresql
+      DB_PORT: 5432
+      POSTGRES_USER: temporal
+      POSTGRES_PWD: temporal
+      POSTGRES_SEEDS: temporal-postgresql
+    ports:
+      - "7233:7233"
+
+  temporal-ui:
+    image: temporalio/ui:latest
+    container_name: complicore-temporal-ui
+    restart: unless-stopped
+    depends_on:
+      - temporal
+    environment:
+      TEMPORAL_ADDRESS: temporal:7233
+    ports:
+      - "8080:8080"
+
+volumes:
+  pgdata:
+  qdrant_data:

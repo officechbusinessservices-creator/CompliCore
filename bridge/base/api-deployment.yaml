@@ -1,0 +1,82 @@
+#! api-deployment.yaml
+# Generated code, do not edit
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+    name: api
+    namespace: rental-platform-architecture
+    labels:
+        com.docker.compose.project: rental-platform-architecture
+        com.docker.compose.service: api
+spec:
+    replicas: 1
+    selector:
+        matchLabels:
+            com.docker.compose.project: rental-platform-architecture
+            com.docker.compose.service: api
+    strategy:
+        type: Recreate
+    template:
+        metadata:
+            labels:
+                com.docker.compose.project: rental-platform-architecture
+                com.docker.compose.service: api
+                com.docker.compose.network.backend: "true"
+        spec:
+            restartPolicy: Always
+            containers:
+                - name: api
+                  image: rental-platform-architecture-api
+                  imagePullPolicy: IfNotPresent
+                  env:
+                    - name: ALERTMANAGER_SLACK_CHANNEL
+                      value: "#alerts"
+                    - name: ALERTMANAGER_SLACK_WEBHOOK_URL
+                      value: "https://hooks.slack.com/services/replace/me"
+                    - name: ALLOWED_ORIGINS
+                      value: "https://yourdomain.com"
+                    - name: COOKIE_SAME_SITE
+                      value: "lax"
+                    - name: COOKIE_SECURE
+                      value: "true"
+                    - name: DATABASE_URL
+                      value: ""
+                    - name: DB_SSL
+                      value: "true"
+                    - name: DB_SSL_REJECT_UNAUTHORIZED
+                      value: "true"
+                    - name: EMAIL_FROM
+                      value: "no-reply@yourdomain.com"
+                    - name: EMAIL_HOST
+                      value: "smtp.your-provider.com"
+                    - name: EMAIL_PASSWORD
+                      value: "replace_with_smtp_password"
+                    - name: EMAIL_PORT
+                      value: "587"
+                    - name: EMAIL_USERNAME
+                      value: "replace_with_smtp_user"
+                    - name: JWT_SECRET
+                      value: ""
+                    - name: NEXT_PUBLIC_API_BASE
+                      value: "https://yourdomain.com"
+                    - name: NODE_ENV
+                      value: "production"
+                    - name: PORT
+                      value: "4000"
+                    - name: WS_ALLOWED_ORIGINS
+                      value: "https://yourdomain.com"
+                  securityContext:
+                    readOnlyRootFilesystem: true
+                  livenessProbe:
+                    exec:
+                        command:
+                            - /bin/sh
+                            - -c
+                            - wget -qO- http://127.0.0.1:4000/health/ready >/dev/null || exit 1
+                    periodSeconds: 30
+                    initialDelaySeconds: 40
+                    timeoutSeconds: 10
+                    failureThreshold: 3
+                  ports:
+                    - name: api-4000
+                      containerPort: 4000

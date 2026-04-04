@@ -1,0 +1,51 @@
+#! web-deployment.yaml
+# Generated code, do not edit
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+    name: web
+    namespace: rental-platform-architecture
+    labels:
+        com.docker.compose.project: rental-platform-architecture
+        com.docker.compose.service: web
+spec:
+    replicas: 1
+    selector:
+        matchLabels:
+            com.docker.compose.project: rental-platform-architecture
+            com.docker.compose.service: web
+    strategy:
+        type: Recreate
+    template:
+        metadata:
+            labels:
+                com.docker.compose.project: rental-platform-architecture
+                com.docker.compose.service: web
+                com.docker.compose.network.backend: "true"
+                com.docker.compose.network.frontend: "true"
+        spec:
+            restartPolicy: Always
+            containers:
+                - name: web
+                  image: rental-platform-architecture-web
+                  imagePullPolicy: IfNotPresent
+                  env:
+                    - name: NEXT_PUBLIC_API_BASE
+                      value: ""
+                    - name: NODE_ENV
+                      value: "production"
+                  securityContext:
+                    readOnlyRootFilesystem: true
+                  livenessProbe:
+                    exec:
+                        command:
+                            - /bin/sh
+                            - -c
+                            - wget -qO- http://127.0.0.1:3000 >/dev/null || exit 1
+                    periodSeconds: 30
+                    initialDelaySeconds: 40
+                    timeoutSeconds: 10
+                    failureThreshold: 3
+                  ports:
+                    - name: web-3000
+                      containerPort: 3000

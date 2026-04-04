@@ -1,0 +1,22 @@
+{
+  "manifest": "CCP-302-MAV-001",
+  "portfolio_type": "Multi-Asset Vault",
+  "tvv_target_usd": 5000000,
+  "allocation_model": {
+    "institutional_anchor_reserve_units": 200,
+    "retail_market_units": 4800,
+    "retail_cap_units": 200,
+    "institutional_cap": "unrestricted"
+  },
+  "compliance": {
+    "base_protocol": "CCP-201",
+    "expansion_protocol": "CCP-302",
+    "ssi_tiers": ["StandardInvestor", "InstitutionalEntity"],
+    "proof_checks": ["rPoR_24h", "JurisdictionalPolicy", "IdentityCredential"]
+  },
+  "sellout_handover": {
+    "pilot_asset": "SG-COMM-MBFC-001",
+    "required_event": "GENESIS_SELL_OUT",
+    "next_action": "CapitalCall_4000000_USD"
+  }
+}

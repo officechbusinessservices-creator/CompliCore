@@ -1,0 +1,56 @@
+:root {
+  --color-primary: #6EA8FE;
+  --color-primary-hover: #8AB8FF;
+  --color-surface: #11182D;
+  --color-canvas: #0B1020;
+  --color-surface-elevated: #16203A;
+  --color-border: #25314F;
+  --color-text-primary: #F5F7FB;
+  --color-text-secondary: #B8C1D9;
+  --color-success: #22C55E;
+  --color-warning: #F59E0B;
+  --color-danger: #EF4444;
+
+  --font-family-base: Inter, system-ui, sans-serif;
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  --font-size-12: 12px;
+  --font-size-14: 14px;
+  --font-size-16: 16px;
+  --font-size-18: 18px;
+  --font-size-20: 20px;
+  --font-size-24: 24px;
+  --font-size-30: 30px;
+  --font-size-36: 36px;
+  --font-size-48: 48px;
+
+  --space-1: 8px;
+  --space-2: 16px;
+  --space-3: 24px;
+  --space-4: 32px;
+  --space-5: 40px;
+  --space-6: 48px;
+  --space-7: 64px;
+  --space-8: 80px;
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+
+  --shadow-sm: 0 2px 8px rgba(0,0,0,.18);
+  --shadow-md: 0 8px 24px rgba(0,0,0,.24);
+  --shadow-lg: 0 16px 40px rgba(0,0,0,.28);
+
+  --breakpoint-mobile: 375px;
+  --breakpoint-tablet: 768px;
+  --breakpoint-desktop: 1440px;
+
+  --motion-standard: 180ms;
+  --motion-medium: 220ms;
+  --motion-slow: 300ms;
+  --motion-hero: 500ms;
+}

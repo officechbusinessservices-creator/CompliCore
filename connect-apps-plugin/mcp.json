@@ -1,0 +1,10 @@
+{
+  "name": "complicore-connect-apps",
+  "version": "1.0.0",
+  "description": "Manage CompliCore external app integrations: PMS providers, OTA channels, payment processors, smart locks, and accounting systems.",
+  "server": {
+    "command": "node",
+    "args": ["dist/index.js"],
+    "env": {}
+  }
+}

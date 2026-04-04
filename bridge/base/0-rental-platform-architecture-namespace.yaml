@@ -1,0 +1,8 @@
+#! 0-rental-platform-architecture-namespace.yaml
+# Generated code, do not edit
+apiVersion: v1
+kind: Namespace
+metadata:
+    name: rental-platform-architecture
+    labels:
+        com.docker.compose.project: rental-platform-architecture

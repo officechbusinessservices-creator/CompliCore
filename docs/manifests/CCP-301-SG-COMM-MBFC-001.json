@@ -1,0 +1,28 @@
+{
+  "asset_id": "SG-COMM-MBFC-001",
+  "asset_type": "Commercial Real Estate",
+  "valuation_sgd": 1000000,
+  "fractions": {
+    "total_units": 1000,
+    "unit_value_sgd": 1000,
+    "partition": "Tier-1_Accredited"
+  },
+  "jurisdiction": "Singapore (MAS SFA Compliant)",
+  "compliance_logic": {
+    "standard": "ERC-7518",
+    "restrictions": "Accredited Investors Only (Net Assets > S$2M)",
+    "data_residency": "SG-SOUTH-1 (APAC Cluster)",
+    "ccp201_policy_link": true
+  },
+  "deed_hash": "0x8b3a...d9e2",
+  "issuer_did": "did:complicore:admin:0x1",
+  "proof_of_reserve": {
+    "provider": "Chainlink_Proof_of_Reserve",
+    "heartbeat_seconds": 60,
+    "threshold": "1.0_Asset_to_1.0_Token"
+  },
+  "settlement": {
+    "mode": "DvP_Atomic",
+    "target_p95_seconds": 2
+  }
+}
