@@ -1,13 +1,124 @@
 services:
+  # ── Frontend (Next.js) ─────────────────────────────────────
   - type: web
-    name: Complicore
+    name: complicore-web
     env: node
-    rootDir: backend
-    buildCommand: npm install && npm run build
-    startCommand: npm run start
+    region: oregon
+    plan: starter
+    branch: main
+    rootDir: .
+    buildCommand: |
+      npm ci
+      npm run build
+    startCommand: node server.js
+    healthCheckPath: /
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NEXT_PUBLIC_API_BASE
+        fromService:
+          name: complicore-api
+          type: web
+          property: host
+          envVarKey: API_HOST
+        pattern: "https://${API_HOST}"
+      - key: NEXTAUTH_URL
+        fromService:
+          name: complicore-web
+          type: web
+          property: host
+          envVarKey: WEB_HOST
+        pattern: "https://${WEB_HOST}"
+      - key: NEXTAUTH_SECRET
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: complicore-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: complicore-redis
+          type: redis
+          property: connectionString
+
+  # ── Backend API (FastAPI) ──────────────────────────────────
+  - type: web
+    name: complicore-api
+    env: python
+    region: oregon
+    plan: starter
+    branch: main
+    rootDir: .
+    buildCommand: |
+      pip install -r requirements.txt
+    startCommand: uvicorn apps.api.main:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /health
     envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
       - key: DATABASE_URL
+        fromDatabase:
+          name: complicore-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: complicore-redis
+          type: redis
+          property: connectionString
+      - key: TEMPORAL_HOST
         sync: false
-      - key: JWT_SECRET
+      - key: OPENAI_API_KEY
         sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+
+  # ── Worker (Temporal Orchestrator) ─────────────────────────
+  - type: worker
+    name: complicore-worker
+    env: python
+    region: oregon
+    plan: starter
+    branch: main
+    rootDir: .
+    buildCommand: |
+      pip install -r requirements.txt
+    startCommand: python apps/worker/run_orchestrator.py
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: DATABASE_URL
+        fromDatabase:
+          name: complicore-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: complicore-redis
+          type: redis
+          property: connectionString
+      - key: TEMPORAL_HOST
+        sync: false
+      - key: WORKER_ROLES
+        value: orchestrator
+      - key: WORKER_MAX_CONCURRENCY
+        value: "8"
+      - key: WORKER_HEARTBEAT_INTERVAL_S
+        value: "15"
+
+  # ── Redis ──────────────────────────────────────────────────
+  - type: redis
+    name: complicore-redis
+    plan: starter
+    region: oregon
+    maxmemoryPolicy: allkeys-lru
+
+# ── Managed PostgreSQL ─────────────────────────────────────
+databases:
+  - name: complicore-db
+    databaseName: complicore
+    user: complicore
+    plan: starter
+    region: oregon
+    postgresMajorVersion: "16"
+    ipAllowList: []
