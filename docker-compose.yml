@@ -107,7 +107,7 @@ services:
     container_name: complicore-grafana
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "3002:3000"
     volumes:
       - grafana_data:/var/lib/grafana
     environment:
