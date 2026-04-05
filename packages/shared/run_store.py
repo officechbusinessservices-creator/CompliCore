@@ -130,9 +130,11 @@ def write_artifact(run_id: str, artifact_type: str, data: dict) -> str:
     db = SessionLocal()
     try:
         row = Artifact(
-            workflow_run_id=uuid.UUID(run_id),
+            run_id=uuid.UUID(run_id),
             artifact_type=artifact_type,
-            content_json=data,
+            file_path=f"artifacts/{run_id}/{artifact_type}.json",
+            markdown_path=f"artifacts/{run_id}/{artifact_type}.md",
+            payload_json=data,
         )
         db.add(row)
         db.commit()

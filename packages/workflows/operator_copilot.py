@@ -4,6 +4,7 @@ from datetime import timedelta
 from typing import Optional
 
 from temporalio import workflow
+from temporalio.common import RetryPolicy
 
 with workflow.unsafe.imports_passed_through():
     from packages.agents.activities import (
@@ -52,7 +53,7 @@ class OperatorCopilotWorkflow:
             planner_activity,
             payload,
             start_to_close_timeout=timedelta(seconds=30),
-            retry_policy=workflow.RetryPolicy(maximum_attempts=2),
+            retry_policy=RetryPolicy(maximum_attempts=2),
         )
         self.last_result["plan"] = plan
 
@@ -61,7 +62,7 @@ class OperatorCopilotWorkflow:
             researcher_activity,
             plan,
             start_to_close_timeout=timedelta(seconds=30),
-            retry_policy=workflow.RetryPolicy(maximum_attempts=2),
+            retry_policy=RetryPolicy(maximum_attempts=2),
         )
         self.last_result["research"] = research
 
@@ -70,7 +71,7 @@ class OperatorCopilotWorkflow:
             executor_activity,
             research,
             start_to_close_timeout=timedelta(seconds=30),
-            retry_policy=workflow.RetryPolicy(maximum_attempts=2),
+            retry_policy=RetryPolicy(maximum_attempts=2),
         )
         self.last_result["execution"] = execution
 
@@ -87,7 +88,7 @@ class OperatorCopilotWorkflow:
                     "summary": execution.get("summary"),
                 },
                 start_to_close_timeout=timedelta(seconds=30),
-                retry_policy=workflow.RetryPolicy(maximum_attempts=2),
+                retry_policy=RetryPolicy(maximum_attempts=2),
             )
             self.pending_approval_id = approval.get("approval_id")
 
@@ -111,7 +112,7 @@ class OperatorCopilotWorkflow:
                         "status": "rejected",
                     },
                     start_to_close_timeout=timedelta(seconds=30),
-                    retry_policy=workflow.RetryPolicy(maximum_attempts=2),
+                    retry_policy=RetryPolicy(maximum_attempts=2),
                 )
                 return rejected
 
@@ -120,7 +121,7 @@ class OperatorCopilotWorkflow:
             reviewer_activity,
             execution,
             start_to_close_timeout=timedelta(seconds=30),
-            retry_policy=workflow.RetryPolicy(maximum_attempts=2),
+            retry_policy=RetryPolicy(maximum_attempts=2),
         )
         self.last_result["review"] = review
 
@@ -148,6 +149,6 @@ class OperatorCopilotWorkflow:
                 "status": "completed",
             },
             start_to_close_timeout=timedelta(seconds=30),
-            retry_policy=workflow.RetryPolicy(maximum_attempts=2),
+            retry_policy=RetryPolicy(maximum_attempts=2),
         )
         return final_result
