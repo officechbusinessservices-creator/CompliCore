@@ -123,6 +123,8 @@ https://github.com/officechbusinessservices-creator/CompliCore/pull/126/conflict
 - **[Antigravity OS Plan](./docs/operations/antigravity-os-plan.md)** - Operator-first architecture (roles + workspaces + skills) with CompliCore as a workspace
 - **[Worker-Layer Startup Runbook](./docs/operations/worker-layer-startup.md)** - Correct startup order for infra, workers, scheduler, and dashboard observer
 - **[Skills Usage Guide](./docs/operations/skills-usage-guide.md)** - How to actually use installed skills, bundles, and prompt patterns
+- **[Context Layer Architecture](./docs/architecture/context-layer.md)** - OpenViking-backed context backbone design
+- **[OpenViking Evaluation](./docs/integrations/openviking-evaluation.md)** - integration scope and ownership boundaries
 - **[Superpowers Install Note](./docs/operations/superpowers-install-note.md)** - Optional setup notes for adding Superpowers workflows across Codex/Gemini/Claude/Cursor
 - **[Fleet Operating Model](./docs/operations/fleet-operating-model.md)** - 15-division / 1,000-agent weighted structure with command-layer governors and activation waves
 - **[Worker Scaling Playbook](./docs/operations/worker-scaling-playbook.md)** - Layered 1→100+ worker scaling, queue isolation, worker identity, and fleet monitoring controls
@@ -189,6 +191,7 @@ Explore the platform features:
 Install Antigravity skills (default: `~/.gemini/antigravity/skills`) with `npx antigravity-awesome-skills`, or use `--path` for custom locations.
 Start with **Essentials** for general use, **Web Wizard** for web development, and **Security Engineer** for security-focused work.
 
+The worker layer now runs a 4-stage Temporal flow (plan → research → execute → review) with PostgreSQL persistence, approval gating, artifact output, and API visibility (`/runs`, `/steps`, `/audit`, `/approvals`, `/workflow/{id}/status`, `/metrics/summary`). OpenViking is integrated as the context backbone (via context-gateway), while Temporal remains orchestration runtime.
 The worker layer now runs a 4-stage Temporal flow (plan → research → execute → review) with PostgreSQL persistence, approval gating, artifact output, and API visibility (`/runs`, `/steps`, `/audit`, `/approvals`, `/workflow/{id}/status`, `/metrics/summary`). Plugin runtime endpoints (`/plugins/validate`, `/plugins/load`, `/plugins/dispatch`) support executable plugin command dispatch with policy boundaries. OpenViking is integrated as the context backbone (via context-gateway), while Temporal remains orchestration runtime.
 The worker layer now runs a 4-stage Temporal flow (plan → research → execute → review) with PostgreSQL persistence, approval gating, artifact output, and API visibility (`/runs`, `/steps`, `/audit`, `/approvals`, `/workflow/{id}/status`, `/metrics/summary`). OpenViking is integrated as the context backbone (via context-gateway), while Temporal remains orchestration runtime.
 The worker layer now runs a 4-stage Temporal flow (plan → research → execute → review) with PostgreSQL persistence and API visibility (`/runs`, `/steps`, `/audit`).

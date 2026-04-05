@@ -15,6 +15,9 @@ from sqlalchemy import text
 from temporalio.client import Client
 
 from packages.memory.openviking_client import OpenVikingContextClient
+from packages.shared.db import SessionLocal
+from packages.shared.models import Approval, Artifact, AuditEvent, WorkflowRun, WorkflowStep
+from packages.shared.run_store import decide_approval, get_approval
 from packages.agents.gemini_planner import create_execution_plan
 from packages.agents.gemini_reviewer import review_output
 from packages.agents.nemotron_finalizer import finalize_complicore_flow
@@ -803,6 +806,7 @@ def metrics_summary() -> dict:
             "rejected_runs": rejected_runs,
             "pending_approvals": pending_approvals,
             "total_artifacts": total_artifacts,
+            "completion_rate": round(completed_runs / total_runs, 4) if total_runs else 0,
             "total_plugins": total_plugins,
             "enabled_plugins": enabled_plugins,
             "completion_rate": round(completed_runs / total_runs, 4) if total_runs else 0,

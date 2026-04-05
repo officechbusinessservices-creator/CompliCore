@@ -74,7 +74,9 @@ def resolve_activities(roles: list[str]):
     return list(activity_map.values())
 
 
-async def heartbeat_loop(worker_id: str, worker_type: str, queue_name: str, max_concurrency: int) -> None:
+async def heartbeat_loop(
+    worker_id: str, worker_type: str, queue_name: str, max_concurrency: int
+) -> None:
     while True:
         upsert_worker_heartbeat(
             worker_id=worker_id,
@@ -87,26 +89,40 @@ async def heartbeat_loop(worker_id: str, worker_type: str, queue_name: str, max_
             max_concurrency=max_concurrency,
             current_workspace=os.getenv("WORKER_WORKSPACE"),
             current_role=os.getenv("WORKER_ROLE"),
-            metadata_json={"queues": parse_queue_names(), "roles": parse_worker_roles()},
+            metadata_json={
+                "queues": parse_queue_names(),
+                "roles": parse_worker_roles(),
+            },
             started_at=datetime.now(timezone.utc),
         )
         await asyncio.sleep(env_int("WORKER_HEARTBEAT_INTERVAL_S", 15))
 
 
-async def run_worker_for_queue(client: Client, queue_name: str, activities: list, max_concurrency: int) -> None:
-    worker_id = f"{os.getenv('WORKER_NAME_PREFIX', 'worker')}-{queue_name}-{os.getpid()}"
+async def run_worker_for_queue(
+    client: Client, queue_name: str, activities: list, max_concurrency: int
+) -> None:
+    worker_id = (
+        f"{os.getenv('WORKER_NAME_PREFIX', 'worker')}-{queue_name}-{os.getpid()}"
+    )
     worker_type = os.getenv("WORKER_TYPE", "multi-role")
 
     worker = Worker(
         client,
         task_queue=queue_name,
-        workflows=[OperatorCopilotWorkflow] if queue_name == "orchestrator-queue" else [],
+        workflows=[OperatorCopilotWorkflow]
+        if queue_name == "orchestrator-queue"
+        else [],
         activities=activities,
         max_concurrent_activities=max_concurrency,
     )
 
-    print(f"Worker {worker_id} running on {queue_name} with concurrency={max_concurrency}")
-    await asyncio.gather(worker.run(), heartbeat_loop(worker_id, worker_type, queue_name, max_concurrency))
+    print(
+        f"Worker {worker_id} running on {queue_name} with concurrency={max_concurrency}"
+    )
+    await asyncio.gather(
+        worker.run(),
+        heartbeat_loop(worker_id, worker_type, queue_name, max_concurrency),
+    )
 
 
 async def main() -> None:
@@ -117,27 +133,16 @@ async def main() -> None:
     max_concurrency = env_int("WORKER_MAX_CONCURRENCY", 8)
 
     if not activities and "orchestrator-queue" not in queue_names:
-        raise RuntimeError("No activities configured and no orchestrator queue assigned.")
+        raise RuntimeError(
+            "No activities configured and no orchestrator queue assigned."
+        )
 
-    await asyncio.gather(*[run_worker_for_queue(client, queue, activities, max_concurrency) for queue in queue_names])
-
-async def main() -> None:
-    client = await Client.connect(os.getenv("TEMPORAL_HOST", "localhost:7233"))
-    worker = Worker(
-        client,
-        task_queue="orchestrator-queue",
-        workflows=[OperatorCopilotWorkflow],
-        activities=[
-            planner_activity,
-            researcher_activity,
-            executor_activity,
-            reviewer_activity,
-            create_approval_request_activity,
-            finalize_workflow_activity,
-        ],
+    await asyncio.gather(
+        *[
+            run_worker_for_queue(client, queue, activities, max_concurrency)
+            for queue in queue_names
+        ]
     )
-    print("Orchestrator worker running on orchestrator-queue")
-    await worker.run()
 
 
 if __name__ == "__main__":
