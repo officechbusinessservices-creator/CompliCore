@@ -1,183 +1,171 @@
+```markdown
 # CompliCore Development Patterns
 
 > Auto-generated skill from repository analysis
 
 ## Overview
 
-CompliCore is a TypeScript-based compliance management application built with Next.js and Prisma. It features a full-stack architecture with authentication, database management, and CI/CD workflows. The codebase follows consistent patterns for database migrations, API integrations, and testing infrastructure.
+This skill introduces the core development patterns and workflows used in the CompliCore repository, a Python-based backend with a Next.js frontend. It covers coding conventions, commit styles, and the most common workflows for contributing, maintaining, and documenting the codebase. By following these patterns, contributors can ensure consistency, reliability, and ease of collaboration across the project.
 
 ## Coding Conventions
 
 ### File Naming
-- Use **camelCase** for all file names
-- Test files follow pattern: `*.test.ts`
-- Migration files: `*/migration.sql` in timestamped directories
 
-### Import/Export Style
-```typescript
-// Use relative imports
-import { AuthController } from '../controllers/auth-controller'
-import { prismaUserRepo } from './prisma-user-repo'
+- Use **camelCase** for file names.
+  - Example: `userProfile.py`, `dataLoader.js`
 
-// Use named exports
-export const authService = new AuthService()
-export { UserRepository } from './user-repository'
-```
+### Import Style
 
-### Commit Messages
-- Use conventional prefixes: `fix:`, `feat:`, `chore:`
-- Keep messages around 63 characters
-- Examples: `fix: auth token validation`, `feat: add user dashboard`
+- Use **alias imports** to clarify module usage.
+  - Python example:
+    ```python
+    import pandas as pd
+    import numpy as np
+    ```
+  - JavaScript example:
+    ```javascript
+    import dbClient from './dbClient'
+    ```
+
+### Export Style
+
+- Use **default exports** for modules.
+  - JavaScript example:
+    ```javascript
+    export default function handler(req, res) {
+      // ...
+    }
+    ```
+
+### Commit Patterns
+
+- Commit types are mixed, with prefixes such as `docs`, `feat`, `chore`.
+- Commit messages are concise (average ~69 characters).
 
 ## Workflows
 
-### Database Schema Migration
-**Trigger:** When adding new database tables or modifying existing schema
-**Command:** `/add-database-table`
+### Add or Update Skill Docs
+**Trigger:** When adding new skills or updating documentation for agent skills  
+**Command:** `/add-skill-doc`
 
-1. Generate Prisma migration file with descriptive name
-2. Update `backend/prisma/schema.prisma` with new models/fields
-3. Update related API routes in `backend/src/routes/*.ts`
-4. Add comprehensive tests in `backend/src/__tests__/*.test.ts`
-5. Run migration locally to verify schema changes
+1. Create or update `SKILL.md` files in one or more of the following directories:
+    - `.claude/skills/`
+    - `.agent/skills/`
+    - `.codebuddy/skills/`
+    - `.codex/skills/`
+    - `.continue/skills/`
+    - `.cursor/skills/`
+    - `.gemini/skills/`
+2. Optionally, add or update related resource files (e.g., `data/*.csv`, `scripts/*.py`, `templates/*.template`).
+3. Update `AGENTS.md` or related index/readme files to reflect the changes.
 
-```typescript
-// Example schema addition
-model ComplianceRecord {
-  id        String   @id @default(cuid())
-  title     String
-  status    String
-  userId    String
-  createdAt DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [id])
-}
+**Example:**
+```bash
+# Add a new skill documentation
+/add-skill-doc
 ```
 
-### Pull Request Merge Workflow
-**Trigger:** When integrating feature work into main branches
-**Command:** `/merge-pr`
+---
 
-1. Create feature branch from main/complicore
-2. Submit pull request with clear description
-3. Ensure CI checks pass in `.github/workflows/ci.yml`
-4. Request code review from team members
-5. Merge to main/complicore after approval
+### Dependency Bump via Dependabot
+**Trigger:** When a dependency update is needed for security, bugfix, or maintenance  
+**Command:** `/bump-dependency`
 
-### Authentication Enhancement
-**Trigger:** When enhancing auth, adding security features, or fixing auth bugs
-**Command:** `/enhance-auth`
+1. Update `package-lock.json` or `requirements.txt` in the relevant directory.
+2. Commit with a message referencing 'bump', 'dependabot', and the dependency name/version.
 
-1. Update auth controllers in `backend/src/controllers/auth-controller.ts`
-2. Modify user repositories in `backend/src/lib/prisma-user-repo.ts`
-3. Add WebAuthn/security features in `backend/src/lib/webauthn-stepup.ts`
-4. Update API tests in `backend/src/__tests__/api.test.ts`
-5. Test authentication flows end-to-end
-
-```typescript
-// Example auth enhancement
-export class AuthController {
-  async enhanceStepUp(req: Request, res: Response) {
-    const { userId, challenge } = req.body
-    const result = await webAuthnStepUp.verify(userId, challenge)
-    return res.json({ success: result.verified })
-  }
-}
+**Example:**
+```bash
+# Bump a Python dependency
+/bump-dependency
 ```
 
-### Frontend Page API Integration
-**Trigger:** When wiring up frontend components to real backend data
-**Command:** `/connect-api`
+---
 
-1. Update page components in `src/app/(auth)/*.tsx`
-2. Add API client calls in `src/lib/api-client.ts`
-3. Update corresponding route handlers in `backend/src/routes/*.ts`
-4. Add proper loading and error states to UI components
-5. Replace mock data with real API responses
+### Add or Update API or Workflow Logic
+**Trigger:** When adding new workflows, updating workflow logic, or extending API capabilities  
+**Command:** `/add-workflow-logic`
 
-```typescript
-// Example API integration
-export async function getComplianceData() {
-  const response = await fetch('/api/compliance')
-  if (!response.ok) throw new Error('Failed to fetch')
-  return response.json()
-}
+1. Edit or create files such as:
+    - `apps/api/main.py`
+    - `apps/worker/run_orchestrator.py`
+    - `packages/shared/run_store.py`
+    - `packages/workflows/operator_copilot.py`
+2. Update `Makefile` or `docker-compose.yml` if new services/scripts are needed.
+3. Update documentation in `docs/operations/*` if relevant.
+
+**Example:**
+```python
+# apps/api/main.py
+from fastapi import FastAPI
+
+app = FastAPI()
+
+@app.get("/status")
+def read_status():
+    return {"status": "ok"}
+```
+```bash
+# Add new workflow logic
+/add-workflow-logic
 ```
 
-### CI Workflow Updates
-**Trigger:** When fixing build issues or improving automated testing
-**Command:** `/fix-ci`
+---
 
-1. Update GitHub Actions workflow in `.github/workflows/ci.yml`
-2. Fix database connections and environment setup
-3. Update environment variables in `backend/src/lib/env.ts`
-4. Test CI pipeline with sample PR
-5. Verify all checks pass consistently
+### Add or Update Ops or Deployment Docs
+**Trigger:** When improving onboarding, deployment, or operational documentation  
+**Command:** `/update-ops-docs`
 
-### Testing Infrastructure Setup
-**Trigger:** When adding tests or improving testing infrastructure
-**Command:** `/add-tests`
+1. Edit or create files in `docs/operations/`, `deploy/`, or add new `.md` files for deployment.
+2. Update `Makefile`, `scripts/*.sh`, or `docker-compose.yml` as needed.
+3. Update `QUICK_START.md`, `README.md`, or `requirements.txt`.
 
-1. Add test configuration files (`vitest.config.ts`)
-2. Create test files following `*.test.tsx` or `*.test.ts` pattern
-3. Update package dependencies for testing frameworks
-4. Add test utilities in `src/test/` directory
-5. Ensure tests run in CI pipeline
-
-```typescript
-// Example test structure
-import { describe, it, expect } from 'vitest'
-import { render, screen } from '@testing-library/react'
-
-describe('ComplianceList', () => {
-  it('renders compliance items', async () => {
-    render(<ComplianceList />)
-    expect(screen.getByText('Compliance Records')).toBeInTheDocument()
-  })
-})
+**Example:**
+```bash
+# Update deployment documentation
+/update-ops-docs
 ```
 
-### Documentation Updates
-**Trigger:** When documenting features, APIs, or setup procedures
-**Command:** `/update-docs`
+---
 
-1. Create or update markdown files in `docs/` directory
-2. Add comprehensive API documentation
-3. Update `README.md`, `CLAUDE.md`, and setup guides
-4. Add configuration examples like `.env.local.example`
-5. Update `DEV_SETUP.md` with current procedures
+### Merge Main or Feature Branch
+**Trigger:** When merging a feature branch or synchronizing with main  
+**Command:** `/merge-main`
+
+1. Merge main or feature branch, resulting in updates across many files.
+2. Resolve conflicts and update documentation, configs, and code as needed.
+
+**Example:**
+```bash
+# Merge main into your feature branch
+git checkout feature/my-feature
+git merge main
+# Resolve conflicts, then
+/merge-main
+```
 
 ## Testing Patterns
 
-CompliCore uses **Vitest** as the primary testing framework:
+- **Test files** follow the pattern: `*.test.*`
+- The specific testing framework is unknown, but typical usage might be:
+    - Python: `pytest` or `unittest`
+    - JavaScript: `jest` or `vitest`
+- Place test files alongside the code or in a dedicated `tests/` directory.
 
-- Test files use pattern: `*.test.ts` or `*.test.tsx`
-- Backend tests in: `backend/src/__tests__/`
-- Frontend tests in: `src/test/`
-- API tests cover authentication, database operations, and route handlers
-- Component tests use React Testing Library for UI components
-
-```typescript
-// Backend API test example
-describe('Auth API', () => {
-  it('should authenticate valid user', async () => {
-    const response = await request(app)
-      .post('/api/auth/login')
-      .send({ email: 'test@example.com', password: 'password' })
-    
-    expect(response.status).toBe(200)
-    expect(response.body.token).toBeDefined()
-  })
-})
+**Example:**
+```python
+# userProfile.test.py
+def test_user_profile_creation():
+    assert create_user_profile("Alice") is not None
 ```
 
 ## Commands
 
-| Command | Purpose |
-|---------|---------|
-| `/add-database-table` | Generate Prisma migrations and update schema |
-| `/merge-pr` | Handle pull request workflow and CI checks |
-| `/enhance-auth` | Add or modify authentication features |
-| `/connect-api` | Wire frontend components to backend APIs |
-| `/fix-ci` | Update and troubleshoot CI/CD pipeline |
-| `/add-tests` | Create tests and improve test coverage |
-| `/update-docs` | Add or update project documentation |
+| Command             | Purpose                                                      |
+|---------------------|--------------------------------------------------------------|
+| /add-skill-doc      | Add or update skill documentation in agent/skill directories |
+| /bump-dependency    | Bump npm or Python dependencies via dependabot               |
+| /add-workflow-logic | Implement or update workflow logic or API endpoints          |
+| /update-ops-docs    | Add or update operational/deployment documentation           |
+| /merge-main         | Merge main or feature branches and resolve conflicts         |
+```
