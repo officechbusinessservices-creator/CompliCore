@@ -10,7 +10,7 @@ services:
       POSTGRES_USER: complicore
       POSTGRES_PASSWORD: complicore
     ports:
-      - "5432:5432"
+      - "5434:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
 
@@ -48,7 +48,7 @@ services:
     depends_on:
       - temporal-postgresql
     environment:
-      DB: postgresql
+      DB: postgres12
       DB_PORT: 5432
       POSTGRES_USER: temporal
       POSTGRES_PWD: temporal

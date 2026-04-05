@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 from datetime import timedelta
+from typing import Optional
 
 from temporalio import workflow
 
@@ -7,7 +10,6 @@ with workflow.unsafe.imports_passed_through():
         create_approval_request_activity,
         executor_activity,
         finalize_workflow_activity,
-        executor_activity,
         planner_activity,
         researcher_activity,
         reviewer_activity,
@@ -20,7 +22,7 @@ class OperatorCopilotWorkflow:
         self.current_stage = "pending"
         self.last_result: dict = {}
         self.approval_status = "not_required"
-        self.pending_approval_id: str | None = None
+        self.pending_approval_id: Optional[str] = None
 
     @workflow.query
     def get_status(self) -> dict:
@@ -32,19 +34,16 @@ class OperatorCopilotWorkflow:
         }
 
     @workflow.signal
-    def approve(self, approval_id: str | None = None) -> None:
+    def approve(self, approval_id: Optional[str] = None) -> None:
         self.approval_status = "approved"
         if approval_id:
             self.pending_approval_id = approval_id
 
     @workflow.signal
-    def reject(self, approval_id: str | None = None) -> None:
+    def reject(self, approval_id: Optional[str] = None) -> None:
         self.approval_status = "rejected"
         if approval_id:
             self.pending_approval_id = approval_id
-
-            "last_result": self.last_result,
-        }
 
     @workflow.run
     async def run(self, payload: dict) -> dict:
@@ -92,7 +91,9 @@ class OperatorCopilotWorkflow:
             )
             self.pending_approval_id = approval.get("approval_id")
 
-            await workflow.wait_condition(lambda: self.approval_status in {"approved", "rejected"})
+            await workflow.wait_condition(
+                lambda: self.approval_status in {"approved", "rejected"}
+            )
             if self.approval_status == "rejected":
                 self.current_stage = "rejected"
                 rejected = {
@@ -104,14 +105,15 @@ class OperatorCopilotWorkflow:
                 }
                 await workflow.execute_activity(
                     finalize_workflow_activity,
-                    {"db_run_id": payload["db_run_id"], "result": rejected, "status": "rejected"},
+                    {
+                        "db_run_id": payload["db_run_id"],
+                        "result": rejected,
+                        "status": "rejected",
+                    },
                     start_to_close_timeout=timedelta(seconds=30),
                     retry_policy=workflow.RetryPolicy(maximum_attempts=2),
                 )
                 return rejected
-
-        )
-        self.last_result["execution"] = execution
 
         self.current_stage = "reviewing"
         review = await workflow.execute_activity(
@@ -129,21 +131,23 @@ class OperatorCopilotWorkflow:
             "workspace": payload.get("workspace"),
             "role": payload.get("role"),
             "approval_id": self.pending_approval_id,
-        return {
-            "objective": payload.get("objective"),
-            "status": "completed",
             "plan": plan,
             "research": research,
             "execution": execution,
             "review": review,
-            "summary": review.get("final_output", {}).get("summary", "Workflow completed"),
+            "summary": review.get("final_output", {}).get(
+                "summary", "Workflow completed"
+            ),
             "next_actions": review.get("final_output", {}).get("next_actions", []),
         }
         await workflow.execute_activity(
             finalize_workflow_activity,
-            {"db_run_id": payload["db_run_id"], "result": final_result, "status": "completed"},
+            {
+                "db_run_id": payload["db_run_id"],
+                "result": final_result,
+                "status": "completed",
+            },
             start_to_close_timeout=timedelta(seconds=30),
             retry_policy=workflow.RetryPolicy(maximum_attempts=2),
         )
         return final_result
-        }
